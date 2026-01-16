@@ -1,0 +1,1490 @@
+{% extends "main.html" %}
+
+{% block title %}Batch Management - University VLE{% endblock %}
+
+{% block navigation %}
+    {% include "admin_navigation.html" %}
+{% endblock %}
+
+{% block body %}
+<div class="batches-management">
+    <!-- Page Header -->
+    <div class="page-header">
+        <h1 class="page-title">
+            <i class="fas fa-calendar-alt"></i> Batch Management
+        </h1>
+        <div class="header-actions">
+            <div class="search-box">
+                <i class="fas fa-search"></i>
+                <input type="text" id="searchBatch" placeholder="Search batches...">
+            </div>
+            <button class="btn btn-primary" onclick="openAddBatchModal()">
+                <i class="fas fa-plus"></i> Add Batch
+            </button>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i class="fas fa-calendar"></i>
+            </div>
+            <div class="stat-content">
+                <h3 id="totalBatches">{{ batches|length|default:"0" }}</h3>
+                <p>Total Batches</p>
+            </div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i class="fas fa-users"></i>
+            </div>
+            <div class="stat-content">
+                <h3>{{ active_students_count|default:"0" }}</h3>
+                <p>Active Students</p>
+            </div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i class="fas fa-chalkboard-teacher"></i>
+            </div>
+            <div class="stat-content">
+                <h3>{{ ongoing_batches|default:"0" }}</h3>
+                <p>Ongoing Batches</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- View Options -->
+    <div class="view-options-container">
+        <div class="view-options">
+            <span class="view-option active" onclick="changeView('grid')">
+                <i class="fas fa-th-large"></i> Grid View
+            </span>
+            <span class="view-option" onclick="changeView('list')">
+                <i class="fas fa-list"></i> List View
+            </span>
+        </div>
+    </div>
+
+    <!-- Batches Grid View -->
+    <div class="batches-grid" id="gridView">
+        {% if batches %}
+            {% for batch in batches %}
+            <div class="batch-card" 
+                 data-id="{{ batch.id }}" 
+                 data-name="{{ batch.name|lower }}" 
+                 data-course="{{ batch.course.name|default:''|lower }}"
+                 data-intake-year="{{ batch.intake_year }}"
+                 data-course-id="{{ batch.course.id|default:'' }}"
+                 data-is-active="{{ batch.is_active|yesno:'true,false' }}">
+                <div class="batch-header">
+                    <div class="batch-year">{{ batch.intake_year }}</div>
+                    <div class="header-top-actions">
+                        <div class="status-badge {% if batch.is_active %}active{% else %}inactive{% endif %}">
+                            {% if batch.is_active %}Active{% else %}Inactive{% endif %}
+                        </div>
+                        <button class="btn-delete-batch" onclick="deleteBatch(event, {{ batch.id }}, '{{ batch.name }}')">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="batch-body">
+                    <h4>{{ batch.name }}</h4>
+                    <p class="batch-course">Course: {{ batch.course.name|default:"No Course" }}</p>
+                    <div class="batch-info">
+                        <div class="info-row">
+                            <span class="info-label">Intake Year:</span>
+                            <span class="info-value intake-year">{{ batch.intake_year }}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Course:</span>
+                            <span class="info-value course-name">{{ batch.course.name|default:"N/A" }}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Students:</span>
+                            <span class="info-value student-count">{{ batch.student_count|default:"0" }}</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="batch-footer">
+                    <!-- View Button - Go to batch detail page -->
+                    <a href="{% url 'dashboard:batch_detail' batch.id %}" class="btn btn-view">
+                        <i class="fas fa-eye"></i> View
+                    </a>
+                    
+                    <!-- Edit Button - Open edit modal -->
+                    <button class="btn btn-edit" onclick="editBatch({{ batch.id }})">
+                        <i class="fas fa-edit"></i> Edit
+                    </button>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="empty-state" style="grid-column: 1 / -1;">
+                <div class="empty-state-icon">
+                    <i class="fas fa-calendar-alt"></i>
+                </div>
+                <h3>No Batches Found</h3>
+                <p>Get started by adding your first batch</p>
+                <button class="btn btn-primary" onclick="openAddBatchModal()">
+                    <i class="fas fa-plus"></i> Add First Batch
+                </button>
+            </div>
+        {% endif %}
+        
+        <!-- Add Batch Card -->
+        <div class="batch-card add-card" onclick="openAddBatchModal()">
+            <div class="add-card-content">
+                <div class="add-icon">
+                    <i class="fas fa-plus"></i>
+                </div>
+                <h4>Add New Batch</h4>
+                <p>Create a new batch</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Batches List View -->
+    <div class="batches-table" id="listView" style="display: none;">
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Batch Name</th>
+                        <th>Course</th>
+                        <th>Intake Year</th>
+                        <th>Students</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for batch in batches %}
+                    <tr data-id="{{ batch.id }}" 
+                        data-name="{{ batch.name|lower }}" 
+                        data-course="{{ batch.course.name|default:''|lower }}"
+                        data-intake-year="{{ batch.intake_year }}"
+                        data-course-id="{{ batch.course.id|default:'' }}"
+                        data-is-active="{{ batch.is_active|yesno:'true,false' }}">
+                        <td>
+                            <div class="batch-info-cell">
+                                <div class="batch-year-circle">{{ batch.intake_year }}</div>
+                                <div>
+                                    <strong>{{ batch.name }}</strong>
+                                    <small>{{ batch.course.name|default:"" }}</small>
+                                </div>
+                            </div>
+                        </td>
+                        <td>{{ batch.course.name|default:"-" }}</td>
+                        <td>{{ batch.intake_year }}</td>
+                        <td>
+                            <span class="count-badge">{{ batch.student_count|default:"0" }}</span>
+                        </td>
+                        <td>
+                            <span class="status-badge {% if batch.is_active %}active{% else %}inactive{% endif %}">
+                                {% if batch.is_active %}Active{% else %}Inactive{% endif %}
+                            </span>
+                        </td>
+                        <td>
+                            <div class="action-buttons">
+                                <!-- View Button -->
+                                <a href="{% url 'dashboard:batch_detail' batch.id %}" class="btn btn-sm btn-view" title="View Batch">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                
+                                <!-- Edit Button -->
+                                <button class="btn btn-sm btn-edit" onclick="editBatch({{ batch.id }})" title="Edit Batch">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                
+                                <!-- Delete Button -->
+                                <button class="btn btn-sm btn-danger" onclick="deleteBatch(event, {{ batch.id }}, '{{ batch.name }}')" title="Delete Batch">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Add/Edit Batch Modal -->
+<div class="modal-overlay" id="batchModal" style="display: none;">
+    <div class="modal">
+        <div class="modal-header">
+            <h3 class="modal-title" id="modalTitle">Add New Batch</h3>
+            <button class="modal-close" onclick="closeModal()">&times;</button>
+        </div>
+        <div class="modal-content">
+            <form id="batchForm" method="post" action="">
+                {% csrf_token %}
+                <input type="hidden" id="batchId" name="id">
+                
+                <div class="form-group">
+                    <label for="batchName">Batch Name *</label>
+                    <input type="text" id="batchName" name="name" placeholder="e.g., 2023-2024 Batch, Computer Science 2024" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="batchCode">Course *</label>
+                    <select id="batchCode" name="course" required>
+                        <option value="">Select Course</option>
+                        {% if courses %}
+                            {% for course in courses %}
+                            <option value="{{ course.id }}">{{ course.name }}</option>
+                            {% endfor %}
+                        {% endif %}
+                    </select>
+                    <small class="help-text">Select the course for this batch</small>
+                </div>
+                
+                <div class="form-group">
+                    <label for="startYear">Intake Year *</label>
+                    <input type="number" id="startYear" name="intake_year" min="2000" max="2100" required placeholder="e.g., 2023">
+                </div>
+                
+                <div class="form-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="isActive" name="is_active" checked>
+                        <span class="checkmark"></span>
+                        Active Batch
+                    </label>
+                    <small class="help-text">Uncheck to make this batch inactive</small>
+                </div>
+                                
+                <div class="form-actions">
+                    <button type="button" class="btn btn-outline" onclick="closeModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Save Batch
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Loading Overlay -->
+<div id="loadingOverlay" style="display: none;">
+    <div class="loading-spinner">
+        <i class="fas fa-spinner fa-spin"></i>
+        <p>Processing...</p>
+    </div>
+</div>
+{% endblock %}
+
+{% block style %}
+<style>
+    /* Main Container */
+    .batches-management {
+        padding: 20px;
+        background: #f8f9fa;
+        min-height: 100vh;
+    }
+
+    /* Page Header */
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .page-title {
+        font-size: 2rem;
+        color: #2c3e50;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .header-actions {
+        display: flex;
+        gap: 1rem;
+        align-items: center;
+    }
+
+    .search-box {
+        position: relative;
+        width: 300px;
+    }
+
+    .search-box i {
+        position: absolute;
+        left: 1rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #95a5a6;
+    }
+
+    .search-box input {
+        width: 100%;
+        padding: 0.75rem 1rem 0.75rem 3rem;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        font-size: 0.95rem;
+        background: white;
+        transition: all 0.3s ease;
+    }
+
+    .search-box input:focus {
+        outline: none;
+        border-color: #4361ee;
+        box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.1);
+    }
+
+    /* Statistics Grid */
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .stat-card {
+        background: white;
+        border-radius: 12px;
+        padding: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        transition: all 0.3s ease;
+        border: 1px solid #eee;
+    }
+
+    .stat-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+    }
+
+    .stat-icon {
+        width: 60px;
+        height: 60px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        color: white;
+        flex-shrink: 0;
+    }
+
+    .stat-card:nth-child(1) .stat-icon {
+        background: linear-gradient(135deg, #4361ee, #3a56d4);
+    }
+
+    .stat-card:nth-child(2) .stat-icon {
+        background: linear-gradient(135deg, #7209b7, #5a0a94);
+    }
+
+    .stat-card:nth-child(3) .stat-icon {
+        background: linear-gradient(135deg, #4cc9f0, #4895ef);
+    }
+
+    .stat-content h3 {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #2c3e50;
+        margin-bottom: 0.25rem;
+        line-height: 1;
+    }
+
+    .stat-content p {
+        color: #7f8c8d;
+        font-size: 0.9rem;
+        margin: 0;
+    }
+
+    /* View Options */
+    .view-options-container {
+        margin-bottom: 1.5rem;
+        background: white;
+        padding: 1rem;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        border: 1px solid #eee;
+    }
+
+    .view-options {
+        display: inline-flex;
+        background: #f8f9fa;
+        padding: 0.25rem;
+        border-radius: 8px;
+        gap: 0.25rem;
+    }
+
+    .view-option {
+        padding: 0.5rem 1rem;
+        border-radius: 6px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: #7f8c8d;
+        font-size: 0.9rem;
+        transition: all 0.3s ease;
+    }
+
+    .view-option:hover {
+        background: white;
+        color: #4361ee;
+    }
+
+    .view-option.active {
+        background: #4361ee;
+        color: white;
+    }
+
+    /* Batches Grid */
+    .batches-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 1.5rem;
+    }
+
+    /* Batch Card */
+    .batch-card {
+        background: white;
+        border-radius: 12px;
+        overflow: hidden;
+        border: 1px solid #eee;
+        transition: all 0.3s ease;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .batch-card:not(.add-card):hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
+        border-color: #4361ee;
+    }
+
+    /* Batch Header */
+    .batch-header {
+        padding: 1.5rem;
+        background: linear-gradient(135deg, #4cc9f0 0%, #4895ef 100%);
+        color: white;
+        position: relative;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .batch-year {
+        font-size: 2rem;
+        font-weight: 700;
+        opacity: 0.9;
+    }
+
+    .header-top-actions {
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+    }
+
+    .status-badge {
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        background: rgba(255, 255, 255, 0.2);
+        color: white;
+    }
+
+    .status-badge.active {
+        background: rgba(76, 201, 240, 0.3);
+    }
+
+    .status-badge.inactive {
+        background: rgba(156, 163, 175, 0.3);
+    }
+
+    .btn-delete-batch {
+        background: rgba(255, 255, 255, 0.2);
+        border: none;
+        color: white;
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-size: 0.9rem;
+        flex-shrink: 0;
+    }
+
+    .btn-delete-batch:hover {
+        background: rgba(255, 255, 255, 0.3);
+        transform: scale(1.1);
+    }
+
+    /* Batch Body */
+    .batch-body {
+        padding: 1.5rem;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .batch-body h4 {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #2c3e50;
+        margin-bottom: 0.25rem;
+        line-height: 1.4;
+    }
+
+    .batch-course {
+        font-size: 0.9rem;
+        color: #7f8c8d;
+        margin-bottom: 1rem;
+    }
+
+    /* Batch Info */
+    .batch-info {
+        margin-top: auto;
+        padding-top: 1rem;
+        border-top: 1px solid #f0f0f0;
+    }
+
+    .info-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.5rem 0;
+    }
+
+    .info-row:first-child {
+        padding-top: 0;
+    }
+
+    .info-row:last-child {
+        padding-bottom: 0;
+    }
+
+    .info-label {
+        font-size: 0.85rem;
+        color: #7f8c8d;
+        font-weight: 500;
+    }
+
+    .info-value {
+        font-weight: 600;
+        color: #2c3e50;
+        text-align: right;
+        max-width: 60%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .intake-year {
+        color: #4361ee;
+    }
+
+    .course-name {
+        color: #7209b7;
+    }
+
+    .student-count {
+        color: #4cc9f0;
+        font-size: 1.1rem;
+    }
+
+    /* Batch Footer - ADJUSTED FOR 2 BUTTONS */
+    .batch-footer {
+        padding: 1rem 1.5rem;
+        background: #f8f9fa;
+        border-top: 1px solid #eee;
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: nowrap;
+    }
+
+    /* Button Styles - ADJUSTED FOR 2 BUTTONS */
+    .batch-footer .btn {
+        flex: 1;
+        min-width: 0;
+        padding: 0.75rem 0.5rem;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 0.85rem;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        text-align: center;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.375rem;
+        white-space: nowrap;
+        overflow: hidden;
+    }
+
+    /* View Button */
+    .btn-view {
+        background: #4361ee;
+        color: white;
+        border: 1px solid #3a56d4;
+    }
+
+    .btn-view:hover {
+        background: #3a56d4;
+        color: white;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(67, 97, 238, 0.2);
+    }
+
+    /* Edit Button */
+    .btn-edit {
+        background: #f8f9fa;
+        color: #2c3e50;
+        border: 1px solid #ddd;
+    }
+
+    .btn-edit:hover {
+        background: #e9ecef;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Add Batch Card */
+    .batch-card.add-card {
+        background: transparent;
+        border: 2px dashed #ddd;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 200px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .batch-card.add-card:hover {
+        border-color: #4361ee;
+        background: rgba(67, 97, 238, 0.05);
+    }
+
+    .add-card-content {
+        text-align: center;
+        padding: 2rem;
+    }
+
+    .add-icon {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        background: #4361ee;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        margin: 0 auto 1rem;
+        transition: all 0.3s ease;
+    }
+
+    .batch-card.add-card:hover .add-icon {
+        transform: scale(1.1);
+    }
+
+    .add-card-content h4 {
+        color: #2c3e50;
+        margin-bottom: 0.5rem;
+        font-size: 1.1rem;
+    }
+
+    .add-card-content p {
+        color: #7f8c8d;
+        font-size: 0.9rem;
+        margin: 0;
+    }
+
+    /* Batches Table */
+    .batches-table {
+        background: white;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        border: 1px solid #eee;
+    }
+
+    .table-container {
+        overflow-x: auto;
+    }
+
+    .batches-table table {
+        width: 100%;
+        border-collapse: collapse;
+        min-width: 800px;
+    }
+
+    .batches-table th {
+        background: #f8f9fa;
+        padding: 1rem;
+        text-align: left;
+        font-weight: 600;
+        color: #2c3e50;
+        border-bottom: 2px solid #eee;
+        white-space: nowrap;
+    }
+
+    .batches-table td {
+        padding: 1rem;
+        border-bottom: 1px solid #eee;
+        vertical-align: middle;
+    }
+
+    .batches-table tr:hover {
+        background: #f8f9fa;
+    }
+
+    .batches-table tr:last-child td {
+        border-bottom: none;
+    }
+
+    /* Table Cell Styles */
+    .batch-info-cell {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        min-width: 200px;
+    }
+
+    .batch-year-circle {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #4cc9f0 0%, #4895ef 100%);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        font-size: 1.1rem;
+        flex-shrink: 0;
+    }
+
+    .batch-info-cell > div {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .batch-info-cell strong {
+        display: block;
+        font-size: 0.95rem;
+        color: #2c3e50;
+        margin-bottom: 0.25rem;
+    }
+
+    .batch-info-cell small {
+        display: block;
+        font-size: 0.85rem;
+        color: #7f8c8d;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .count-badge {
+        background: #e3f2fd;
+        color: #1976d2;
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-weight: 600;
+        font-size: 0.85rem;
+        display: inline-block;
+    }
+
+    /* Table Action Buttons - REMOVED STUDENTS BUTTON */
+    .action-buttons {
+        display: flex;
+        gap: 0.5rem;
+        justify-content: flex-start;
+    }
+
+    .action-buttons .btn-sm {
+        width: 36px;
+        height: 36px;
+        padding: 0;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s ease;
+        flex-shrink: 0;
+    }
+
+    .action-buttons .btn-view {
+        background: #4361ee;
+        color: white;
+    }
+
+    .action-buttons .btn-view:hover {
+        background: #3a56d4;
+        transform: translateY(-1px);
+    }
+
+    .action-buttons .btn-edit {
+        background: #f8f9fa;
+        color: #2c3e50;
+        border: 1px solid #ddd;
+    }
+
+    .action-buttons .btn-edit:hover {
+        background: #e9ecef;
+        transform: translateY(-1px);
+    }
+
+    .action-buttons .btn-danger {
+        background: #dc3545;
+        color: white;
+    }
+
+    .action-buttons .btn-danger:hover {
+        background: #c82333;
+        transform: translateY(-1px);
+    }
+
+    /* Empty State */
+    .empty-state {
+        text-align: center;
+        padding: 4rem 2rem;
+        background: white;
+        border-radius: 12px;
+        border: 1px solid #eee;
+        grid-column: 1 / -1;
+    }
+
+    .empty-state-icon {
+        font-size: 4rem;
+        color: #ddd;
+        margin-bottom: 1.5rem;
+    }
+
+    .empty-state h3 {
+        font-size: 1.5rem;
+        color: #7f8c8d;
+        margin-bottom: 0.5rem;
+    }
+
+    .empty-state p {
+        color: #95a5a6;
+        margin-bottom: 2rem;
+    }
+
+    /* Modal Styles */
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+        padding: 1rem;
+    }
+
+    .modal {
+        background: white;
+        border-radius: 12px;
+        width: 90%;
+        max-width: 500px;
+        max-height: 90vh;
+        overflow-y: auto;
+        animation: modalSlideIn 0.3s ease;
+    }
+
+    .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1.5rem;
+        border-bottom: 1px solid #eee;
+    }
+
+    .modal-title {
+        margin: 0;
+        font-size: 1.5rem;
+        color: #2c3e50;
+    }
+
+    .modal-close {
+        background: none;
+        border: none;
+        font-size: 1.5rem;
+        color: #95a5a6;
+        cursor: pointer;
+        padding: 0.5rem;
+        border-radius: 4px;
+        transition: all 0.3s ease;
+    }
+
+    .modal-close:hover {
+        background: #f8f9fa;
+        color: #2c3e50;
+    }
+
+    .modal-content {
+        padding: 1.5rem;
+    }
+
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+
+    .form-group label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 500;
+        color: #2c3e50;
+    }
+
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+        width: 100%;
+        padding: 0.75rem 1rem;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        font-size: 0.95rem;
+        background: white;
+        transition: all 0.3s ease;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus {
+        outline: none;
+        border-color: #4361ee;
+        box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.1);
+    }
+
+    .checkbox-label {
+        display: flex;
+        align-items: center;
+        cursor: pointer;
+        position: relative;
+        padding-left: 2rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .checkbox-label input {
+        position: absolute;
+        opacity: 0;
+        cursor: pointer;
+        height: 0;
+        width: 0;
+    }
+
+    .checkmark {
+        position: absolute;
+        left: 0;
+        height: 20px;
+        width: 20px;
+        background-color: #eee;
+        border-radius: 4px;
+        transition: all 0.3s ease;
+    }
+
+    .checkbox-label:hover input ~ .checkmark {
+        background-color: #ccc;
+    }
+
+    .checkbox-label input:checked ~ .checkmark {
+        background-color: #4361ee;
+    }
+
+    .checkmark:after {
+        content: "";
+        position: absolute;
+        display: none;
+        left: 7px;
+        top: 3px;
+        width: 6px;
+        height: 12px;
+        border: solid white;
+        border-width: 0 2px 2px 0;
+        transform: rotate(45deg);
+    }
+
+    .checkbox-label input:checked ~ .checkmark:after {
+        display: block;
+    }
+
+    .help-text {
+        font-size: 0.85rem;
+        color: #95a5a6;
+        margin-top: 0.25rem;
+        display: block;
+    }
+
+    .form-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 1rem;
+        margin-top: 2rem;
+        padding-top: 1.5rem;
+        border-top: 1px solid #eee;
+    }
+
+    /* Loading Overlay */
+    #loadingOverlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.7);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 2000;
+    }
+
+    .loading-spinner {
+        text-align: center;
+        color: white;
+    }
+
+    .loading-spinner i {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+        animation: spin 1s linear infinite;
+    }
+
+    .loading-spinner p {
+        font-size: 1.2rem;
+    }
+
+    /* Notification Styles */
+    .notification {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 1rem 1.5rem;
+        border-radius: 8px;
+        color: white;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        min-width: 300px;
+        max-width: 400px;
+        z-index: 9999;
+        animation: slideIn 0.3s ease;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    .notification.success {
+        background: linear-gradient(135deg, #43e97b, #38f9d7);
+    }
+
+    .notification.error {
+        background: linear-gradient(135deg, #fa709a, #fee140);
+    }
+
+    .notification button {
+        background: none;
+        border: none;
+        color: white;
+        font-size: 1.25rem;
+        cursor: pointer;
+        padding: 0 0.5rem;
+        margin-left: 1rem;
+    }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    @keyframes slideIn {
+        from {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+
+    @keyframes modalSlideIn {
+        from {
+            opacity: 0;
+            transform: translateY(-20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* Responsive */
+    @media (max-width: 1024px) {
+        .batches-grid {
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        }
+    }
+
+    @media (max-width: 768px) {
+        .page-header {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        
+        .header-actions {
+            width: 100%;
+            flex-direction: column;
+        }
+        
+        .search-box {
+            width: 100%;
+        }
+        
+        .stats-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+        
+        .batches-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .batch-footer {
+            flex-wrap: wrap;
+        }
+        
+        .batch-footer .btn {
+            min-width: calc(50% - 0.25rem); /* Changed from 33.333% to 50% for 2 buttons */
+            flex: none;
+            padding: 0.75rem 0.5rem;
+            font-size: 0.8rem;
+        }
+        
+        .action-buttons {
+            flex-wrap: wrap;
+            gap: 0.375rem;
+        }
+        
+        .action-buttons .btn-sm {
+            width: 32px;
+            height: 32px;
+            font-size: 0.8rem;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .stats-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .view-options {
+            width: 100%;
+        }
+        
+        .view-option {
+            flex: 1;
+            justify-content: center;
+            padding: 0.5rem;
+            font-size: 0.8rem;
+        }
+        
+        .batch-footer .btn {
+            min-width: 100%;
+            margin-bottom: 0.5rem;
+        }
+        
+        .batch-footer .btn:last-child {
+            margin-bottom: 0;
+        }
+        
+        .info-value {
+            font-size: 0.9rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block script %}
+<script>
+    // Global variables
+    let currentView = 'grid';
+    
+    // DOM Ready
+    document.addEventListener('DOMContentLoaded', function() {
+        setupEventListeners();
+        updateStats();
+    });
+
+    function setupEventListeners() {
+        // Search functionality
+        const searchInput = document.getElementById('searchBatch');
+        if (searchInput) {
+            searchInput.addEventListener('input', function(e) {
+                filterBatches(e.target.value);
+            });
+        }
+        
+        // Form submission
+        const batchForm = document.getElementById('batchForm');
+        if (batchForm) {
+            batchForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                saveBatch();
+            });
+        }
+    }
+
+    function updateStats() {
+        // Update statistics from data
+        const totalBatches = document.querySelectorAll('.batch-card:not(.add-card)').length;
+        document.getElementById('totalBatches').textContent = totalBatches;
+    }
+
+    function changeView(view) {
+        currentView = view;
+        const gridView = document.getElementById('gridView');
+        const listView = document.getElementById('listView');
+        const viewOptions = document.querySelectorAll('.view-option');
+        
+        viewOptions.forEach(option => option.classList.remove('active'));
+        event.target.closest('.view-option').classList.add('active');
+        
+        if (view === 'grid') {
+            gridView.style.display = 'grid';
+            listView.style.display = 'none';
+        } else {
+            gridView.style.display = 'none';
+            listView.style.display = 'block';
+        }
+    }
+
+    function filterBatches(searchTerm) {
+        const term = searchTerm.toLowerCase().trim();
+        
+        if (currentView === 'grid') {
+            // Filter grid view
+            const cards = document.querySelectorAll('.batch-card:not(.add-card)');
+            let visibleCount = 0;
+            
+            cards.forEach(card => {
+                const name = card.getAttribute('data-name') || '';
+                const course = card.getAttribute('data-course') || '';
+                const year = card.getAttribute('data-intake-year') || '';
+                
+                const matches = name.includes(term) || 
+                               course.includes(term) || 
+                               year.toString().includes(term);
+                card.style.display = matches ? 'flex' : 'none';
+                if (matches) visibleCount++;
+            });
+            
+            // Show empty state if no matches
+            const emptyState = document.querySelector('.empty-state');
+            if (emptyState) {
+                emptyState.style.display = visibleCount === 0 ? 'block' : 'none';
+            }
+        } else {
+            // Filter list view
+            const rows = document.querySelectorAll('#listView tbody tr');
+            rows.forEach(row => {
+                const name = row.getAttribute('data-name') || '';
+                const course = row.getAttribute('data-course') || '';
+                const year = row.getAttribute('data-intake-year') || '';
+                
+                const matches = name.includes(term) || 
+                               course.includes(term) || 
+                               year.toString().includes(term);
+                row.style.display = matches ? '' : 'none';
+            });
+        }
+    }
+
+    function openAddBatchModal() {
+        document.getElementById('modalTitle').textContent = 'Add New Batch';
+        document.getElementById('batchForm').reset();
+        document.getElementById('batchId').value = '';
+        document.getElementById('isActive').checked = true;
+        document.getElementById('batchModal').style.display = 'flex';
+    }
+
+    function editBatch(batchId) {
+        // Find the batch card
+        const batchCard = document.querySelector(`.batch-card[data-id="${batchId}"]`);
+        const batchRow = document.querySelector(`tr[data-id="${batchId}"]`);
+        
+        // Use whichever is available
+        const batchElement = batchCard || batchRow;
+        if (!batchElement) return;
+        
+        // Get current data from data attributes
+        const batchName = batchElement.getAttribute('data-name') || '';
+        const courseId = batchElement.getAttribute('data-course-id') || '';
+        const intakeYear = batchElement.getAttribute('data-intake-year') || '';
+        const isActive = batchElement.getAttribute('data-is-active') === 'true';
+        
+        // Set modal title
+        document.getElementById('modalTitle').textContent = 'Edit Batch';
+        
+        // Set form values with existing data
+        document.getElementById('batchId').value = batchId;
+        document.getElementById('batchName').value = batchName;
+        document.getElementById('batchCode').value = courseId;
+        document.getElementById('startYear').value = intakeYear;
+        document.getElementById('isActive').checked = isActive;
+        
+        // Show modal
+        document.getElementById('batchModal').style.display = 'flex';
+    }
+
+    function closeModal() {
+        document.getElementById('batchModal').style.display = 'none';
+    }
+
+    function deleteBatch(event, batchId, batchName) {
+        event.stopPropagation();
+
+        // 1️⃣ Ask for confirmation
+        if (!confirm(`Are you sure you want to delete "${batchName}"? This action cannot be undone.`)) {
+            return;
+        }
+
+        fetch(`/api/batches/${batchId}/delete/`, {
+            method: 'DELETE',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken'),
+            }
+        })
+        .then(response => {
+
+            if (!response.ok) {
+                throw new Error('Failed to delete batch');
+            }
+
+            // ✅ Notification on success
+            showNotification(`Batch "${batchName}" deleted successfully!`, 'success');
+
+            // ✅ Remove batch from DOM if exists
+            const batchCard = document.querySelector(`.batch-card[data-id="${batchId}"]`);
+            const batchRow  = document.querySelector(`tr[data-id="${batchId}"]`);
+
+            if (batchCard) batchCard.remove();
+            if (batchRow)  batchRow.remove();
+        })
+        .catch(error => {
+            console.error('Error deleting batch:', error);
+            showNotification('Error deleting batch. Please try again.', 'error');
+        });
+    }
+
+    function saveBatch() {
+        const form = document.getElementById('batchForm');
+        const formData = new FormData(form);
+        const batchId = formData.get('id');
+        
+        // Validate
+        if (!formData.get('name')) {
+            alert('Batch name is required');
+            return;
+        }
+        
+        if (!formData.get('course')) {
+            alert('Course is required');
+            return;
+        }
+        
+        if (!formData.get('intake_year')) {
+            alert('Intake year is required');
+            return;
+        }
+        
+        // Determine URL based on whether we're adding or editing
+        const url = batchId ? `/api/batches/${batchId}/update/` : '/api/batches/create/';
+        const method = batchId ? 'PUT' : 'POST';
+        
+        fetch(url, {
+            method: method,
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken'),
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(Object.fromEntries(formData))
+        })
+        .then(response => {
+            return response.json().then(data => {
+                if (!response.ok) {
+                    throw data;  // pass error object to catch
+                }
+                return data;     // success, pass data along
+            });
+        })
+        .then(data => {
+            showNotification(`Batch ${batchId ? 'updated' : 'created'} successfully!`, 'success');
+            closeModal();
+            setTimeout(() => location.reload(), 1000);
+        })
+        .catch(error => {
+            console.error('Error saving batch:', error);
+            showNotification(`Failed to save batch: ${error.message || 'Unknown error'}`, 'error');
+        });
+    }
+
+    function showNotification(message, type) {
+        // Remove existing notifications
+        document.querySelectorAll('.notification').forEach(n => n.remove());
+        
+        // Create notification
+        const notification = document.createElement('div');
+        notification.className = `notification ${type}`;
+        notification.innerHTML = `
+            <span>${message}</span>
+            <button onclick="this.parentElement.remove()">×</button>
+        `;
+        
+        // Add to page
+        document.body.appendChild(notification);
+        
+        // Auto-remove after 5 seconds
+        setTimeout(() => {
+            if (notification.parentNode) {
+                notification.remove();
+            }
+        }, 5000);
+    }
+
+    // Helper function to get CSRF token
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,858 @@
+{% extends "main.html" %}
+
+{% block title %}{{ course.code }} - Course Management{% endblock %}
+
+{% block navigation %}
+    {% include "admin_navigation.html" %}
+{% endblock %}
+
+{% block body %}
+<div class="course-management">
+    <!-- Course Header -->
+    <div class="course-header card">
+        <div class="course-breadcrumb">
+            <a href="{% url 'dashboard:manage_courses' %}" class="breadcrumb-link">
+                <i class="fas fa-arrow-left"></i> Back to Courses
+            </a>
+        </div>
+        
+        <div class="course-info">
+            <div class="course-icon">
+                <i class="fas fa-graduation-cap"></i>
+            </div>
+            <div class="course-main">
+                <h1 class="course-title">{{ course.code }} - {{ course.name }}</h1>
+                <div class="course-meta">
+                    <span class="meta-item">
+                        <i class="fas fa-university"></i>
+                        {{ course.department.name }}
+                    </span>
+                    <span class="meta-item">
+                        <i class="fas fa-clock"></i>
+                        {{ course.duration_years }} year{% if course.duration_years > 1 %}s{% endif %}
+                    </span>
+                    <span class="meta-item">
+                        <i class="fas fa-users"></i>
+                        {{ course.students.count|default:"0" }} students
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Semester Grid -->
+    <div class="semester-grid card">
+        <div class="card-header">
+            <h3 class="card-title">
+                <i class="fas fa-layer-group"></i> Semesters
+            </h3>
+            <div class="semester-stats">
+                <span>{{ course.semesters.count }} semesters</span>
+            </div>
+        </div>
+        
+        <div class="semester-cards">
+            {% if course.semesters.all %}
+                {% for semester in course.semesters.all %}
+                <div class="semester-card" onclick="openSemesterModal('semesterModal_{{ semester.number }}')">
+                    <div class="semester-header">
+                        <div class="semester-number">
+                            Semester {{ semester.number }}
+                        </div>
+                        <div class="semester-subjects">
+                            {{ semester.subjects.count }} subjects
+                        </div>
+                    </div>
+                    <div class="semester-subject-list">
+                        {% if semester.subjects.all %}
+                            {% for subject in semester.subjects.all|slice:":3" %}
+                            <div class="subject-item">
+                                <i class="fas fa-book"></i>
+                                <span>{{ subject.code }} - {{ subject.name|truncatechars:30 }}</span>
+                            </div>
+                            {% endfor %}
+                            {% if semester.subjects.count > 3 %}
+                            <div class="subject-more">
+                                +{{ semester.subjects.count|add:"-3" }} more
+                            </div>
+                            {% endif %}
+                        {% else %}
+                            <div class="no-subjects">
+                                No subjects added
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="semester-actions">
+                        <button class="btn btn-sm btn-outline" onclick="openSemesterModal('semesterModal_{{ semester.number }}')">
+                            <i class="fas fa-edit"></i> Manage
+                        </button>
+                    </div>
+                </div>
+                {% endfor %}
+            {% endif %}
+            
+            <!-- Add Semester Card -->
+            <div class="add-semester-card" onclick="openAddSemesterModal()">
+                <div class="add-icon">
+                    <i class="fas fa-plus"></i>
+                </div>
+                <h3>Add Semester</h3>
+                <p>Create a new semester for this course</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Semester Modals -->
+    {% if course.semesters.all %}
+        {% for semester in course.semesters.all %}
+        <div class="modal-overlay" id="semesterModal_{{ semester.number }}" style="display: none;">
+            <div class="modal modal-lg">
+                <div class="modal-header">
+                    <h3><i class="fas fa-book"></i> Semester {{ semester.number }} Subjects</h3>
+                    <button class="modal-close" onclick="closeModal('semesterModal_{{ semester.number }}')">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="table-container">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Code</th>
+                                    <th>Name</th>
+                                    <th>Credits</th>
+                                    <th>Hours</th>
+                                    <th style="width: 150px;">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% if semester.subjects.all %}
+                                    {% for subject in semester.subjects.all %}
+                                    <tr>
+                                        <form action="{% url 'dashboard:update_subject' %}" method="POST" style="display: contents;">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="subject_id" value="{{ subject.id }}">
+                                            <td><strong>{{ subject.code }}</strong></td>
+                                            <td><input type="text" name="name" value="{{ subject.name }}" class="form-input" required></td>
+                                            <td><input type="text" name="credits" value="{{ subject.credits }}" class="form-input" required></td>
+                                            <td><input type="number" name="total_hours" value="{{ subject.total_hours }}" class="form-input" min="1" required></td>
+                                            <td>
+                                                <div class="action-buttons">
+                                                    <button type='submit' class='btn btn-sm btn-success'>
+                                                        <i class="fas fa-save"></i>
+                                                    </button>
+                                                    <button type='button' class='btn btn-sm btn-danger' onclick="deleteSubject({{ subject.id }})">
+                                                        <i class='fas fa-trash'></i>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </form>
+                                    </tr>
+                                    {% endfor %}
+                                {% endif %}
+                                
+                                <!-- Add New Subject Row -->
+                                <tr>
+                                    <form action="{% url 'dashboard:add_subject' %}" method="POST" style="display: contents;">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="semester_id" value="{{ semester.id }}">
+                                        <input type="hidden" name="course_id" value="{{ course.id }}">
+                                        <input type="hidden" name="department_id" value="{{ course.department.id }}">
+                                        <td><input type="text" name="code" class="form-input" placeholder="Subject Code" required></td>
+                                        <td><input type="text" name="name" class="form-input" placeholder="Subject Name" required></td>
+                                        <td><input type="text" name="credits" class="form-input" placeholder="Credits" required></td>
+                                        <td><input type="number" name="total_hours" class="form-input" placeholder="Hours" min="1" required></td>
+                                        <td>
+                                            <button type='submit' class='btn btn-sm btn-primary'>
+                                                <i class="fas fa-plus"></i> Add
+                                            </button>
+                                        </td>
+                                    </form>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="modal-actions">
+                        <button class="btn btn-outline" onclick="closeModal('semesterModal_{{ semester.number }}')">
+                            Close
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    {% endif %}
+
+    <!-- Add Semester Modal -->
+    <div class="modal-overlay" id="addSemesterModal" style="display: none;">
+        <div class="modal">
+            <div class="modal-header">
+                <h3><i class="fas fa-plus-circle"></i> Add New Semester</h3>
+                <button class="modal-close" onclick="closeModal('addSemesterModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form method="post" action="{% url 'dashboard:add_semester' %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="course_id" value="{{ course.id }}">
+                    
+                    <div class="form-group">
+                        <label class="form-label">Semester Number *</label>
+                        <input type="number" name="number" class="form-control" min="1" max="20" required>
+                    </div>
+                    
+                    <div class="modal-actions">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-plus"></i> Add Semester
+                        </button>
+                        <button type="button" class="btn btn-outline" onclick="closeModal('addSemesterModal')">
+                            Cancel
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block style %}
+<style>
+    .course-management {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+
+    /* Course Header */
+    .course-header {
+        padding: 1.5rem;
+    }
+
+    .course-breadcrumb {
+        margin-bottom: 1rem;
+    }
+
+    .breadcrumb-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: #3b2fd4;
+        text-decoration: none;
+        font-weight: 500;
+        padding: 0.5rem;
+        border-radius: 6px;
+        transition: all 0.3s ease;
+    }
+
+    .breadcrumb-link:hover {
+        background: #f8f9ff;
+    }
+
+    .course-info {
+        display: flex;
+        align-items: center;
+        gap: 1.5rem;
+        flex-wrap: wrap;
+    }
+
+    .course-icon {
+        width: 70px;
+        height: 70px;
+        border-radius: 12px;
+        background: linear-gradient(135deg, #3b2fd4, #2a1bb7);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.75rem;
+    }
+
+    .course-main {
+        flex: 1;
+        min-width: 300px;
+    }
+
+    .course-title {
+        font-size: 1.75rem;
+        font-weight: 700;
+        color: var(--dark);
+        margin-bottom: 0.5rem;
+        line-height: 1.3;
+    }
+
+    .course-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1.5rem;
+        align-items: center;
+    }
+
+    .meta-item {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: #666;
+        font-size: 0.95rem;
+    }
+
+    .meta-item i {
+        color: #3b2fd4;
+    }
+
+    /* Semester Grid */
+    .semester-cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 1.25rem;
+        margin-top: 1rem;
+    }
+
+    .semester-card {
+        background: white;
+        border: 2px solid #f0f0f0;
+        border-radius: 12px;
+        padding: 1.25rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .semester-card:hover {
+        border-color: #3b2fd4;
+        transform: translateY(-4px);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+    }
+
+    .semester-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+    }
+
+    .semester-number {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: var(--dark);
+    }
+
+    .semester-subjects {
+        background: #f8f9ff;
+        color: #3b2fd4;
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 500;
+    }
+
+    .semester-subject-list {
+        margin-bottom: 1.25rem;
+        min-height: 100px;
+    }
+
+    .subject-item {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.4rem 0;
+        border-bottom: 1px solid #f5f5f5;
+    }
+
+    .subject-item:last-child {
+        border-bottom: none;
+    }
+
+    .subject-item i {
+        color: #3b2fd4;
+        width: 16px;
+        font-size: 0.85rem;
+    }
+
+    .subject-item span {
+        flex: 1;
+        font-size: 0.85rem;
+        color: var(--dark);
+    }
+
+    .no-subjects {
+        text-align: center;
+        padding: 1.5rem 0;
+        color: #999;
+        font-style: italic;
+        font-size: 0.9rem;
+    }
+
+    .subject-more {
+        text-align: center;
+        padding: 0.4rem;
+        color: #3b2fd4;
+        font-size: 0.8rem;
+        font-weight: 500;
+        background: #f8f9ff;
+        border-radius: 6px;
+        margin-top: 0.5rem;
+    }
+
+    .semester-actions {
+        display: flex;
+        justify-content: flex-end;
+        padding-top: 1rem;
+        border-top: 1px solid #f0f0f0;
+    }
+
+    /* Add Semester Card */
+    .add-semester-card {
+        border: 2px dashed #ddd;
+        border-radius: 12px;
+        padding: 2rem 1.5rem;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        background: white;
+        min-height: 200px;
+    }
+
+    .add-semester-card:hover {
+        border-color: #3b2fd4;
+        background: #f8f9ff;
+    }
+
+    .add-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        background: #3b2fd4;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
+        margin-bottom: 1rem;
+    }
+
+    .add-semester-card h3 {
+        font-size: 1.1rem;
+        color: var(--dark);
+        margin-bottom: 0.5rem;
+    }
+
+    .add-semester-card p {
+        color: #666;
+        font-size: 0.85rem;
+    }
+
+    /* Modal Styling */
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+        animation: fadeIn 0.3s ease;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+
+    .modal {
+        background: white;
+        border-radius: 12px;
+        width: 90%;
+        max-width: 800px;
+        max-height: 85vh;
+        overflow-y: auto;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        animation: slideIn 0.3s ease;
+    }
+
+    .modal-lg {
+        max-width: 900px;
+    }
+
+    @keyframes slideIn {
+        from { transform: translateY(-20px); opacity: 0; }
+        to { transform: translateY(0); opacity: 1; }
+    }
+
+    .modal-header {
+        padding: 1.25rem;
+        border-bottom: 1px solid #f0f0f0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .modal-header h3 {
+        margin: 0;
+        color: var(--dark);
+        font-size: 1.2rem;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .modal-close {
+        background: none;
+        border: none;
+        font-size: 1.5rem;
+        color: #999;
+        cursor: pointer;
+        padding: 0;
+        width: 30px;
+        height: 30px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 4px;
+        transition: all 0.2s;
+    }
+
+    .modal-close:hover {
+        background: #f5f5f5;
+        color: #666;
+    }
+
+    .modal-body {
+        padding: 1.25rem;
+    }
+
+    /* Table Styling */
+    .table-container {
+        overflow-x: auto;
+        border-radius: 8px;
+        border: 1px solid #f0f0f0;
+    }
+
+    .table {
+        width: 100%;
+        border-collapse: collapse;
+        min-width: 700px;
+    }
+
+    .table thead {
+        background: linear-gradient(135deg, #3b2fd4 0%, #2a1bb7 100%);
+    }
+
+    .table th {
+        padding: 1rem;
+        text-align: left;
+        color: white;
+        font-weight: 600;
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .table td {
+        padding: 0.875rem 1rem;
+        border-bottom: 1px solid #f0f0f0;
+        background: white;
+        vertical-align: middle;
+    }
+
+    .table tbody tr:hover td {
+        background: #f8f9ff;
+    }
+
+    .table tbody tr:last-child td {
+        border-bottom: none;
+    }
+
+    /* Form Inputs in Table */
+    .form-input {
+        width: 100%;
+        padding: 0.5rem 0.75rem;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        font-size: 0.9rem;
+        transition: all 0.3s ease;
+        box-sizing: border-box;
+    }
+
+    .form-input:focus {
+        outline: none;
+        border-color: #3b2fd4;
+        box-shadow: 0 0 0 3px rgba(59, 47, 212, 0.1);
+    }
+
+    /* Action Buttons */
+    .action-buttons {
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    .action-buttons form {
+        display: contents;
+    }
+
+    .btn {
+        padding: 0.5rem 1rem;
+        border: none;
+        border-radius: 6px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.85rem;
+    }
+
+    .btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+
+    .btn-sm {
+        padding: 0.4rem 0.75rem;
+        font-size: 0.8rem;
+    }
+
+    .btn-primary {
+        background: #3b2fd4;
+        color: white;
+    }
+
+    .btn-primary:hover {
+        background: #2a1bb7;
+    }
+
+    .btn-outline {
+        background: white;
+        color: #3b2fd4;
+        border: 1px solid #3b2fd4;
+    }
+
+    .btn-outline:hover {
+        background: #f8f9ff;
+    }
+
+    .btn-success {
+        background: #4caf50;
+        color: white;
+    }
+
+    .btn-success:hover {
+        background: #388e3c;
+    }
+
+    .btn-danger {
+        background: #f44336;
+        color: white;
+    }
+
+    .btn-danger:hover {
+        background: #d32f2f;
+    }
+
+    /* Form Styling in Modal */
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+
+    .form-label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 600;
+        color: var(--dark);
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 0.75rem 1rem;
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+    }
+
+    .form-control:focus {
+        outline: none;
+        border-color: #3b2fd4;
+        box-shadow: 0 0 0 3px rgba(59, 47, 212, 0.1);
+    }
+
+    .modal-actions {
+        display: flex;
+        gap: 1rem;
+        justify-content: flex-end;
+        margin-top: 1.5rem;
+        padding-top: 1.25rem;
+        border-top: 1px solid #f0f0f0;
+    }
+
+    /* Card Styling */
+    .card {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+
+    .card-header {
+        padding: 1.25rem;
+        border-bottom: 1px solid #f0f0f0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .card-title {
+        font-size: 1.2rem;
+        color: var(--dark);
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        margin: 0;
+    }
+
+    /* Responsive */
+    @media (max-width: 1024px) {
+        .semester-cards {
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        }
+    }
+
+    @media (max-width: 768px) {
+        .course-info {
+            flex-direction: column;
+            text-align: center;
+            align-items: center;
+        }
+        
+        .course-main {
+            text-align: center;
+        }
+        
+        .course-meta {
+            justify-content: center;
+        }
+        
+        .semester-cards {
+            grid-template-columns: 1fr;
+        }
+        
+        .modal {
+            width: 95%;
+            margin: 1rem;
+        }
+        
+        .modal-actions {
+            flex-direction: column;
+        }
+        
+        .modal-actions .btn {
+            width: 100%;
+        }
+        
+        .action-buttons {
+            flex-direction: column;
+        }
+        
+        .action-buttons .btn {
+            width: 100%;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .course-title {
+            font-size: 1.5rem;
+        }
+        
+        .semester-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 0.5rem;
+        }
+        
+        .modal-header {
+            padding: 1rem;
+        }
+        
+        .modal-body {
+            padding: 1rem;
+        }
+        
+        .table th, .table td {
+            padding: 0.75rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block script %}
+<script>
+    // Modal Functions
+    function openSemesterModal(modalId) {
+        document.getElementById(modalId).style.display = 'flex';
+    }
+    
+    function openAddSemesterModal() {
+        document.getElementById('addSemesterModal').style.display = 'flex';
+    }
+    
+    function closeModal(modalId) {
+        document.getElementById(modalId).style.display = 'none';
+    }
+    
+    // Delete Subject Function
+    function deleteSubject(subjectId) {
+        if (confirm("Are you sure you want to delete this subject?")) {
+            const csrf_token = document.querySelector('[name=csrfmiddlewaretoken]').value;
+            
+            fetch('/dashboard/admin/delete_subject/' + subjectId + '/', { 
+                method: 'POST', 
+                headers: {
+                    'X-CSRFToken': csrf_token,
+                    'Content-Type': 'application/json'
+                },
+                credentials: "same-origin"
+            }).then(response => {
+                if (response.ok) {
+                    location.reload();
+                }
+            }).catch(error => {
+                console.error('Error:', error);
+                alert('Error deleting subject');
+            });
+        }
+    }
+    
+    // Close modal when clicking outside
+    document.querySelectorAll('.modal-overlay').forEach(overlay => {
+        overlay.addEventListener('click', function(e) {
+            if (e.target === this) {
+                this.style.display = 'none';
+            }
+        });
+    });
+    
+    // Close modal with Escape key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            document.querySelectorAll('.modal-overlay').forEach(modal => {
+                if (modal.style.display === 'flex') {
+                    modal.style.display = 'none';
+                }
+            });
+        }
+    });
+    
+    // Prevent form submission on Enter key in table rows
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && e.target.tagName === 'INPUT' && e.target.closest('table')) {
+            e.stopPropagation();
+        }
+    });
+</script>
+{% endblock %}

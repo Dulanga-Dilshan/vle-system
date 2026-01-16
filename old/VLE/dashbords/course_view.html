@@ -1,0 +1,111 @@
+<?php
+session_start();
+if(!isset($_SESSION["role"]) || $_SESSION["role"] != "staff") {
+    header("Location: ../index.php");
+    exit;
+}
+
+if(!isset($_GET['course_id'])) {
+    header("Location: course_management.php");
+    exit;
+}
+
+include "../php/config.php";
+$course_id = $_GET['course_id'];
+
+$sql = "SELECT course_name, course_code FROM courses WHERE course_id = ?";
+$stmt = $conn->prepare($sql);
+$stmt->bind_param("i", $course_id);
+$stmt->execute();
+$result = $stmt->get_result();
+$course = $result->fetch_assoc();
+
+if(!$course) {
+    echo "Course not found.";
+    exit;
+}
+?>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><?php echo htmlspecialchars($course['course_code']); ?> - <?php echo htmlspecialchars($course['course_name']); ?></title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+<div class="page-container">
+
+    <!-- Navigation -->
+    <nav class="main-nav">
+        <div class="nav-container">
+            <div class="nav-brand">
+                <i class="fas fa-graduation-cap"></i>
+                <span>University VLE</span>
+            </div>
+            <div class="nav-right">
+                <a href="course_management.php" class="back-btn">
+                    <i class="fas fa-arrow-left"></i> Back to Courses
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="dashboard-header">
+            <h2 class="dashboard-title">
+                <?php echo htmlspecialchars($course['course_code']); ?> - <?php echo htmlspecialchars($course['course_name']); ?>
+            </h2>
+        </div>
+
+        <div class="dashboard-grid">
+            <a href="upload_materials.php?course_id=<?php echo $course_id; ?>" class="dashboard-card">
+                <div class="card-header">
+                    <div class="card-icon green-icon">
+                        <i class="fas fa-upload"></i>
+                    </div>
+                    <h3 class="card-title">Upload Materials</h3>
+                </div>
+                <p class="card-description">Add lecture slides, notes, and learning resources for students.</p>
+            </a>
+
+            <a href="schedule_lecture.php?course_id=<?php echo $course_id; ?>" class="dashboard-card">
+                <div class="card-header">
+                    <div class="card-icon yellow-icon">
+                        <i class="fas fa-calendar-alt"></i>
+                    </div>
+                    <h3 class="card-title">Schedule Lecture</h3>
+                </div>
+                <p class="card-description">Set class dates, times, and links for online sessions.</p>
+            </a>
+
+            <a href="view_students.php?course_id=<?php echo $course_id; ?>" class="dashboard-card">
+                <div class="card-header">
+                    <div class="card-icon blue-icon">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <h3 class="card-title">View Students</h3>
+                </div>
+                <p class="card-description">See enrolled students and track their attendance.</p>
+            </a>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="main-footer">
+        <div class="footer-container">
+            <p>&copy; 2025 University VLE System. All rights reserved.</p>
+            <div class="social-links">
+                <a href="#"><i class="fab fa-facebook"></i></a>
+                <a href="#"><i class="fab fa-twitter"></i></a>
+                <a href="#"><i class="fab fa-linkedin"></i></a>
+                <a href="#"><i class="fab fa-instagram"></i></a>
+            </div>
+        </div>
+    </footer>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>University VLE - Student Dashboard</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="page-container">
+        <!-- Navigation - Updated to match original code -->
+        <nav class="main-nav">
+            <div class="nav-container">
+                <div class="nav-brand">
+                    <i class="fas fa-graduation-cap"></i>
+                    <span>University VLE</span>
+                </div>
+                <div class="nav-logout">
+                    <a href="../index.php" class="logout-btn">
+                        <i class="fas fa-sign-out-alt"></i>Logout
+                    </a>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Content Area -->
+        <main class="dashboard-content">
+            <!-- Left Column -->
+            <div class="left-column">
+                <!-- Current Courses Section -->
+                <section class="card current-courses">
+                    <div class="card-header">
+                        <h2><i class="fas fa-book-open"></i> Current Courses</h2>
+                        <a href="#" class="view-all">View All</a>
+                    </div>
+                    <div class="course-list">
+                        <div class="course-item">
+                            <div class="course-icon" style="background-color: #e9d5ff;">
+                                <i class="fas fa-atom" style="color: #9333ea;"></i>
+                            </div>
+                            <div class="course-info">
+                                <h3>Advanced Physics</h3>
+                                <p>Dr. Smith | Mon/Wed 10:00 AM</p>
+                                <div class="progress-bar">
+                                    <div class="progress" style="width: 75%;"></div>
+                                </div>
+                                <span class="progress-text">75% completed</span>
+                            </div>
+                        </div>
+                        <div class="course-item">
+                            <div class="course-icon" style="background-color: #d1fae5;">
+                                <i class="fas fa-calculator" style="color: #10b981;"></i>
+                            </div>
+                            <div class="course-info">
+                                <h3>Calculus II</h3>
+                                <p>Prof. Johnson | Tue/Thu 2:00 PM</p>
+                                <div class="progress-bar">
+                                    <div class="progress" style="width: 60%;"></div>
+                                </div>
+                                <span class="progress-text">60% completed</span>
+                            </div>
+                        </div>
+                        <div class="course-item">
+                            <div class="course-icon" style="background-color: #e0e7ff;">
+                                <i class="fas fa-laptop-code" style="color: #6366f1;"></i>
+                            </div>
+                            <div class="course-info">
+                                <h3>Data Structures</h3>
+                                <p>Dr. Williams | Fri 9:00 AM</p>
+                                <div class="progress-bar">
+                                    <div class="progress" style="width: 45%;"></div>
+                                </div>
+                                <span class="progress-text">45% completed</span>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Latest Materials Section -->
+                <section class="card latest-materials">
+                    <div class="card-header">
+                        <h2><i class="fas fa-file-alt"></i> Latest Materials</h2>
+                        <a href="#" class="view-all">View All</a>
+                    </div>
+                    <div class="materials-grid">
+                        <div class="material-item">
+                            <div class="material-icon">
+                                <i class="fas fa-file-pdf"></i>
+                            </div>
+                            <div class="material-info">
+                                <h3>Quantum Mechanics Lecture 5</h3>
+                                <p>Physics | Uploaded: 2 hours ago</p>
+                            </div>
+                        </div>
+                        <div class="material-item">
+                            <div class="material-icon">
+                                <i class="fas fa-video"></i>
+                            </div>
+                            <div class="material-info">
+                                <h3>Recursion Tutorial</h3>
+                                <p>Data Structures | Uploaded: Yesterday</p>
+                            </div>
+                        </div>
+                        <div class="material-item">
+                            <div class="material-icon">
+                                <i class="fas fa-file-powerpoint"></i>
+                            </div>
+                            <div class="material-info">
+                                <h3>Integration Techniques</h3>
+                                <p>Calculus | Uploaded: 2 days ago</p>
+                            </div>
+                        </div>
+                        <div class="material-item">
+                            <div class="material-icon">
+                                <i class="fas fa-file-code"></i>
+                            </div>
+                            <div class="material-info">
+                                <h3>Assignment 3 Solution</h3>
+                                <p>Data Structures | Uploaded: 3 days ago</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Assignments Section -->
+                <section class="card assignments">
+                    <div class="card-header">
+                        <h2><i class="fas fa-tasks"></i> Upcoming Assignments</h2>
+                        <a href="#" class="view-all">View All</a>
+                    </div>
+                    <div class="assignment-list">
+                        <div class="assignment-item urgent">
+                            <div class="assignment-details">
+                                <h3>Quantum Physics Problem Set</h3>
+                                <p>Due: Tomorrow, 11:59 PM</p>
+                            </div>
+                            <button class="action-btn">Submit</button>
+                        </div>
+                        <div class="assignment-item">
+                            <div class="assignment-details">
+                                <h3>Calculus II Midterm Project</h3>
+                                <p>Due: March 15, 2023</p>
+                            </div>
+                            <button class="action-btn">View</button>
+                        </div>
+                        <div class="assignment-item">
+                            <div class="assignment-details">
+                                <h3>Data Structures Lab Report</h3>
+                                <p>Due: March 20, 2023</p>
+                            </div>
+                            <button class="action-btn">Start</button>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <!-- Right Column -->
+            <div class="right-column">
+                <!-- GPA Summary -->
+                <section class="card gpa-summary">
+                    <div class="card-header">
+                        <h2><i class="fas fa-chart-line"></i> Academic Summary</h2>
+                    </div>
+                    <div class="gpa-display">
+                        <div class="gpa-circle">
+                            <div class="circle-progress" data-value="3.75">
+                                <svg class="progress-ring" width="120" height="120">
+                                    <circle class="progress-ring-circle" stroke-width="8" fill="transparent" r="52" cx="60" cy="60"/>
+                                </svg>
+                                <div class="gpa-value">3.75</div>
+                            </div>
+                        </div>
+                        <div class="gpa-details">
+                            <div class="detail-item">
+                                <span class="detail-label">Current Semester</span>
+                                <span class="detail-value">Spring 2023</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Credits</span>
+                                <span class="detail-value">15/120</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Attendance</span>
+                                <span class="detail-value">92%</span>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Schedule Section -->
+                <section class="card schedule">
+                    <div class="card-header">
+                        <h2><i class="fas fa-calendar-alt"></i> Today's Schedule</h2>
+                        <a href="#" class="view-all">Full Calendar</a>
+                    </div>
+                    <div class="schedule-list">
+                        <div class="schedule-item">
+                            <div class="time">10:00 - 11:30</div>
+                            <div class="class-info">
+                                <h3>Advanced Physics</h3>
+                                <p>Lecture Hall A | Dr. Smith</p>
+                            </div>
+                            <button class="join-btn">
+                                <i class="fas fa-video"></i>
+                            </button>
+                        </div>
+                        <div class="schedule-item">
+                            <div class="time">14:00 - 15:30</div>
+                            <div class="class-info">
+                                <h3>Calculus II</h3>
+                                <p>Room 302 | Prof. Johnson</p>
+                            </div>
+                            <button class="join-btn">
+                                <i class="fas fa-video"></i>
+                            </button>
+                        </div>
+                        <div class="schedule-item">
+                            <div class="time">16:00 - 17:00</div>
+                            <div class="class-info">
+                                <h3>Study Group</h3>
+                                <p>Library | Data Structures</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Notices Section -->
+                <section class="card notices">
+                    <div class="card-header">
+                        <h2><i class="fas fa-bullhorn"></i> Notices & Announcements</h2>
+                    </div>
+                    <div class="notice-list">
+                        <div class="notice-item important">
+                            <div class="notice-icon">
+                                <i class="fas fa-exclamation-circle"></i>
+                            </div>
+                            <div class="notice-content">
+                                <h3>Midterm Exam Schedule</h3>
+                                <p>Check the updated exam schedule on the notice board.</p>
+                                <span class="notice-time">Today, 9:30 AM</span>
+                            </div>
+                        </div>
+                        <div class="notice-item">
+                            <div class="notice-icon">
+                                <i class="fas fa-info-circle"></i>
+                            </div>
+                            <div class="notice-content">
+                                <h3>Library Closure</h3>
+                                <p>Main library will be closed this Saturday for maintenance.</p>
+                                <span class="notice-time">Yesterday, 4:15 PM</span>
+                            </div>
+                        </div>
+                        <div class="notice-item">
+                            <div class="notice-icon">
+                                <i class="fas fa-calendar-check"></i>
+                            </div>
+                            <div class="notice-content">
+                                <h3>Career Fair</h3>
+                                <p>Annual university career fair on March 25th.</p>
+                                <span class="notice-time">March 1, 2023</span>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Messages Section -->
+                <section class="card messages">
+                    <div class="card-header">
+                        <h2><i class="fas fa-comments"></i> Recent Messages</h2>
+                    </div>
+                    <div class="message-list">
+                        <div class="message-item">
+                            <div class="message-avatar">TS</div>
+                            <div class="message-content">
+                                <h3>Dr. Taylor Smith</h3>
+                                <p>Your assignment submission was excellent!</p>
+                                <span class="message-time">2 hours ago</span>
+                            </div>
+                        </div>
+                        <div class="message-item">
+                            <div class="message-avatar">SG</div>
+                            <div class="message-content">
+                                <h3>Study Group</h3>
+                                <p>Meeting tomorrow at 4pm in the library.</p>
+                                <span class="message-time">Yesterday</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        <a href="#" class="view-all">View All Messages</a>
+                    </div>
+                </section>
+            </div>
+        </main>
+
+        <!-- Footer - Updated to match original code -->
+        <footer class="main-footer">
+            <div class="footer-container">
+                <p>&copy; 2023 University VLE System. All rights reserved.</p>
+                <div class="social-links">
+                    <a href="#"><i class="fab fa-facebook"></i></a>
+                    <a href="#"><i class="fab fa-twitter"></i></a>
+                    <a href="#"><i class="fab fa-linkedin"></i></a>
+                    <a href="#"><i class="fab fa-instagram"></i></a>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        // Script for the circular GPA progress indicator
+        document.addEventListener('DOMContentLoaded', function() {
+            const circle = document.querySelector('.progress-ring-circle');
+            const radius = circle.r.baseVal.value;
+            const circumference = radius * 2 * Math.PI;
+            
+            circle.style.strokeDasharray = `${circumference} ${circumference}`;
+            circle.style.strokeDashoffset = circumference;
+            
+            const offset = circumference - (3.75 / 4.0) * circumference;
+            circle.style.strokeDashoffset = offset;
+            circle.style.stroke = '#9333ea';
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,1582 @@
+{% extends "main.html" %}
+
+{% block title %}Manage Faculties - University VLE{% endblock %}
+
+{% block navigation %}
+    {% include "admin_navigation.html" %}
+{% endblock %}
+
+{% block body %}
+<div class="faculties-management">
+    <!-- Page Header -->
+    <div class="page-header">
+        <h1 class="page-title">
+            <i class="fas fa-school"></i> Faculties
+        </h1>
+        <div class="header-actions">
+            <div class="search-box">
+                <i class="fas fa-search"></i>
+                <input type="text" id="searchFaculty" placeholder="Search faculties...">
+            </div>
+            <button class="btn btn-primary" onclick="openAddFacultyModal()">
+                <i class="fas fa-plus"></i> Add Faculty
+            </button>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i class="fas fa-university"></i>
+            </div>
+            <div class="stat-content">
+                <h3 id="totalFaculties">{{ faculties|length|default:"0" }}</h3>
+                <p>Total Faculties</p>
+            </div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i class="fas fa-chalkboard-teacher"></i>
+            </div>
+            <div class="stat-content">
+                <h3 id="totalFacultyCount">
+                    {{ total_faculty_members|default:"0" }}
+                </h3>
+                <p>Total Faculty Members</p>
+            </div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i class="fas fa-layer-group"></i>
+            </div>
+            <div class="stat-content">
+                <h3>{{ total_departments|default:"0" }}</h3>
+                <p>Total Departmentds</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- View Options -->
+    <div class="view-options-container">
+        <div class="view-options">
+            <span class="view-option active" onclick="changeView('grid')">
+                <i class="fas fa-th-large"></i> Grid View
+            </span>
+            <span class="view-option" onclick="changeView('list')">
+                <i class="fas fa-list"></i> List View
+            </span>
+        </div>
+    </div>
+
+    <!-- Faculties Grid View -->
+    <div class="faculties-grid" id="gridView">
+        {% if faculties %}
+            {% for faculty in faculties %}
+            <div class="faculty-card" data-id="{{ faculty.id }}" data-name="{{ faculty.name|lower }}" data-code="{{ faculty.code|lower }}" data-dean="{{ faculty.dean.fullname|lower|default:'' }}">
+                <div class="faculty-header">
+                    <div class="avatar">{{ faculty.name|first|upper }}</div>
+                    <div class="header-top-actions">
+                        <div class="status-badge {% if faculty.is_active %}active{% else %}inactive{% endif %}"></div>
+                        {% if request.user.is_authenticated and request.user.is_superuser %}
+                        <button class="btn-delete-faculty" onclick="deleteFaculty(event, {{ faculty.id }}, '{{ faculty.name }}')">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="faculty-body">
+                    <h4>{{ faculty.name }}</h4>
+                    <p class="faculty-code">{{ faculty.code|default:"No Code" }}</p>
+                    <div class="faculty-info">
+                        <div class="info-row">
+                            <span class="info-label">Dean:</span>
+                            <span class="info-value dean-name">
+                                {% if faculty.dean %}
+                                    {{ faculty.dean.name }}
+                                {% else %}
+                                    Not Assigned
+                                {% endif %}
+                            </span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Departments:</span>
+                            <span class="info-value department-count">{{ faculty.department_set.all|length|default:"0" }}</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="faculty-footer">
+                    <!-- View Button - Go inside faculty -->
+                    <a href="{% url 'dashboard:manage_faculty' faculty.id %}" class="btn btn-view">
+                        <i class="fas fa-eye"></i> View
+                    </a>
+                    
+                    <!-- Edit Button - Open edit modal -->
+                    <button class="btn btn-edit" onclick="editFaculty({{ faculty.id }})">
+                        <i class="fas fa-edit"></i> Edit
+                    </button>
+                    
+                    <!-- Courses Button - Go to courses with faculty ID -->
+                    <a href="{% url 'dashboard:manage_courses' %}?faculty={{ faculty.id }}" class="btn btn-courses">
+                        <i class="fas fa-book"></i> Courses
+                    </a>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="empty-state" style="grid-column: 1 / -1;">
+                <div class="empty-state-icon">
+                    <i class="fas fa-school"></i>
+                </div>
+                <h3>No Faculties Found</h3>
+                <p>Get started by adding your first faculty</p>
+                <button class="btn btn-primary" onclick="openAddFacultyModal()">
+                    <i class="fas fa-plus"></i> Add First Faculty
+                </button>
+            </div>
+        {% endif %}
+        
+        <!-- Add Faculty Card -->
+        <div class="faculty-card add-card" onclick="openAddFacultyModal()">
+            <div class="add-card-content">
+                <div class="add-icon">
+                    <i class="fas fa-plus"></i>
+                </div>
+                <h4>Add New Faculty</h4>
+                <p>Create a new faculty</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Faculties List View -->
+    <div class="faculties-table" id="listView" style="display: none;">
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Faculty Name</th>
+                        <th>Code</th>
+                        <th>Dean</th>
+                        <th>Departments</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for faculty in faculties %}
+                    <tr data-id="{{ faculty.id }}" data-name="{{ faculty.name|lower }}" data-code="{{ faculty.code|lower }}" data-dean="{{ faculty.dean.fullname|lower|default:'' }}">
+                        <td>
+                            <div class="faculty-info-cell">
+                                <div class="faculty-avatar">{{ faculty.name|first|upper }}</div>
+                                <div>
+                                    <strong>{{ faculty.name }}</strong>
+                                    <small>{{ faculty.description|default:"" }}</small>
+                                </div>
+                            </div>
+                        </td>
+                        <td>{{ faculty.code|default:"-" }}</td>
+                        <td>
+                            {% if faculty.dean %}
+                            <div class="dean-cell">
+                                <strong>{{ faculty.dean.name }}</strong>
+                            </div>
+                            {% else %}
+                            <span class="no-dean">Not Assigned</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="count-badge">{{ faculty.department_set.all|length|default:"0" }}</span>
+                        </td>
+                        <td>
+                            <div class="action-buttons">
+                                <!-- View Button -->
+                                <a href="{% url 'dashboard:manage_faculty' faculty.id %}" class="btn btn-sm btn-view" title="View Faculty">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                
+                                <!-- Edit Button -->
+                                <button class="btn btn-sm btn-edit" onclick="editFaculty({{ faculty.id }})" title="Edit Faculty">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                
+                                <!-- Courses Button -->
+                                <a href="{% url 'dashboard:manage_courses' %}?faculty={{ faculty.id }}" class="btn btn-sm btn-courses" title="View Courses">
+                                    <i class="fas fa-book"></i>
+                                </a>
+                                
+                                <!-- Delete Button -->
+                                {% if request.user.is_superuser %}
+                                <button class="btn btn-sm btn-danger" onclick="deleteFaculty(event, {{ faculty.id }}, '{{ faculty.name }}')" title="Delete Faculty">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Add/Edit Faculty Modal -->
+<div class="modal-overlay" id="facultyModal" style="display: none;">
+    <div class="modal">
+        <div class="modal-header">
+            <h3 class="modal-title" id="modalTitle">Add New Faculty</h3>
+            <button class="modal-close" onclick="closeModal()">&times;</button>
+        </div>
+        <div class="modal-content">
+            <form id="facultyForm" method="post" action="">
+                {% csrf_token %}
+                <input type="hidden" id="facultyId" name="id">
+                
+                <div class="form-group">
+                    <label for="facultyName">Faculty Name *</label>
+                    <input type="text" id="facultyName" name="name" placeholder="e.g., Engineering, Science" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="facultyCode">Faculty Code</label>
+                    <input type="text" id="facultyCode" name="code" placeholder="e.g., ENG, SCI" maxlength="10" required>
+                    <small class="help-text">Short code for the faculty (optional)</small>
+                </div>
+
+                <input type="hidden" name="university" value="1">
+                
+                <div class="form-group">
+                    <label for="deanSelect">Assign Dean</label>
+                    <div class="dean-selection">
+                        <select id="deanSelect" name="dean" required>
+                            <option value="">-- Select Dean --</option>
+                            {% for dean in available_deans %}
+                            <option value="{{ dean.id }}">{{ dean.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                                
+                <div class="form-actions">
+                    <button type="button" class="btn btn-outline" onclick="closeModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Save Faculty
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Loading Overlay -->
+<div id="loadingOverlay" style="display: none;">
+    <div class="loading-spinner">
+        <i class="fas fa-spinner fa-spin"></i>
+        <p>Processing...</p>
+    </div>
+</div>
+{% endblock %}
+
+{% block style %}
+<style>
+    /* Main Container */
+    .faculties-management {
+        padding: 20px;
+        background: #f8f9fa;
+        min-height: 100vh;
+    }
+
+    /* Page Header */
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .page-title {
+        font-size: 2rem;
+        color: #2c3e50;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .header-actions {
+        display: flex;
+        gap: 1rem;
+        align-items: center;
+    }
+
+    .search-box {
+        position: relative;
+        width: 300px;
+    }
+
+    .search-box i {
+        position: absolute;
+        left: 1rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #95a5a6;
+    }
+
+    .search-box input {
+        width: 100%;
+        padding: 0.75rem 1rem 0.75rem 3rem;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        font-size: 0.95rem;
+        background: white;
+        transition: all 0.3s ease;
+    }
+
+    .search-box input:focus {
+        outline: none;
+        border-color: #4361ee;
+        box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.1);
+    }
+
+    /* Statistics Grid */
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .stat-card {
+        background: white;
+        border-radius: 12px;
+        padding: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        transition: all 0.3s ease;
+        border: 1px solid #eee;
+    }
+
+    .stat-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+    }
+
+    .stat-icon {
+        width: 60px;
+        height: 60px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        color: white;
+        flex-shrink: 0;
+    }
+
+    .stat-card:nth-child(1) .stat-icon {
+        background: linear-gradient(135deg, #4361ee, #3a56d4);
+    }
+
+    .stat-card:nth-child(2) .stat-icon {
+        background: linear-gradient(135deg, #7209b7, #5a0a94);
+    }
+
+    .stat-card:nth-child(3) .stat-icon {
+        background: linear-gradient(135deg, #4cc9f0, #4895ef);
+    }
+
+    .stat-content h3 {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #2c3e50;
+        margin-bottom: 0.25rem;
+        line-height: 1;
+    }
+
+    .stat-content p {
+        color: #7f8c8d;
+        font-size: 0.9rem;
+        margin: 0;
+    }
+
+    /* View Options */
+    .view-options-container {
+        margin-bottom: 1.5rem;
+        background: white;
+        padding: 1rem;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        border: 1px solid #eee;
+    }
+
+    .view-options {
+        display: inline-flex;
+        background: #f8f9fa;
+        padding: 0.25rem;
+        border-radius: 8px;
+        gap: 0.25rem;
+    }
+
+    .view-option {
+        padding: 0.5rem 1rem;
+        border-radius: 6px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: #7f8c8d;
+        font-size: 0.9rem;
+        transition: all 0.3s ease;
+    }
+
+    .view-option:hover {
+        background: white;
+        color: #4361ee;
+    }
+
+    .view-option.active {
+        background: #4361ee;
+        color: white;
+    }
+
+    /* Faculties Grid */
+    .faculties-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 1.5rem;
+    }
+
+    /* Faculty Card */
+    .faculty-card {
+        background: white;
+        border-radius: 12px;
+        overflow: hidden;
+        border: 1px solid #eee;
+        transition: all 0.3s ease;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .faculty-card:not(.add-card):hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
+        border-color: #4361ee;
+    }
+
+    /* Faculty Header */
+    .faculty-header {
+        padding: 1.5rem;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .faculty-header .avatar {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.2);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        font-weight: 600;
+        margin-bottom: 1rem;
+    }
+
+    .header-top-actions {
+        position: absolute;
+        top: 1rem;
+        right: 1rem;
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+    }
+
+    .status-badge {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        flex-shrink: 0;
+    }
+
+    .status-badge.active {
+        background: #4ade80;
+        box-shadow: 0 0 0 3px rgba(74, 222, 128, 0.2);
+    }
+
+    .status-badge.inactive {
+        background: #9ca3af;
+        box-shadow: 0 0 0 3px rgba(156, 163, 175, 0.2);
+    }
+
+    .btn-delete-faculty {
+        background: rgba(255, 255, 255, 0.2);
+        border: none;
+        color: white;
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-size: 0.9rem;
+        flex-shrink: 0;
+    }
+
+    .btn-delete-faculty:hover {
+        background: rgba(255, 255, 255, 0.3);
+        transform: scale(1.1);
+    }
+
+    /* Faculty Body */
+    .faculty-body {
+        padding: 1.5rem;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .faculty-body h4 {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #2c3e50;
+        margin-bottom: 0.25rem;
+        line-height: 1.4;
+    }
+
+    .faculty-code {
+        font-size: 0.9rem;
+        color: #7f8c8d;
+        margin-bottom: 1rem;
+    }
+
+    .badges {
+        display: flex;
+        gap: 0.5rem;
+        margin-bottom: 1rem;
+        flex-wrap: wrap;
+    }
+
+    .badge {
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        display: inline-block;
+    }
+
+    .badge-dean {
+        background: rgba(67, 97, 238, 0.1);
+        color: #4361ee;
+        border: 1px solid rgba(67, 97, 238, 0.2);
+    }
+
+    .badge-hod {
+        background: rgba(114, 9, 183, 0.1);
+        color: #7209b7;
+        border: 1px solid rgba(114, 9, 183, 0.2);
+    }
+
+    /* Faculty Info */
+    .faculty-info {
+        margin-top: auto;
+        padding-top: 1rem;
+        border-top: 1px solid #f0f0f0;
+    }
+
+    .info-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.5rem 0;
+    }
+
+    .info-row:first-child {
+        padding-top: 0;
+    }
+
+    .info-row:last-child {
+        padding-bottom: 0;
+    }
+
+    .info-label {
+        font-size: 0.85rem;
+        color: #7f8c8d;
+        font-weight: 500;
+    }
+
+    .info-value {
+        font-weight: 600;
+        color: #2c3e50;
+        text-align: right;
+        max-width: 60%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .dean-name {
+        color: #4361ee;
+    }
+
+    .department-count {
+        color: #7209b7;
+        font-size: 1.1rem;
+    }
+
+    /* Faculty Footer - FIXED BUTTONS */
+    .faculty-footer {
+        padding: 1rem 1.5rem;
+        background: #f8f9fa;
+        border-top: 1px solid #eee;
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: nowrap;
+    }
+
+    /* Button Styles - FIXED */
+    .faculty-footer .btn {
+        flex: 1;
+        min-width: 0;
+        padding: 0.625rem 0.5rem;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 0.85rem;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        text-align: center;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.375rem;
+        white-space: nowrap;
+        overflow: hidden;
+    }
+
+    /* View Button */
+    .btn-view {
+        background: #4361ee;
+        color: white;
+        border: 1px solid #3a56d4;
+    }
+
+    .btn-view:hover {
+        background: #3a56d4;
+        color: white;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(67, 97, 238, 0.2);
+    }
+
+    /* Edit Button */
+    .btn-edit {
+        background: #f8f9fa;
+        color: #2c3e50;
+        border: 1px solid #ddd;
+    }
+
+    .btn-edit:hover {
+        background: #e9ecef;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Courses Button */
+    .btn-courses {
+        background: #28a745;
+        color: white;
+        border: 1px solid #218838;
+    }
+
+    .btn-courses:hover {
+        background: #218838;
+        color: white;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(40, 167, 69, 0.2);
+    }
+
+    /* Add Faculty Card */
+    .faculty-card.add-card {
+        background: transparent;
+        border: 2px dashed #ddd;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 200px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .faculty-card.add-card:hover {
+        border-color: #4361ee;
+        background: rgba(67, 97, 238, 0.05);
+    }
+
+    .add-card-content {
+        text-align: center;
+        padding: 2rem;
+    }
+
+    .add-icon {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        background: #4361ee;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        margin: 0 auto 1rem;
+        transition: all 0.3s ease;
+    }
+
+    .faculty-card.add-card:hover .add-icon {
+        transform: scale(1.1);
+    }
+
+    .add-card-content h4 {
+        color: #2c3e50;
+        margin-bottom: 0.5rem;
+        font-size: 1.1rem;
+    }
+
+    .add-card-content p {
+        color: #7f8c8d;
+        font-size: 0.9rem;
+        margin: 0;
+    }
+
+    /* Faculties Table */
+    .faculties-table {
+        background: white;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        border: 1px solid #eee;
+    }
+
+    .table-container {
+        overflow-x: auto;
+    }
+
+    .faculties-table table {
+        width: 100%;
+        border-collapse: collapse;
+        min-width: 800px;
+    }
+
+    .faculties-table th {
+        background: #f8f9fa;
+        padding: 1rem;
+        text-align: left;
+        font-weight: 600;
+        color: #2c3e50;
+        border-bottom: 2px solid #eee;
+        white-space: nowrap;
+    }
+
+    .faculties-table td {
+        padding: 1rem;
+        border-bottom: 1px solid #eee;
+        vertical-align: middle;
+    }
+
+    .faculties-table tr:hover {
+        background: #f8f9fa;
+    }
+
+    .faculties-table tr:last-child td {
+        border-bottom: none;
+    }
+
+    /* Table Cell Styles */
+    .faculty-info-cell {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        min-width: 200px;
+    }
+
+    .faculty-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        flex-shrink: 0;
+    }
+
+    .faculty-info-cell > div {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .faculty-info-cell strong {
+        display: block;
+        font-size: 0.95rem;
+        color: #2c3e50;
+        margin-bottom: 0.25rem;
+    }
+
+    .faculty-info-cell small {
+        display: block;
+        font-size: 0.85rem;
+        color: #7f8c8d;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .dean-cell strong {
+        display: block;
+        font-size: 0.95rem;
+        color: #2c3e50;
+        margin-bottom: 0.25rem;
+    }
+
+    .dean-cell small {
+        font-size: 0.85rem;
+        color: #7f8c8d;
+    }
+
+    .no-dean {
+        color: #9ca3af;
+        font-style: italic;
+        font-size: 0.9rem;
+    }
+
+    .count-badge {
+        background: #f3e5f5;
+        color: #7209b7;
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-weight: 600;
+        font-size: 0.85rem;
+        display: inline-block;
+    }
+
+    .status-badge {
+        display: inline-block;
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        text-transform: uppercase;
+    }
+
+    .status-badge.active {
+        background: #d4edda;
+        color: #155724;
+    }
+
+    .status-badge.inactive {
+        background: #f8d7da;
+        color: #721c24;
+    }
+
+    /* Table Action Buttons */
+    .action-buttons {
+        display: flex;
+        gap: 0.5rem;
+        justify-content: flex-start;
+    }
+
+    .action-buttons .btn-sm {
+        width: 36px;
+        height: 36px;
+        padding: 0;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s ease;
+        flex-shrink: 0;
+    }
+
+    .action-buttons .btn-view {
+        background: #4361ee;
+        color: white;
+    }
+
+    .action-buttons .btn-view:hover {
+        background: #3a56d4;
+        transform: translateY(-1px);
+    }
+
+    .action-buttons .btn-edit {
+        background: #f8f9fa;
+        color: #2c3e50;
+        border: 1px solid #ddd;
+    }
+
+    .action-buttons .btn-edit:hover {
+        background: #e9ecef;
+        transform: translateY(-1px);
+    }
+
+    .action-buttons .btn-courses {
+        background: #28a745;
+        color: white;
+    }
+
+    .action-buttons .btn-courses:hover {
+        background: #218838;
+        transform: translateY(-1px);
+    }
+
+    .action-buttons .btn-danger {
+        background: #dc3545;
+        color: white;
+    }
+
+    .action-buttons .btn-danger:hover {
+        background: #c82333;
+        transform: translateY(-1px);
+    }
+
+    /* Empty State */
+    .empty-state {
+        text-align: center;
+        padding: 4rem 2rem;
+        background: white;
+        border-radius: 12px;
+        border: 1px solid #eee;
+        grid-column: 1 / -1;
+    }
+
+    .empty-state-icon {
+        font-size: 4rem;
+        color: #ddd;
+        margin-bottom: 1.5rem;
+    }
+
+    .empty-state h3 {
+        font-size: 1.5rem;
+        color: #7f8c8d;
+        margin-bottom: 0.5rem;
+    }
+
+    .empty-state p {
+        color: #95a5a6;
+        margin-bottom: 2rem;
+    }
+
+    /* Modal Styles */
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+        padding: 1rem;
+    }
+
+    .modal {
+        background: white;
+        border-radius: 12px;
+        width: 90%;
+        max-width: 500px;
+        max-height: 90vh;
+        overflow-y: auto;
+        animation: modalSlideIn 0.3s ease;
+    }
+
+    .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1.5rem;
+        border-bottom: 1px solid #eee;
+    }
+
+    .modal-title {
+        margin: 0;
+        font-size: 1.5rem;
+        color: #2c3e50;
+    }
+
+    .modal-close {
+        background: none;
+        border: none;
+        font-size: 1.5rem;
+        color: #95a5a6;
+        cursor: pointer;
+        padding: 0.5rem;
+        border-radius: 4px;
+        transition: all 0.3s ease;
+    }
+
+    .modal-close:hover {
+        background: #f8f9fa;
+        color: #2c3e50;
+    }
+
+    .modal-content {
+        padding: 1.5rem;
+    }
+
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+
+    .form-group label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 500;
+        color: #2c3e50;
+    }
+
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+        width: 100%;
+        padding: 0.75rem 1rem;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        font-size: 0.95rem;
+        background: white;
+        transition: all 0.3s ease;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus {
+        outline: none;
+        border-color: #4361ee;
+        box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.1);
+    }
+
+    .dean-selection {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .or-divider {
+        text-align: center;
+        color: #7f8c8d;
+        font-size: 0.9rem;
+        position: relative;
+    }
+
+    .or-divider:before,
+    .or-divider:after {
+        content: '';
+        position: absolute;
+        top: 50%;
+        width: 45%;
+        height: 1px;
+        background: #eee;
+    }
+
+    .or-divider:before {
+        left: 0;
+    }
+
+    .or-divider:after {
+        right: 0;
+    }
+
+    .help-text {
+        font-size: 0.85rem;
+        color: #95a5a6;
+        margin-top: 0.25rem;
+        display: block;
+    }
+
+    .form-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 1rem;
+        margin-top: 2rem;
+        padding-top: 1.5rem;
+        border-top: 1px solid #eee;
+    }
+
+    /* Loading Overlay */
+    #loadingOverlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.7);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 2000;
+    }
+
+    .loading-spinner {
+        text-align: center;
+        color: white;
+    }
+
+    .loading-spinner i {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+        animation: spin 1s linear infinite;
+    }
+
+    .loading-spinner p {
+        font-size: 1.2rem;
+    }
+
+    /* Notification Styles */
+    .notification {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 1rem 1.5rem;
+        border-radius: 8px;
+        color: white;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        min-width: 300px;
+        max-width: 400px;
+        z-index: 9999;
+        animation: slideIn 0.3s ease;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    .notification.success {
+        background: linear-gradient(135deg, #43e97b, #38f9d7);
+    }
+
+    .notification.error {
+        background: linear-gradient(135deg, #fa709a, #fee140);
+    }
+
+    .notification button {
+        background: none;
+        border: none;
+        color: white;
+        font-size: 1.25rem;
+        cursor: pointer;
+        padding: 0 0.5rem;
+        margin-left: 1rem;
+    }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    @keyframes slideIn {
+        from {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+
+    @keyframes modalSlideIn {
+        from {
+            opacity: 0;
+            transform: translateY(-20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* Responsive */
+    @media (max-width: 1024px) {
+        .faculties-grid {
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        }
+    }
+
+    @media (max-width: 768px) {
+        .page-header {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        
+        .header-actions {
+            width: 100%;
+            flex-direction: column;
+        }
+        
+        .search-box {
+            width: 100%;
+        }
+        
+        .stats-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+        
+        .faculties-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .faculty-footer {
+            flex-wrap: wrap;
+        }
+        
+        .faculty-footer .btn {
+            min-width: calc(33.333% - 0.5rem);
+            flex: none;
+            padding: 0.75rem 0.5rem;
+            font-size: 0.8rem;
+        }
+        
+        .action-buttons {
+            flex-wrap: wrap;
+            gap: 0.375rem;
+        }
+        
+        .action-buttons .btn-sm {
+            width: 32px;
+            height: 32px;
+            font-size: 0.8rem;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .stats-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .view-options {
+            width: 100%;
+        }
+        
+        .view-option {
+            flex: 1;
+            justify-content: center;
+            padding: 0.5rem;
+            font-size: 0.8rem;
+        }
+        
+        .faculty-footer .btn {
+            min-width: 100%;
+            margin-bottom: 0.5rem;
+        }
+        
+        .faculty-footer .btn:last-child {
+            margin-bottom: 0;
+        }
+        
+        .info-value {
+            font-size: 0.9rem;
+        }
+        
+        .badge {
+            padding: 0.2rem 0.5rem;
+            font-size: 0.7rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block script %}
+<script>
+    // Global variables
+    let currentView = 'grid';
+    
+    // DOM Ready
+    document.addEventListener('DOMContentLoaded', function() {
+        setupEventListeners();
+        updateStats();
+    });
+
+    function setupEventListeners() {
+        // Search functionality
+        const searchInput = document.getElementById('searchFaculty');
+        if (searchInput) {
+            searchInput.addEventListener('input', function(e) {
+                filterFaculties(e.target.value);
+            });
+        }
+        
+        // Form submission
+        const facultyForm = document.getElementById('facultyForm');
+        if (facultyForm) {
+            facultyForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                saveFaculty();
+            });
+        }
+    }
+
+    function updateStats() {
+        // Update statistics from data
+        const totalFaculties = document.querySelectorAll('.faculty-card:not(.add-card)').length;
+        document.getElementById('totalFaculties').textContent = totalFaculties;
+    }
+
+    function changeView(view) {
+        currentView = view;
+        const gridView = document.getElementById('gridView');
+        const listView = document.getElementById('listView');
+        const viewOptions = document.querySelectorAll('.view-option');
+        
+        viewOptions.forEach(option => option.classList.remove('active'));
+        event.target.closest('.view-option').classList.add('active');
+        
+        if (view === 'grid') {
+            gridView.style.display = 'grid';
+            listView.style.display = 'none';
+        } else {
+            gridView.style.display = 'none';
+            listView.style.display = 'block';
+        }
+    }
+
+    function filterFaculties(searchTerm) {
+        const term = searchTerm.toLowerCase().trim();
+        
+        if (currentView === 'grid') {
+            // Filter grid view
+            const cards = document.querySelectorAll('.faculty-card:not(.add-card)');
+            let visibleCount = 0;
+            
+            cards.forEach(card => {
+                const name = card.getAttribute('data-name') || '';
+                const code = card.getAttribute('data-code') || '';
+                const dean = card.getAttribute('data-dean') || '';
+                
+                const matches = name.includes(term) || code.includes(term) || dean.includes(term);
+                card.style.display = matches ? 'flex' : 'none';
+                if (matches) visibleCount++;
+            });
+            
+            // Show empty state if no matches
+            const emptyState = document.querySelector('.empty-state');
+            if (emptyState) {
+                emptyState.style.display = visibleCount === 0 ? 'block' : 'none';
+            }
+        } else {
+            // Filter list view
+            const rows = document.querySelectorAll('#listView tbody tr');
+            rows.forEach(row => {
+                const name = row.getAttribute('data-name') || '';
+                const code = row.getAttribute('data-code') || '';
+                const dean = row.getAttribute('data-dean') || '';
+                
+                const matches = name.includes(term) || code.includes(term) || dean.includes(term);
+                row.style.display = matches ? '' : 'none';
+            });
+        }
+    }
+
+    function openAddFacultyModal() {
+        document.getElementById('modalTitle').textContent = 'Add New Faculty';
+        document.getElementById('facultyForm').reset();
+        document.getElementById('facultyId').value = '';
+        //document.getElementById('statusSelect').value = 'active';
+        document.getElementById('facultyModal').style.display = 'flex';
+    }
+
+    function editFaculty(facultyId) {
+        // Find the faculty data
+        const facultyCard = document.querySelector(`.faculty-card[data-id="${facultyId}"]`);
+        if (!facultyCard) return;
+        
+        // Get current data - JUST LIKE YOU'RE DOING FOR NAME AND CODE
+        const facultyName = facultyCard.querySelector('h4').textContent;
+        const facultyCode = facultyCard.querySelector('.faculty-code').textContent;
+        const deanName = facultyCard.querySelector('.dean-name').textContent;
+        
+        // Set modal title
+        document.getElementById('modalTitle').textContent = 'Edit Faculty';
+        
+        // Set form values
+        document.getElementById('facultyId').value = facultyId;
+        document.getElementById('facultyName').value = facultyName;
+        document.getElementById('facultyCode').value = facultyCode === 'No Code' ? '' : facultyCode;
+        
+        // Find and select the dean - JUST LIKE OTHER DATA
+        const deanSelect = document.getElementById('deanSelect');
+        
+        // First, reset to default
+        deanSelect.value = '';
+        
+        // If there's a dean assigned
+        if (deanName !== 'Not Assigned' && deanName.trim() !== '') {
+            // Loop through all options to find a match
+            for (let i = 0; i < deanSelect.options.length; i++) {
+                const option = deanSelect.options[i];
+                // Compare the displayed name with the dean's name
+                if (option.textContent.trim() === deanName.trim()) {
+                    deanSelect.value = option.value;
+                    break;
+                }
+            }
+        }
+        
+        // Show modal
+        document.getElementById('facultyModal').style.display = 'flex';
+    }
+
+    function closeModal() {
+        document.getElementById('facultyModal').style.display = 'none';
+    }
+
+    function deleteFaculty(event, facultyId, facultyName) {
+        event.stopPropagation();
+
+        // 1️⃣ Ask for confirmation
+        if (!confirm(`Are you sure you want to delete "${facultyName}"? This action cannot be undone.`)) {
+            return;
+        }
+
+        showLoading();
+
+        fetch(`/api/faculties/${facultyId}/delete/`, {
+            method: 'DELETE',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken'),
+            }
+        })
+        .then(response => {
+            hideLoading();
+
+            if (!response.ok) {
+                throw new Error('Failed to delete faculty');
+            }
+
+            // ✅ Notification on success
+            showNotification(`Faculty "${facultyName}" deleted successfully!`, 'success');
+
+            // ✅ Remove faculty from DOM if exists
+            const facultyCard = document.querySelector(`.faculty-card[data-id="${facultyId}"]`);
+            const facultyRow  = document.querySelector(`tr[data-id="${facultyId}"]`);
+
+            if (facultyCard) facultyCard.remove();
+            if (facultyRow)  facultyRow.remove();
+        })
+        .catch(error => {
+            hideLoading();
+            console.error('Error deleting faculty:', error);
+            showNotification('Error deleting faculty. Please try again.', 'error');
+        });
+    }
+
+
+    function saveFaculty() {
+        const form = document.getElementById('facultyForm');
+        const formData = new FormData(form);
+        const facultyId = formData.get('id');
+        
+        // Validate
+        if (!formData.get('name')) {
+            alert('Faculty name is required');
+            return;
+        }
+        
+        showLoading();
+        
+        // Determine URL based on whether we're adding or editing
+        const url = facultyId ? `/api/faculties/${facultyId}/update/` : '/api/faculties/create/';
+        const method = facultyId ? 'PUT' : 'POST';
+        
+        fetch(url, {
+            method: method,
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken'),
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(Object.fromEntries(formData))
+        })
+        .then(response => {
+            return response.json().then(data => {
+                if (!response.ok) {
+                    throw data;  // pass error object to catch
+                }
+                return data;     // success, pass data along
+            });
+        })
+        .then(data => {
+            showNotification(`Faculty ${facultyId ? 'updated' : 'created'} successfully!`, 'success');
+            closeModal();
+            setTimeout(() => location.reload(), 1000);
+        })
+        .catch(error => {
+            console.error('Error saving faculty:', error);
+            showNotification(`Failed to save faculty: ${error.message || 'Unknown error'}`, 'error');
+            setTimeout(() => location.reload(), 1000);
+        });
+    }
+
+    function showLoading() {
+        document.getElementById('loadingOverlay').style.display = 'flex';
+    }
+
+    function hideLoading() {
+        document.getElementById('loadingOverlay').style.display = 'none';
+    }
+
+    function showNotification(message, type) {
+        // Remove existing notifications
+        document.querySelectorAll('.notification').forEach(n => n.remove());
+        
+        // Create notification
+        const notification = document.createElement('div');
+        notification.className = `notification ${type}`;
+        notification.innerHTML = `
+            <span>${message}</span>
+            <button onclick="this.parentElement.remove()">×</button>
+        `;
+        
+        // Add to page
+        document.body.appendChild(notification);
+        
+        // Auto-remove after 5 seconds
+        setTimeout(() => {
+            if (notification.parentNode) {
+                notification.remove();
+            }
+        }, 5000);
+    }
+
+    // Helper function to get CSRF token
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+</script>
+{% endblock %}

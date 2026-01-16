@@ -1,0 +1,20 @@
+create user 'vleSystem'@'localhost' identified by 'dehue7543FS';
+grant select,insert,update,delete on vle.* to 'vleSystem'@'localhost';
+flush privileges;
+
++-------------------------------+
+| Tables_in_vle                 |
++-------------------------------+
+| announcements                 |
+| courses                       |
+| staff                         |
+| staff_registration_requests   |
+| student_registration_requests |
+| students                      |
+| users                         |
++-------------------------------+
+
+
+insert into users(username,passwd,role,status,active) 
+values('admin','$2y$10$Rklgio.RzubkH1fGrUKBiOW3hiMbl5QHjVQHI0oQJy422epeYik9a','admin','active','yes');
+

@@ -1,0 +1,4 @@
+create user 'vleSystem'@'localhost' identified by 'dehue7543FS';
+grant select,insert,update,delete on vle.* to 'vleSystem'@'localhost';
+flush privileges;
+

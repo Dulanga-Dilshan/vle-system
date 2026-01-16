@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pending Registration Requests</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .tabs {
+            display: flex;
+            margin-bottom: 20px;
+        }
+        .tab-btn {
+            padding: 10px 30px;
+            border: none;
+            background: #eee;
+            color: #333;
+            cursor: pointer;
+            font-weight: bold;
+            border-radius: 8px 8px 0 0;
+            margin-right: 5px;
+            outline: none;
+            transition: background 0.2s;
+        }
+        .tab-btn.active {
+            background: #3b2fd4;
+            color: #fff;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .requests-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: #fafafa;
+            margin-bottom: 20px;
+        }
+        .requests-table th, .requests-table td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: left;
+        }
+        .requests-table th {
+            background: #eee;
+        }
+        .form-actions {
+            text-align: right;
+            margin-top: 10px;
+        }
+        .form-actions button {
+            padding: 8px 20px;
+            border-radius: 6px;
+            border: none;
+            background: #3b2fd4;
+            color: #fff;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .form-actions button:hover {
+            background: #2a1fa0;
+        }
+        .status-select {
+            width: 120px;
+        }
+        .color-status {
+            background: #2196f3;
+            color: #fff;
+            font-weight: bold;
+            border-radius: 6px;
+            padding: 4px 8px;
+            transition: background 0.2s;
+        }
+    </style>
+</head>
+<body class="body">
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <i class="fas fa-graduation-cap"></i>
+                <span>University VLE</span>
+            </div>
+            <div class="nav-items">
+                <a href="admin.php" class="logout-btn">
+                    <i class="fas fa-arrow-left"></i> Back to Dashboard
+                </a>
+                <button id="logout-btn" class="logout-btn">
+                    <i class="fas fa-sign-out-alt"></i>Logout
+                </button>
+            </div>
+        </div>
+    </nav>
+    <main class="main-content">
+        <div class="header-section" style="margin-bottom: 20px;">
+            <h2 style="color:#222; padding:8px 0; border-radius:6px; margin-bottom:10px; background:none;">
+                Pending Registration Requests
+            </h2>
+            <span style="display:block; margin-top:8px; color:#222;">
+                Approve or deny new user registrations below.
+            </span>
+        </div>
+        <div class="tabs">
+            <button class="tab-btn active" onclick="showTab('student')">Students</button>
+            <button class="tab-btn" onclick="showTab('staff')">Staff</button>
+        </div>
+        <!-- Student Tab Content -->
+        <div id="student" class="tab-content active">
+            <form method="post" action="../php/process_student_requests.php">
+                <table class="requests-table">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Reg. Number</th>
+                            <th>Faculty</th>
+                            <th>Email</th>
+                            <th>ID Photo</th>
+                            <th>Date Requested</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php
+                            include "../php/config.php";
+                            $query="
+                                select req_id,firstName,lastName,Registration_number,Faculty,id_img_name,email,req_date
+                                from student_registration_requests;
+                            ";
+
+                            $result=mysqli_query($conn,$query);
+                            while($row=mysqli_fetch_array($result)){
+                                $full_name=$row["firstName"];
+                                $full_name.=" ".$row["lastName"];
+                                $reg_no=$row["Registration_number"];
+                                $faculty=$row["Faculty"];
+                                $email=$row["email"];
+                                $id_img=$row["id_img_name"];
+                                $req_day=$row["req_date"];
+                                $req_id=$row["req_id"];
+
+                                echo "
+                                <tr><td>$full_name</td><td>$reg_no</td><td>$faculty</td><td>$email</td>
+                                <td>
+                                <a href='/VLE/uplodes/register_id_pics/$id_img' target='_blank'>
+                                    <img src='/VLE/uplodes/register_id_pics/$id_img' alt='ID Photo' style='width:50px;height:50px;border-radius:4px;'>
+                                </a>
+                                </td>
+                                <td>$req_day</td>
+                                <td>
+                                    <select name='id_$req_id' class='status-select color-status'>
+                                    <option value='none' style='background:#2196f3; color:#fff;'>None</option>
+                                    <option value='approved' style='background:#4caf50; color:#fff;'>Approved</option>
+                                    <option value='denied' style='background:#f44336; color:#fff;'>Denied</option>
+                                </select>
+                                </td></tr>
+                                ";
+                            }
+                            
+
+
+
+                        ?>        
+
+                    </tbody>
+                </table>
+                <div class="form-actions">
+                    <button type="submit">Submit Student Requests</button>
+                </div>
+            </form>
+        </div>
+        <!-- Staff Tab Content -->
+        <div id="staff" class="tab-content">
+            <form method="post" action="../php/process_staff_requests.php">
+                <table class="requests-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Role</th>
+                            <th>Date Requested</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php
+                        include "../php/config.php";
+                        $query= "
+                            select id,staff_id,full_name,sub_role,email,req_date
+                            from staff_registration_requests;
+                        ";
+
+                        $result=mysqli_query($conn,$query);
+                        while($row=mysqli_fetch_array($result)){
+                            $full_name=$row["full_name"];
+                            $staff_id=$row["staff_id"];
+                            $email=$row["email"];
+                            $role=$row["sub_role"];
+                            $date=$row["req_date"];
+                            $id=$row["id"];
+                            echo "
+                                <tr><td>$staff_id</td> <td>$full_name</td><td>$email</td><td>$role</td><td>$date</td>
+                                <td>
+                                    <select name='id_$id' class='status-select color-status'>
+                                    <option value='none' style='background:#2196f3; color:#fff;'>None</option>
+                                    <option value='approved' style='background:#4caf50; color:#fff;'>Approved</option>
+                                    <option value='denied' style='background:#f44336; color:#fff;'>Denied</option>
+                                    </select>
+                                </td></tr>
+                            
+                            ";
+                        }
+                        ?>
+                    </tbody>
+                </table>
+                <div class="form-actions">
+                    <button type="submit">Submit Staff Requests</button>
+                </div>
+            </form>
+        </div>
+    </main>
+    <footer class="footer">
+        <div class="footer-container">
+            <p>&copy; 2023 University VLE System. All rights reserved.</p>
+            <div class="social-icons">
+                <a href="#"><i class="fab fa-facebook"></i></a>
+                <a href="#"><i class="fab fa-twitter"></i></a>
+                <a href="#"><i class="fab fa-linkedin"></i></a>
+                <a href="#"><i class="fab fa-instagram"></i></a>
+            </div>
+        </div>
+    </footer>
+    <script>
+        // Tab switching logic
+        function showTab(tab) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(tc => tc.classList.remove('active'));
+            document.querySelector('.tab-btn[onclick*="' + tab + '"]').classList.add('active');
+            document.getElementById(tab).classList.add('active');
+        }
+        // Color the select based on value
+        function updateSelectColor(select) {
+            if (select.value === "approved") {
+                select.style.background = "#4caf50";
+                select.style.color = "#fff";
+            } else if (select.value === "denied") {
+                select.style.background = "#f44336";
+                select.style.color = "#fff";
+            } else {
+                select.style.background = "#2196f3";
+                select.style.color = "#fff";
+            }
+        }
+        document.querySelectorAll('.color-status').forEach(sel => {
+            updateSelectColor(sel);
+            sel.addEventListener('change', function() {
+                updateSelectColor(this);
+            });
+        });
+        document.getElementById('logout-btn').addEventListener('click', () => {
+            window.location.href = '../index.php';
+        });
+    </script>
+</body>
+</html>

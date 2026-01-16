@@ -1,0 +1,119 @@
+{% extends 'main.html' %}
+
+{% block title %} 
+    University VLE - Staff Dashboard
+{% endblock %}
+
+{% block navigation %}
+    {% include 'base_navigation.html' %}
+{% endblock %}
+
+{% block body%}
+<div class="page-container">
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="dashboard-header">
+            <h2 class="dashboard-title">Staff Dashboard</h2>
+            <button id="change-password-btn" class="profile-link">
+                <i class="fas fa-key"></i> <a style="text-decoration:'none';" href="reset_passwd.php" >Change Password</a>
+            </button>
+        </div>
+        
+        <div class="dashboard-grid">
+            <!-- Course Management Card -->
+            <div class="dashboard-card">
+                <div class="card-header">
+                    <div class="card-icon blue-icon">
+                        <i class="fas fa-chalkboard-teacher"></i>
+                    </div>
+                    <h3 class="card-title">Course Management</h3>
+                </div>
+                <p class="card-description">Manage your courses, schedule lectures, and upload materials.</p>
+                <div class="card-actions">
+                    <button class="action-btn blue-btn">
+                        <a href="course_management.php" style="text-decoration:none; color:white;"> Manage Courses</a> <i class="fas fa-arrow-right"></i>
+                    </button>
+                    <button class="action-btn green-btn">
+                        <i class="fas fa-video"></i> Host Class
+                    </button>
+                </div>
+            </div>
+
+            <!-- Student Tracking Card -->
+            <div class="dashboard-card">
+                <div class="card-header">
+                    <div class="card-icon purple-icon">
+                        <i class="fas fa-user-graduate"></i>
+                    </div>
+                    <h3 class="card-title">Student Tracking</h3>
+                </div>
+                <p class="card-description">Track student progress, grade assignments, and answer questions.</p>
+                <div class="card-actions">
+                    <button class="action-btn blue-btn">
+                        View Students <i class="fas fa-arrow-right"></i>
+                    </button>
+                    <button class="action-btn yellow-btn">
+                        <i class="fas fa-comments"></i> Q&A
+                    </button>
+                </div>
+            </div>
+
+            <!-- Assignment Monitoring Card -->
+            <div class="dashboard-card">
+                <div class="card-header">
+                    <div class="card-icon red-icon">
+                        <i class="fas fa-eye"></i>
+                    </div>
+                    <h3 class="card-title">Assignment Monitoring</h3>
+                </div>
+                <p class="card-description">Monitor student submissions and grade assignments.</p>
+                <button class="action-btn blue-btn">
+                    Monitor Assignments <i class="fas fa-arrow-right"></i>
+                </button>
+            </div>
+
+            <!-- Results Management Card -->
+            <div class="dashboard-card">
+                <div class="card-header">
+                    <div class="card-icon indigo-icon">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <h3 class="card-title">Results Management</h3>
+                </div>
+                <p class="card-description">Enter and release student examination results.</p>
+                <button class="action-btn blue-btn">
+                    Manage Results <i class="fas fa-arrow-right"></i>
+                </button>
+            </div>
+
+            <!-- Notice Board Management Card -->
+            <div class="dashboard-card">
+                <div class="card-header">
+                    <div class="card-icon yellow-icon">
+                        <i class="fas fa-bullhorn"></i>
+                    </div>
+                    <h3 class="card-title">Notice Board</h3>
+                </div>
+                <p class="card-description">Post and manage important announcements for students.</p>
+                <button class="action-btn blue-btn">
+                    Manage Notices <i class="fas fa-arrow-right"></i>
+                </button>
+            </div>
+
+            <!-- Add Past Papers Card -->
+            <div class="dashboard-card">
+                <div class="card-header">
+                    <div class="card-icon green-icon">
+                        <i class="fas fa-file-upload"></i>
+                    </div>
+                    <h3 class="card-title">Add Past Papers</h3>
+                </div>
+                <p class="card-description">Upload previous exam papers for student reference.</p>
+                <button class="action-btn blue-btn">
+                    Upload Papers <i class="fas fa-arrow-right"></i>
+                </button>
+            </div>
+        </div>
+    </main>
+</div>
+{% endblock %}

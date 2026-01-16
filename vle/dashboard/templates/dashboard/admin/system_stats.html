@@ -1,0 +1,1140 @@
+{% extends "main.html" %}
+
+{% block title %}System Analytics - University VLE{% endblock %}
+
+{% block navigation %}
+    {% include "admin_navigation.html" %}
+{% endblock %}
+
+{% block body %}
+<div class="system-analytics">
+    <!-- Page Header -->
+    <div class="page-header">
+        <h1 class="page-title">
+            <i class="fas fa-chart-line"></i> System Analytics
+        </h1>
+        <p class="page-subtitle">
+            Comprehensive overview of system performance, usage, and statistics
+        </p>
+        
+        <div class="header-actions">
+            <div class="date-range">
+                <select class="filter-select" id="timeRange">
+                    <option value="today">Today</option>
+                    <option value="week" selected>Last 7 Days</option>
+                    <option value="month">Last 30 Days</option>
+                    <option value="quarter">Last Quarter</option>
+                    <option value="year">Last Year</option>
+                </select>
+            </div>
+            <button class="btn btn-primary" onclick="exportReport()">
+                <i class="fas fa-download"></i> Export Report
+            </button>
+            <button class="btn btn-outline" onclick="refreshAnalytics()">
+                <i class="fas fa-sync"></i> Refresh
+            </button>
+        </div>
+    </div>
+
+    <!-- Key Metrics -->
+    <div class="key-metrics grid grid-4">
+        <div class="metric-card card">
+            <div class="metric-header">
+                <h3 class="metric-title">Active Users</h3>
+                <div class="metric-trend up">
+                    <i class="fas fa-arrow-up"></i> 12.5%
+                </div>
+            </div>
+            <div class="metric-value">1,845</div>
+            <div class="metric-chart">
+                <div class="sparkline" data-values="30,40,35,50,45,60,55"></div>
+            </div>
+        </div>
+        
+        <div class="metric-card card">
+            <div class="metric-header">
+                <h3 class="metric-title">System Uptime</h3>
+                <div class="metric-trend stable">
+                    <i class="fas fa-minus"></i> 0.0%
+                </div>
+            </div>
+            <div class="metric-value">99.96%</div>
+            <div class="metric-progress">
+                <div class="progress-bar">
+                    <div class="progress" style="width: 99.96%"></div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="metric-card card">
+            <div class="metric-header">
+                <h3 class="metric-title">Avg. Response Time</h3>
+                <div class="metric-trend down">
+                    <i class="fas fa-arrow-down"></i> 8.3%
+                </div>
+            </div>
+            <div class="metric-value">248ms</div>
+            <div class="metric-chart">
+                <div class="sparkline" data-values="280,265,255,245,240,250,248"></div>
+            </div>
+        </div>
+        
+        <div class="metric-card card">
+            <div class="metric-header">
+                <h3 class="metric-title">Storage Usage</h3>
+                <div class="metric-trend warning">
+                    <i class="fas fa-exclamation"></i> 5.2%
+                </div>
+            </div>
+            <div class="metric-value">78.2%</div>
+            <div class="metric-progress">
+                <div class="progress-bar warning">
+                    <div class="progress" style="width: 78.2%"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Section -->
+    <div class="charts-section grid grid-2">
+        <div class="chart-card card">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="fas fa-users"></i> User Growth
+                </h3>
+                <div class="chart-legend">
+                    <span class="legend-item">
+                        <span class="legend-color students"></span>
+                        Students
+                    </span>
+                    <span class="legend-item">
+                        <span class="legend-color staff"></span>
+                        Staff
+                    </span>
+                </div>
+            </div>
+            <div class="chart-container">
+                <div class="chart-placeholder">
+                    <div class="placeholder-content">
+                        <i class="fas fa-chart-bar"></i>
+                        <p>User growth chart visualization</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="chart-card card">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="fas fa-book"></i> Course Popularity
+                </h3>
+                <select class="chart-filter">
+                    <option value="enrollment">By Enrollment</option>
+                    <option value="activity">By Activity</option>
+                    <option value="completion">By Completion</option>
+                </select>
+            </div>
+            <div class="chart-container">
+                <div class="chart-placeholder">
+                    <div class="placeholder-content">
+                        <i class="fas fa-chart-pie"></i>
+                        <p>Course popularity chart visualization</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Detailed Statistics -->
+    <div class="detailed-stats grid grid-2">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="fas fa-tachometer-alt"></i> System Performance
+                </h3>
+            </div>
+            <div class="performance-metrics">
+                <div class="performance-item">
+                    <div class="performance-info">
+                        <span class="performance-label">CPU Usage</span>
+                        <span class="performance-value">42%</span>
+                    </div>
+                    <div class="performance-progress">
+                        <div class="progress-bar">
+                            <div class="progress" style="width: 42%"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="performance-item">
+                    <div class="performance-info">
+                        <span class="performance-label">Memory Usage</span>
+                        <span class="performance-value">78%</span>
+                    </div>
+                    <div class="performance-progress">
+                        <div class="progress-bar warning">
+                            <div class="progress" style="width: 78%"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="performance-item">
+                    <div class="performance-info">
+                        <span class="performance-label">Database Load</span>
+                        <span class="performance-value">65%</span>
+                    </div>
+                    <div class="performance-progress">
+                        <div class="progress-bar">
+                            <div class="progress" style="width: 65%"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="performance-item">
+                    <div class="performance-info">
+                        <span class="performance-label">Network I/O</span>
+                        <span class="performance-value">32%</span>
+                    </div>
+                    <div class="performance-progress">
+                        <div class="progress-bar">
+                            <div class="progress" style="width: 32%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="fas fa-database"></i> Storage Analysis
+                </h3>
+            </div>
+            <div class="storage-analysis">
+                <div class="storage-item">
+                    <div class="storage-info">
+                        <span class="storage-label">Course Files</span>
+                        <span class="storage-value">45.3 GB</span>
+                    </div>
+                    <div class="storage-percentage">45.3%</div>
+                </div>
+                
+                <div class="storage-item">
+                    <div class="storage-info">
+                        <span class="storage-label">User Uploads</span>
+                        <span class="storage-value">22.7 GB</span>
+                    </div>
+                    <div class="storage-percentage">22.7%</div>
+                </div>
+                
+                <div class="storage-item">
+                    <div class="storage-info">
+                        <span class="storage-label">Backups</span>
+                        <span class="storage-value">18.5 GB</span>
+                    </div>
+                    <div class="storage-percentage">18.5%</div>
+                </div>
+                
+                <div class="storage-item">
+                    <div class="storage-info">
+                        <span class="storage-label">System Files</span>
+                        <span class="storage-value">13.5 GB</span>
+                    </div>
+                    <div class="storage-percentage">13.5%</div>
+                </div>
+                
+                <div class="storage-total">
+                    <span>Total: 100 GB</span>
+                    <span>Used: 78.2 GB</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- User Activity -->
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">
+                <i class="fas fa-user-clock"></i> User Activity (Last 24 Hours)
+            </h3>
+            <button class="btn btn-outline btn-sm" onclick="viewActivityLogs()">
+                <i class="fas fa-external-link-alt"></i> View All Logs
+            </button>
+        </div>
+        <div class="activity-table">
+            <div class="table-container">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Time</th>
+                            <th>User</th>
+                            <th>Activity</th>
+                            <th>Duration</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>14:30</td>
+                            <td>
+                                <div class="user-info">
+                                    <div class="user-avatar small">
+                                        JD
+                                    </div>
+                                    <span>John Doe</span>
+                                </div>
+                            </td>
+                            <td>Course: CS101 - Assignment Submission</td>
+                            <td>25m</td>
+                            <td><span class="badge badge-success">Completed</span></td>
+                        </tr>
+                        <tr>
+                            <td>13:45</td>
+                            <td>
+                                <div class="user-info">
+                                    <div class="user-avatar small">
+                                        JS
+                                    </div>
+                                    <span>Jane Smith</span>
+                                </div>
+                            </td>
+                            <td>Forum: Discussion Participation</td>
+                            <td>42m</td>
+                            <td><span class="badge badge-success">Active</span></td>
+                        </tr>
+                        <tr>
+                            <td>12:20</td>
+                            <td>
+                                <div class="user-info">
+                                    <div class="user-avatar small">
+                                        RJ
+                                    </div>
+                                    <span>Robert Johnson</span>
+                                </div>
+                            </td>
+                            <td>Resource: Video Lecture Viewing</td>
+                            <td>1h 15m</td>
+                            <td><span class="badge badge-success">Completed</span></td>
+                        </tr>
+                        <tr>
+                            <td>11:05</td>
+                            <td>
+                                <div class="user-info">
+                                    <div class="user-avatar small">
+                                        MW
+                                    </div>
+                                    <span>Maria Williams</span>
+                                </div>
+                            </td>
+                            <td>Quiz: Attempt and Submission</td>
+                            <td>38m</td>
+                            <td><span class="badge badge-warning">Incomplete</span></td>
+                        </tr>
+                        <tr>
+                            <td>10:30</td>
+                            <td>
+                                <div class="user-info">
+                                    <div class="user-avatar small">
+                                        TB
+                                    </div>
+                                    <span>Thomas Brown</span>
+                                </div>
+                            </td>
+                            <td>Course: CS102 - Material Download</td>
+                            <td>12m</td>
+                            <td><span class="badge badge-success">Completed</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Alerts & Notifications -->
+    <div class="alerts-section grid grid-2">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="fas fa-exclamation-triangle"></i> System Alerts
+                </h3>
+                <span class="badge badge-warning">3 Active</span>
+            </div>
+            <div class="alerts-list">
+                <div class="alert-item critical">
+                    <div class="alert-icon">
+                        <i class="fas fa-exclamation-circle"></i>
+                    </div>
+                    <div class="alert-content">
+                        <h4>Database backup overdue</h4>
+                        <p>Last backup was 3 days ago. Schedule a backup soon.</p>
+                    </div>
+                    <button class="btn btn-sm btn-outline" onclick="runBackup()">
+                        Run Now
+                    </button>
+                </div>
+                
+                <div class="alert-item warning">
+                    <div class="alert-icon">
+                        <i class="fas fa-hdd"></i>
+                    </div>
+                    <div class="alert-content">
+                        <h4>Storage capacity warning</h4>
+                        <p>Storage is at 78% capacity. Consider expanding storage.</p>
+                    </div>
+                    <button class="btn btn-sm btn-outline" onclick="manageStorage()">
+                        Manage
+                    </button>
+                </div>
+                
+                <div class="alert-item info">
+                    <div class="alert-icon">
+                        <i class="fas fa-user-plus"></i>
+                    </div>
+                    <div class="alert-content">
+                        <h4>Pending registrations</h4>
+                        <p>5 new user registrations require approval.</p>
+                    </div>
+                    <a href="{% url 'dashboard:manage_requests' %}" class="btn btn-sm btn-outline">
+                        Review
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="fas fa-bell"></i> Recent Notifications
+                </h3>
+                <button class="btn btn-outline btn-sm" onclick="clearNotifications()">
+                    <i class="fas fa-check-double"></i> Mark All Read
+                </button>
+            </div>
+            <div class="notifications-list">
+                <div class="notification-item">
+                    <div class="notification-icon success">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <div class="notification-content">
+                        <h4>System backup completed</h4>
+                        <p>Daily backup completed successfully</p>
+                        <span class="notification-time">2 hours ago</span>
+                    </div>
+                </div>
+                
+                <div class="notification-item">
+                    <div class="notification-icon info">
+                        <i class="fas fa-info-circle"></i>
+                    </div>
+                    <div class="notification-content">
+                        <h4>New course created</h4>
+                        <p>"Advanced Machine Learning" course added</p>
+                        <span class="notification-time">Yesterday</span>
+                    </div>
+                </div>
+                
+                <div class="notification-item">
+                    <div class="notification-icon warning">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                    <div class="notification-content">
+                        <h4>High server load detected</h4>
+                        <p>CPU usage peaked at 85%</p>
+                        <span class="notification-time">2 days ago</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block style %}
+<style>
+    .system-analytics {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+
+    /* Header Actions */
+    .header-actions {
+        display: flex;
+        gap: 1rem;
+        align-items: center;
+        flex-wrap: wrap;
+        margin-top: 1rem;
+    }
+
+    .date-range {
+        flex: 1;
+        min-width: 200px;
+    }
+
+    /* Key Metrics */
+    .key-metrics {
+        margin: 1rem 0;
+    }
+
+    .metric-card {
+        padding: 1.5rem;
+    }
+
+    .metric-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+    }
+
+    .metric-title {
+        font-size: 0.95rem;
+        font-weight: 500;
+        color: var(--gray);
+        margin: 0;
+    }
+
+    .metric-trend {
+        font-size: 0.8rem;
+        font-weight: 600;
+        padding: 2px 8px;
+        border-radius: 10px;
+        display: inline-flex;
+        align-items: center;
+        gap: 2px;
+    }
+
+    .metric-trend.up {
+        background: #d4edda;
+        color: #155724;
+    }
+
+    .metric-trend.down {
+        background: #f8d7da;
+        color: #721c24;
+    }
+
+    .metric-trend.stable {
+        background: #e3f2fd;
+        color: #1976d2;
+    }
+
+    .metric-trend.warning {
+        background: #fff3cd;
+        color: #856404;
+    }
+
+    .metric-value {
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--dark);
+        margin-bottom: 1rem;
+    }
+
+    .metric-chart {
+        height: 40px;
+    }
+
+    .sparkline {
+        height: 100%;
+        width: 100%;
+        background: linear-gradient(180deg, var(--light) 0%, white 100%);
+        border-radius: 4px;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .sparkline::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 60%;
+        background: linear-gradient(90deg, rgba(67, 97, 238, 0.1) 0%, rgba(114, 9, 183, 0.1) 100%);
+        border-radius: 4px;
+    }
+
+    .metric-progress {
+        margin-top: 0.5rem;
+    }
+
+    .progress-bar {
+        height: 8px;
+        background: var(--gray-light);
+        border-radius: 4px;
+        overflow: hidden;
+    }
+
+    .progress-bar.warning {
+        background: #fff3cd;
+    }
+
+    .progress {
+        height: 100%;
+        background: linear-gradient(90deg, #4361ee, #7209b7);
+        border-radius: 4px;
+    }
+
+    .progress-bar.warning .progress {
+        background: linear-gradient(90deg, #ffc107, #f57c00);
+    }
+
+    /* Charts Section */
+    .charts-section {
+        margin: 1rem 0;
+    }
+
+    .chart-card {
+        height: 100%;
+    }
+
+    .chart-legend {
+        display: flex;
+        gap: 1rem;
+    }
+
+    .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.85rem;
+        color: var(--gray);
+    }
+
+    .legend-color {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+    }
+
+    .legend-color.students {
+        background: #4361ee;
+    }
+
+    .legend-color.staff {
+        background: #7209b7;
+    }
+
+    .chart-filter {
+        padding: 6px 12px;
+        border: 2px solid var(--gray-light);
+        border-radius: 6px;
+        font-size: 0.9rem;
+        background: white;
+    }
+
+    .chart-container {
+        height: 250px;
+        margin-top: 1rem;
+    }
+
+    .chart-placeholder {
+        height: 100%;
+        background: linear-gradient(135deg, #f5f7ff 0%, #e3e9ff 100%);
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--primary);
+    }
+
+    .placeholder-content {
+        text-align: center;
+    }
+
+    .placeholder-content i {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+        opacity: 0.5;
+    }
+
+    .placeholder-content p {
+        color: var(--gray);
+        font-size: 0.9rem;
+    }
+
+    /* Detailed Statistics */
+    .performance-metrics,
+    .storage-analysis {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .performance-item,
+    .storage-item {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 0.75rem 0;
+        border-bottom: 1px solid var(--gray-light);
+    }
+
+    .performance-item:last-child,
+    .storage-item:last-child {
+        border-bottom: none;
+    }
+
+    .performance-info {
+        display: flex;
+        justify-content: space-between;
+        flex: 1;
+        min-width: 150px;
+    }
+
+    .performance-label,
+    .storage-label {
+        font-weight: 500;
+        color: var(--dark);
+    }
+
+    .performance-value {
+        font-weight: 600;
+        color: var(--primary);
+    }
+
+    .performance-progress {
+        flex: 2;
+        min-width: 200px;
+    }
+
+    /* Storage Analysis */
+    .storage-info {
+        display: flex;
+        justify-content: space-between;
+        flex: 1;
+    }
+
+    .storage-value {
+        font-weight: 600;
+        color: var(--gray);
+    }
+
+    .storage-percentage {
+        width: 60px;
+        text-align: right;
+        font-weight: 600;
+        color: var(--primary);
+    }
+
+    .storage-total {
+        display: flex;
+        justify-content: space-between;
+        padding-top: 1rem;
+        margin-top: 1rem;
+        border-top: 2px solid var(--gray-light);
+        font-weight: 600;
+        color: var(--dark);
+    }
+
+    /* User Activity */
+    .user-info {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .user-avatar.small {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: var(--primary);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.8rem;
+        font-weight: 600;
+    }
+
+    /* Alerts & Notifications */
+    .alerts-section {
+        margin: 1rem 0;
+    }
+
+    .alerts-list,
+    .notifications-list {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .alert-item {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 1rem;
+        border-radius: 8px;
+        transition: var(--transition);
+    }
+
+    .alert-item.critical {
+        background: rgba(249, 65, 68, 0.1);
+        border-left: 4px solid var(--danger);
+    }
+
+    .alert-item.warning {
+        background: rgba(248, 150, 30, 0.1);
+        border-left: 4px solid var(--warning);
+    }
+
+    .alert-item.info {
+        background: rgba(67, 97, 238, 0.1);
+        border-left: 4px solid var(--primary);
+    }
+
+    .alert-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.1rem;
+    }
+
+    .alert-item.critical .alert-icon {
+        background: var(--danger);
+    }
+
+    .alert-item.warning .alert-icon {
+        background: var(--warning);
+    }
+
+    .alert-item.info .alert-icon {
+        background: var(--primary);
+    }
+
+    .alert-content {
+        flex: 1;
+    }
+
+    .alert-content h4 {
+        font-size: 0.95rem;
+        margin-bottom: 0.25rem;
+        color: var(--dark);
+    }
+
+    .alert-content p {
+        font-size: 0.85rem;
+        color: var(--gray);
+        margin: 0;
+    }
+
+    .alert-item .btn-sm {
+        white-space: nowrap;
+    }
+
+    /* Notifications */
+    .notification-item {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 0.75rem;
+        border-radius: 8px;
+        transition: var(--transition);
+        cursor: pointer;
+    }
+
+    .notification-item:hover {
+        background: var(--light);
+    }
+
+    .notification-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.1rem;
+    }
+
+    .notification-icon.success {
+        background: rgba(76, 201, 240, 0.1);
+        color: var(--success-dark);
+    }
+
+    .notification-icon.info {
+        background: rgba(67, 97, 238, 0.1);
+        color: var(--primary);
+    }
+
+    .notification-icon.warning {
+        background: rgba(248, 150, 30, 0.1);
+        color: var(--warning);
+    }
+
+    .notification-content {
+        flex: 1;
+    }
+
+    .notification-content h4 {
+        font-size: 0.9rem;
+        margin-bottom: 0.25rem;
+        color: var(--dark);
+    }
+
+    .notification-content p {
+        font-size: 0.85rem;
+        color: var(--gray);
+        margin-bottom: 0.25rem;
+    }
+
+    .notification-time {
+        font-size: 0.75rem;
+        color: var(--gray-light);
+    }
+
+    /* Responsive */
+    @media (max-width: 1024px) {
+        .key-metrics,
+        .charts-section,
+        .detailed-stats,
+        .alerts-section {
+            grid-template-columns: 1fr;
+        }
+        
+        .header-actions {
+            flex-direction: column;
+            align-items: stretch;
+        }
+        
+        .date-range {
+            width: 100%;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .metric-card {
+            text-align: center;
+        }
+        
+        .metric-header {
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        
+        .chart-legend {
+            justify-content: center;
+            margin-top: 0.5rem;
+        }
+        
+        .alert-item,
+        .notification-item {
+            flex-direction: column;
+            text-align: center;
+        }
+        
+        .alert-content,
+        .notification-content {
+            text-align: center;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .page-title {
+            font-size: 1.5rem;
+        }
+        
+        .metric-value {
+            font-size: 1.75rem;
+        }
+        
+        .performance-item,
+        .storage-item {
+            flex-direction: column;
+            align-items: stretch;
+            text-align: center;
+        }
+        
+        .performance-info,
+        .storage-info {
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block script %}
+<script>
+    // Time range selection
+    document.getElementById('timeRange').addEventListener('change', function() {
+        const range = this.value;
+        showLoading();
+        
+        // Simulate data reload based on time range
+        setTimeout(() => {
+            hideLoading();
+            updateMetrics(range);
+        }, 1000);
+    });
+    
+    function updateMetrics(range) {
+        // In real app, this would fetch and update metrics based on time range
+        console.log('Updating metrics for range:', range);
+        
+        // Update metric values based on range (simulated)
+        const metrics = {
+            'today': { users: '1,845', uptime: '99.96%', response: '248ms', storage: '78.2%' },
+            'week': { users: '12,845', uptime: '99.95%', response: '255ms', storage: '78.5%' },
+            'month': { users: '54,230', uptime: '99.92%', response: '262ms', storage: '79.1%' },
+            'quarter': { users: '162,450', uptime: '99.88%', response: '275ms', storage: '80.5%' },
+            'year': { users: '648,900', uptime: '99.82%', response: '290ms', storage: '85.2%' }
+        };
+        
+        const data = metrics[range] || metrics.week;
+        
+        // Update metric displays
+        document.querySelectorAll('.metric-value')[0].textContent = data.users;
+        document.querySelectorAll('.metric-value')[1].textContent = data.uptime;
+        document.querySelectorAll('.metric-value')[2].textContent = data.response;
+        document.querySelectorAll('.metric-value')[3].textContent = data.storage;
+        
+        // Update progress bars
+        document.querySelectorAll('.progress')[1].style.width = data.uptime;
+        document.querySelectorAll('.progress')[3].style.width = data.storage;
+    }
+    
+    // Export report
+    function exportReport() {
+        showLoading();
+        
+        // Simulate report generation
+        setTimeout(() => {
+            hideLoading();
+            
+            showModal('Export Report', `
+                <div class="export-options">
+                    <h4>Select Export Format</h4>
+                    <div class="format-options">
+                        <button class="btn btn-outline" onclick="exportFormat('pdf')">
+                            <i class="fas fa-file-pdf"></i> PDF
+                        </button>
+                        <button class="btn btn-outline" onclick="exportFormat('excel')">
+                            <i class="fas fa-file-excel"></i> Excel
+                        </button>
+                        <button class="btn btn-outline" onclick="exportFormat('csv')">
+                            <i class="fas fa-file-csv"></i> CSV
+                        </button>
+                    </div>
+                    <div class="modal-actions" style="margin-top: 1.5rem;">
+                        <button class="btn btn-outline" onclick="closeModal()">Cancel</button>
+                    </div>
+                </div>
+            `);
+        }, 500);
+    }
+    
+    function exportFormat(format) {
+        showLoading();
+        
+        setTimeout(() => {
+            hideLoading();
+            closeModal();
+            alert(`Report exported as ${format.toUpperCase()} successfully!`);
+        }, 1500);
+    }
+    
+    // Refresh analytics
+    function refreshAnalytics() {
+        showLoading();
+        
+        // Simulate data refresh
+        setTimeout(() => {
+            hideLoading();
+            alert('Analytics data refreshed!');
+            
+            // Update sparklines with new random data
+            updateSparklines();
+        }, 1000);
+    }
+    
+    function updateSparklines() {
+        // Generate random sparkline data
+        document.querySelectorAll('.sparkline').forEach(sparkline => {
+            const values = Array.from({length: 7}, () => Math.floor(Math.random() * 30) + 20);
+            sparkline.setAttribute('data-values', values.join(','));
+        });
+    }
+    
+    // System actions
+    function runBackup() {
+        if (confirm('Run database backup now? This may affect performance temporarily.')) {
+            showLoading();
+            
+            setTimeout(() => {
+                hideLoading();
+                alert('Backup completed successfully!');
+                // Update alert status
+                document.querySelector('.alert-item.critical').style.opacity = '0.5';
+            }, 2000);
+        }
+    }
+    
+    function manageStorage() {
+        window.location.href = '#storage-settings'; // Would link to storage settings page
+    }
+    
+    function viewActivityLogs() {
+        showModal('Activity Logs', `
+            <div class="activity-logs">
+                <p>Comprehensive activity logs would be displayed here.</p>
+                <div class="modal-actions" style="margin-top: 1.5rem;">
+                    <button class="btn btn-primary" onclick="closeModal()">Close</button>
+                </div>
+            </div>
+        `);
+    }
+    
+    function clearNotifications() {
+        if (confirm('Mark all notifications as read?')) {
+            const notifications = document.querySelectorAll('.notification-item');
+            notifications.forEach(notification => {
+                notification.style.opacity = '0.5';
+            });
+            alert('All notifications marked as read.');
+        }
+    }
+    
+    // Initialize sparklines
+    document.addEventListener('DOMContentLoaded', function() {
+        updateSparklines();
+        
+        // Add click handlers to notification items
+        document.querySelectorAll('.notification-item').forEach(item => {
+            item.addEventListener('click', function() {
+                const title = this.querySelector('h4').textContent;
+                const content = this.querySelector('p').textContent;
+                
+                showModal('Notification Details', `
+                    <div class="notification-detail">
+                        <h4>${title}</h4>
+                        <p>${content}</p>
+                        <div class="modal-actions" style="margin-top: 1.5rem;">
+                            <button class="btn btn-primary" onclick="closeModal()">Close</button>
+                            <button class="btn btn-outline" onclick="markNotificationRead(this)">
+                                Mark as Read
+                            </button>
+                        </div>
+                    </div>
+                `);
+            });
+        });
+    });
+    
+    function markNotificationRead(button) {
+        const modal = button.closest('.modal-overlay');
+        const notification = document.querySelector(`.notification-item:has(h4:contains("${modal.querySelector('h4').textContent}"))`);
+        
+        if (notification) {
+            notification.style.opacity = '0.5';
+        }
+        
+        closeModal();
+    }
+</script>
+{% endblock %}

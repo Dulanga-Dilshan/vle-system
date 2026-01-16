@@ -1,0 +1,100 @@
+<?php
+session_start();
+if(!isset($_SESSION["role"]) || $_SESSION["role"] != "staff") {
+    header("Location: ../index.php");
+    exit;
+}
+
+include "../php/sys.php";
+check_users();
+if(!is_active($_SESSION["username"])){
+    header("Location: ../index.php?error=session_expired");
+    exit;
+}
+
+include "../php/config.php";
+
+$staff_id = $_SESSION["username"];
+$get_staff_id="SELECT id FROM staff WHERE staff_id='$staff_id';";
+$result=$conn->query($get_staff_id);
+$row=$result->fetch_assoc();
+$id=$row["id"];
+
+$sql = "SELECT course_id, course_name, course_code FROM courses WHERE lecture_in_charge = ?";
+$stmt = $conn->prepare($sql);
+$stmt->bind_param("s", $id);
+$stmt->execute();
+$result = $stmt->get_result();
+?>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Course Management - University VLE</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+<div class="page-container">
+
+    <!-- Navigation -->
+    <nav class="main-nav">
+        <div class="nav-container">
+            <div class="nav-brand">
+                <i class="fas fa-graduation-cap"></i>
+                <span>University VLE</span>
+            </div>
+            <div class="nav-right">
+                <a href="staff_dashboard.php" class="back-btn">
+                    <i class="fas fa-arrow-left"></i> Back to Dashboard
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="dashboard-header">
+            <h2 class="dashboard-title">Manage Your Courses</h2>
+        </div>
+
+        <?php if($result->num_rows > 0): ?>
+            <div class="dashboard-grid">
+                <?php while($row = $result->fetch_assoc()): ?>
+                    <form method="get" action="course_view.php" class="dashboard-card">
+                        <input type="hidden" name="course_id" value="<?php echo $row['course_id']; ?>">
+                        <div class="card-header">
+                            <div class="card-icon blue-icon">
+                                <i class="fas fa-book"></i>
+                            </div>
+                            <h3 class="card-title"><?php echo htmlspecialchars($row['course_code']); ?></h3>
+                        </div>
+                        <p class="card-description"><?php echo htmlspecialchars($row['course_name']); ?></p>
+                        <button type="submit" class="action-btn blue-btn">
+                            Open Course <i class="fas fa-arrow-right"></i>
+                        </button>
+                    </form>
+                <?php endwhile; ?>
+            </div>
+        <?php else: ?>
+            <p>No courses found for you.</p>
+        <?php endif; ?>
+    </main>
+
+    <!-- Footer -->
+    <footer class="main-footer">
+        <div class="footer-container">
+            <p>&copy; 2025 University VLE System. All rights reserved.</p>
+            <div class="social-links">
+                <a href="#"><i class="fab fa-facebook"></i></a>
+                <a href="#"><i class="fab fa-twitter"></i></a>
+                <a href="#"><i class="fab fa-linkedin"></i></a>
+                <a href="#"><i class="fab fa-instagram"></i></a>
+            </div>
+        </div>
+    </footer>
+
+</div>
+</body>
+</html>

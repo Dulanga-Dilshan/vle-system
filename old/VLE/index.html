@@ -1,0 +1,111 @@
+<?php         
+    session_start();
+?>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>University VLE System - Login</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"> 
+</head>
+<body>
+    <div class="page-container">
+        <!-- Navigation -->
+        <nav class="main-nav">
+            <div class="nav-container">
+                <div class="nav-brand">
+                    <i class="fas fa-graduation-cap"></i>
+                    <span>University VLE</span>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="login-container">
+                <h2 class="login-title">Login to VLE</h2>
+                <form id="login-form" class="login-form" action="php/drect.php" method="post">
+                    <div class="form-group">
+                        <label for="username">Username/ID</label>
+                        <input type="text" id="username" name="username" class="form-control" placeholder="Enter your username or ID" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="password">Password</label>
+                        <div class="password-wrapper">
+                            <input type="password" id="password" name="password" class="form-control" placeholder="Enter your password" required>
+                            <button type="button" class="password-toggle" onclick="togglePassword('password')">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="form-options">
+                        <div class="remember-me">
+                            <input id="remember-me" name="remember_me" type="checkbox" value="1">
+                            <label for="remember-me">Remember me</label>
+                        </div>
+                        <a href="dashbords/fPassword.html" class="forgot-password">Forgot password?</a>
+                    </div>
+                    <?php
+                        if(isset($_SESSION["fail_attemps"])){            
+                            echo "<p style=color:red >Username or Password is wrong</p>";
+                            unset($_SESSION["fail_attemps"]);
+                        }
+                    ?>
+                    <?php
+                    if(isset($_GET['error'])) {
+                        echo '<div style="color:red;">Invalid username or password.</div>';
+                        unset($_GET['error']);
+                    }
+                    if(isset($_GET['state'])){
+                        echo '<div style="color:red;">your account is suspended</div>';
+                        unset($_SESSION['state']);
+                    }
+                    ?>
+                    
+                    <button type="submit" class="login-button">
+                        <i class="fas fa-sign-in-alt"></i> Login
+                    </button>
+                    
+                    <div class="register-link">
+                        Don't have an account? 
+                        <a href="dashbords/registation.php">Register here</a>
+                    </div>
+                </form>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="main-footer">
+            <div class="footer-container">
+                <p>&copy; 2023 University VLE System. All rights reserved.</p>
+                <div class="social-links">
+                    <a href="#"><i class="fab fa-facebook"></i></a>
+                    <a href="#"><i class="fab fa-twitter"></i></a>
+                    <a href="#"><i class="fab fa-linkedin"></i></a>
+                    <a href="#"><i class="fab fa-instagram"></i></a>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        function togglePassword(fieldId) {
+            const field = document.getElementById(fieldId);
+            const icon = field.nextElementSibling.querySelector('i');
+            if (field.type === 'password') {
+                field.type = 'text';
+                icon.classList.replace('fa-eye', 'fa-eye-slash');
+            } else {
+                field.type = 'password';
+                icon.classList.replace('fa-eye-slash', 'fa-eye');
+            }
+        }
+
+
+    </script>
+</body>
+</html>

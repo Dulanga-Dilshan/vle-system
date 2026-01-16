@@ -1,0 +1,338 @@
+{% comment %} admin_navigation.html {% endcomment %}
+<aside class="sidebar">
+    <div class="sidebar-header">
+        <div class="logo">
+            <i class="fas fa-university"></i>
+            <span class="logo-text">University VLE</span>
+            <span class="logo-badge">Admin</span>
+        </div>
+        <button class="sidebar-toggle" id="sidebarToggle">
+            <i class="fas fa-bars"></i>
+        </button>
+    </div>
+
+    <div class="user-profile">
+        <div class="user-avatar">
+            {{ request.user.username|first|upper }}
+        </div>
+        <div class="user-info">
+            <h4>{{ request.user.username }}</h4>
+            <p>Administrator</p>
+        </div>
+    </div>
+
+    <nav class="sidebar-nav">
+        <ul class="nav-menu">
+            <li class="nav-item active">
+                <a href="{% url 'dashboard:admin' %}" class="nav-link">
+                    <i class="fas fa-tachometer-alt"></i>
+                    <span>Dashboard</span>
+                </a>
+            </li>
+            
+            <li class="nav-section">User Management</li>
+            <li class="nav-item">
+                <a href="{% url 'dashboard:manage_users' %}" class="nav-link">
+                    <i class="fas fa-users-cog"></i>
+                    <span>Manage Users</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="{% url 'dashboard:manage_requests' %}" class="nav-link">
+                    <i class="fas fa-user-check"></i>
+                    <span>Registration Requests</span>
+                </a>
+            </li>
+            
+            <li class="nav-section">Academic Management</li>
+
+            <li class="nav-item">
+                <a href="{% url 'dashboard:manage_faculties' %}" class="nav-link">
+                    <i class="fas fa-school"></i>
+                    <span>Manage Faculties</span>
+                </a>
+            </li>
+
+            <li class="nav-item">
+                <a href="{% url 'dashboard:manage_courses' %}" class="nav-link">
+                    <i class="fas fa-book"></i>
+                    <span>Manage Courses</span>
+                </a>
+            </li>
+
+            <li class="nav-item">
+                <a href="{% url 'dashboard:manage_batches' %}" class="nav-link">
+                    <i class="fas fa-calendar-alt"></i>
+                    <span>Manage Batches</span>
+                </a>
+            </li>
+
+            <li class="nav-item">
+                <a href="#" class="nav-link">
+                    <i class="fas fa-calendar-alt"></i>
+                    <span>Schedule Management</span>
+                </a>
+            </li>
+            
+            <li class="nav-section">Content & Communication</li>
+            <li class="nav-item">
+                <a href="{% url 'dashboard:post_annousment' %}" class="nav-link">
+                    <i class="fas fa-bullhorn"></i>
+                    <span>Announcements</span>
+                </a>
+            </li>
+            
+            <li class="nav-section">System Management</li>
+            <li class="nav-item">
+                <a href="{% url 'dashboard:system_state' %}" class="nav-link">
+                    <i class="fas fa-chart-line"></i>
+                    <span>System Stats</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="{% url 'dashboard:system_settings' %}" class="nav-link">
+                    <i class="fas fa-cogs"></i>
+                    <span>System Settings</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="#" class="nav-link">
+                    <i class="fas fa-file-export"></i>
+                    <span>Reports</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+
+    <div class="sidebar-footer">
+        <a href="{% url 'Users:logout' %}" class="logout-btn">
+            <i class="fas fa-sign-out-alt"></i>
+            <span>Logout</span>
+        </a>
+    </div>
+</aside>
+
+<style>
+    .sidebar {
+        width: 280px;
+        background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
+        color: white;
+        position: fixed;
+        height: 100vh;
+        overflow-y: auto;
+        transition: var(--transition);
+        z-index: 100;
+        box-shadow: 5px 0 15px rgba(0, 0, 0, 0.1);
+    }
+
+    .sidebar-header {
+        padding: 1.5rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .logo {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-size: 1.2rem;
+        font-weight: 600;
+    }
+
+    .logo i {
+        font-size: 1.5rem;
+        color: var(--primary);
+    }
+
+    .logo-text {
+        color: white;
+    }
+
+    .logo-badge {
+        background: var(--primary);
+        color: white;
+        padding: 2px 8px;
+        border-radius: 4px;
+        font-size: 0.7rem;
+        font-weight: 600;
+    }
+
+    .sidebar-toggle {
+        display: none;
+        background: none;
+        border: none;
+        color: white;
+        font-size: 1.2rem;
+        cursor: pointer;
+        padding: 0.5rem;
+    }
+
+    .user-profile {
+        padding: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .user-avatar {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--primary), var(--secondary));
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.2rem;
+        font-weight: 600;
+        color: white;
+    }
+
+    .user-info h4 {
+        font-size: 1rem;
+        margin-bottom: 0.25rem;
+        color: white;
+    }
+
+    .user-info p {
+        font-size: 0.85rem;
+        color: rgba(255, 255, 255, 0.7);
+    }
+
+    .sidebar-nav {
+        padding: 1rem 0;
+    }
+
+    .nav-menu {
+        list-style: none;
+    }
+
+    .nav-section {
+        padding: 1rem 1.5rem;
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: rgba(255, 255, 255, 0.5);
+        font-weight: 600;
+        margin-top: 0.5rem;
+    }
+
+    .nav-item {
+        margin: 0.25rem 0;
+    }
+
+    .nav-link {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 0.75rem 1.5rem;
+        color: rgba(255, 255, 255, 0.8);
+        text-decoration: none;
+        transition: var(--transition);
+        position: relative;
+    }
+
+    .nav-link:hover {
+        background: rgba(255, 255, 255, 0.1);
+        color: white;
+    }
+
+    .nav-link.active {
+        background: var(--primary);
+        color: white;
+    }
+
+    .nav-link.active::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 4px;
+        background: white;
+    }
+
+    .nav-link i {
+        width: 20px;
+        text-align: center;
+        font-size: 1.1rem;
+    }
+
+    .nav-badge {
+        margin-left: auto;
+        background: var(--accent);
+        color: white;
+        padding: 2px 8px;
+        border-radius: 10px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+
+    .sidebar-footer {
+        padding: 1.5rem;
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+        margin-top: auto;
+    }
+
+    .logout-btn {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 0.75rem 1rem;
+        background: rgba(255, 255, 255, 0.1);
+        color: white;
+        text-decoration: none;
+        border-radius: 8px;
+        transition: var(--transition);
+    }
+
+    .logout-btn:hover {
+        background: rgba(255, 255, 255, 0.2);
+    }
+
+    @media (max-width: 1024px) {
+        .sidebar {
+            transform: translateX(-100%);
+        }
+        
+        .sidebar.active {
+            transform: translateX(0);
+        }
+        
+        .main-content {
+            margin-left: 0;
+        }
+        
+        .sidebar-toggle {
+            display: block;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .sidebar {
+            width: 250px;
+        }
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const sidebarToggle = document.getElementById('sidebarToggle');
+        const sidebar = document.querySelector('.sidebar');
+        
+        sidebarToggle.addEventListener('click', function() {
+            sidebar.classList.toggle('active');
+        });
+        
+        // Close sidebar when clicking outside on mobile
+        document.addEventListener('click', function(event) {
+            if (window.innerWidth <= 1024) {
+                if (!sidebar.contains(event.target) && !sidebarToggle.contains(event.target)) {
+                    sidebar.classList.remove('active');
+                }
+            }
+        });
+    });
+</script>

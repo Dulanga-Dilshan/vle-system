@@ -1,0 +1,1297 @@
+{% extends "main.html" %}
+
+{% block title %}Manage {{ faculty.name }} - University VLE{% endblock %}
+
+{% block navigation %}
+    {% include "admin_navigation.html" %}
+{% endblock %}
+
+{% block body %}
+<div class="manage-faculty-page">
+    <!-- Page Header -->
+    <div class="page-header">
+        <div class="header-left">
+            <h1 class="page-title">
+                <i class="fas fa-school"></i> {{ faculty.name }}
+            </h1>
+            <p class="page-subtitle">
+                Manage departments and faculty details
+            </p>
+        </div>
+        <div class="header-actions">
+            <a href="{% url 'dashboard:manage_faculties' %}" class="btn btn-outline">
+                <i class="fas fa-arrow-left"></i> Back to Faculties
+            </a>
+            <button class="btn btn-primary" onclick="openAddDepartmentModal()">
+                <i class="fas fa-plus"></i> Add Department
+            </button>
+        </div>
+    </div>
+
+    <!-- Faculty Info Card -->
+<!-- Faculty Info Card -->
+    <div class="faculty-info-card card">
+        <div class="faculty-header">
+            <div class="faculty-avatar">{{ faculty.name|first|upper }}</div>
+            <div class="faculty-details">
+                <h2>{{ faculty.name }}</h2>
+                {% if faculty.code %}
+                <div class="faculty-code-container">
+                    <span class="faculty-code">{{ faculty.code }}</span>
+                </div>
+                {% endif %}
+                <div class="faculty-meta">
+                    <span class="meta-item">
+                        <i class="fas fa-user-tie"></i>
+                        <span class="label">Dean:</span>
+                        <span class="value">{% if faculty.dean %}{{ faculty.dean.name }}{% else %}Not Assigned{% endif %}</span>
+                    </span>
+                    <span class="meta-item">
+                        <i class="fas fa-layer-group"></i>
+                        <span class="label">Departments:</span>
+                        <span class="value">{{ departments|length }}</span>
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Departments Section -->
+    <div class="departments-section">
+        <div class="section-header">
+            <h2>
+                <i class="fas fa-layer-group"></i> Departments
+            </h2>
+            <div class="search-box">
+                <i class="fas fa-search"></i>
+                <input type="text" id="searchDepartment" placeholder="Search departments...">
+            </div>
+        </div>
+
+        {% if departments %}
+        <div class="departments-grid" id="departmentsGrid">
+            {% for department in departments %}
+            <div class="department-card card" 
+                 data-id="{{ department.id }}" 
+                 data-name="{{ department.name|lower }}" 
+                 data-code="{{ department.code|lower }}"
+                 data-description="{{ department.description|default:'' }}"
+                 data-hod-id="{{ department.hod.id|default:'' }}">
+                <div class="department-header">
+                    <div class="department-code">{{ department.code|default:"" }}</div>
+                    <div class="department-actions">
+                        <a href="{% url 'dashboard:manage_courses' %}?department={{ department.id }}" class="btn btn-sm btn-success" title="View Courses">
+                            <i class="fas fa-book"></i>
+                        </a>
+                        <button class="btn btn-sm btn-outline" onclick="editDepartment({{ department.id }})" title="Edit">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn btn-sm btn-danger" onclick="deleteDepartment({{ department.id }}, '{{ department.name }}')" title="Delete">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="department-body">
+                    <h3>{{ department.name }}</h3>
+                    <div class="department-info">
+                        <div class="info-item">
+                            <i class="fas fa-user-tie"></i>
+                            HOD: {% if department.head %}{{ department.head.name }}{% else %}Not Assigned{% endif %}
+                        </div>
+                        <div class="info-item">
+                            <i class="fas fa-book"></i>
+                            Courses: {{ department.courses.count }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <div class="empty-state-icon">
+                <i class="fas fa-layer-group"></i>
+            </div>
+            <h3>No Departments Found</h3>
+            <p>Add departments to organize this faculty</p>
+            <button class="btn btn-primary" onclick="openAddDepartmentModal()">
+                <i class="fas fa-plus"></i> Add First Department
+            </button>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Add/Edit Department Modal -->
+<div class="modal-overlay" id="departmentModal" style="display: none;">
+    <div class="modal">
+        <div class="modal-header">
+            <h3 class="modal-title" id="departmentModalTitle">Add Department</h3>
+            <button class="modal-close" onclick="closeDepartmentModal()">&times;</button>
+        </div>
+        <div class="modal-content">
+            <form id="departmentForm" method="post" action="">
+                {% csrf_token %}
+                <input type="hidden" id="departmentId" name="id">
+                <input type="hidden" name="faculty" value="{{ faculty.id }}">
+                
+                <div class="form-group">
+                    <label for="departmentName">Department Name *</label>
+                    <input type="text" id="departmentName" name="name" placeholder="e.g., Computer Science" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="departmentCode">Department Code *</label>
+                    <input type="text" id="departmentCode" name="code" placeholder="e.g., CS" maxlength="10" required>
+                    <small class="help-text">Short code for the department</small>
+                </div>
+                
+                <div class="form-group">
+                    <label for="departmentDescription">Description</label>
+                    <textarea id="departmentDescription" name="description" rows="3" placeholder="Brief description of the department..."></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="hodSelect">Assign Head of Department (HOD)</label>
+                    <select id="hodSelect" name="head">
+                        <option value="">-- Select HOD --</option>
+                        {% for hod in available_hods %}
+                        <option value="{{ hod.id }}">{{ hod.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="button" class="btn btn-outline" onclick="closeDepartmentModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Save Department
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Loading Overlay -->
+<div id="loadingOverlay" style="display: none;">
+    <div class="loading-spinner">
+        <i class="fas fa-spinner fa-spin"></i>
+        <p>Processing...</p>
+    </div>
+</div>
+{% endblock %}
+
+{% block style %}
+<style>
+    /* Manage Faculty Page */
+    .manage-faculty-page {
+        padding: 20px;
+    }
+
+    /* Page Header */
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .page-title {
+        font-size: 1.75rem;
+        color: #2c3e50;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        font-weight: 600;
+    }
+
+    .page-subtitle {
+        font-size: 0.95rem;
+        color: #7f8c8d;
+        margin: 0.5rem 0 0 0;
+    }
+
+    .header-actions {
+        display: flex;
+        gap: 1rem;
+        align-items: center;
+    }
+
+    /* Faculty Info Card */
+    .faculty-info-card {
+        margin-bottom: 2.5rem;
+        border-radius: 16px;
+        overflow: hidden;
+        border: 1px solid #e9ecef;
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+        background: white;
+    }
+
+    .faculty-info-card .faculty-header {
+        display: flex;
+        align-items: center;
+        padding: 2rem;
+        gap: 1.75rem;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        position: relative;
+    }
+
+    .faculty-info-card .faculty-header::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, #43e97b 0%, #38f9d7 100%);
+    }
+
+    .faculty-avatar {
+        width: 90px;
+        height: 90px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.15);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2.5rem;
+        font-weight: 700;
+        flex-shrink: 0;
+        border: 3px solid rgba(255, 255, 255, 0.25);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    .faculty-details {
+        flex: 1;
+    }
+
+    .faculty-details h2 {
+        font-size: 1.75rem;
+        margin: 0 0 0.5rem 0;
+        color: white;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .faculty-details h2:before {
+        content: '\f19d'; /* University icon */
+        font-family: 'Font Awesome 5 Free';
+        font-weight: 900;
+        font-size: 1.5rem;
+        opacity: 0.8;
+    }
+
+    .faculty-code {
+        font-size: 1rem;
+        background: rgba(255, 255, 255, 0.1);
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        display: inline-block;
+        margin-bottom: 1rem;
+        font-weight: 500;
+    }
+
+    .faculty-meta {
+        display: flex;
+        gap: 1.5rem;
+        flex-wrap: wrap;
+        margin-top: 0.75rem;
+    }
+
+    .meta-item {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        font-size: 0.95rem;
+        background: rgba(255, 255, 255, 0.12);
+        padding: 0.6rem 1rem;
+        border-radius: 10px;
+        backdrop-filter: blur(8px);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        transition: all 0.3s ease;
+    }
+
+    .meta-item:hover {
+        background: rgba(255, 255, 255, 0.18);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    .meta-item i {
+        font-size: 1rem;
+        opacity: 0.9;
+        color: white;
+    }
+
+    .meta-item .label {
+        font-weight: 500;
+        color: rgba(255, 255, 255, 0.9);
+    }
+
+    .meta-item .value {
+        font-weight: 600;
+        color: white;
+        margin-left: 0.25rem;
+    }
+
+    /* If faculty code is available, show it */
+    {% if faculty.code %}
+    .faculty-code-container {
+        margin-bottom: 1rem;
+    }
+    {% endif %}
+
+    /* Departments Section */
+    .departments-section {
+        margin-top: 1rem;
+    }
+
+    .departments-section .section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+        padding: 0.5rem 0;
+        border-bottom: 1px solid #e9ecef;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .departments-section .section-header h2 {
+        font-size: 1.5rem;
+        color: #2c3e50;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        font-weight: 600;
+        padding-bottom: 0.5rem;
+    }
+
+    .departments-section .search-box {
+        position: relative;
+        width: 300px;
+    }
+
+    .departments-section .search-box i {
+        position: absolute;
+        left: 1rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #95a5a6;
+        font-size: 0.95rem;
+    }
+
+    .departments-section .search-box input {
+        width: 100%;
+        padding: 0.75rem 1rem 0.75rem 3rem;
+        border: 1px solid #e9ecef;
+        border-radius: 8px;
+        font-size: 0.95rem;
+        background: white;
+        transition: all 0.3s ease;
+    }
+
+    .departments-section .search-box input:focus {
+        outline: none;
+        border-color: #4361ee;
+        box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.1);
+    }
+
+    /* Departments Grid */
+    .departments-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        gap: 1.5rem;
+    }
+
+    /* Department Card */
+    .department-card {
+        border: 1px solid #e9ecef;
+        border-radius: 12px;
+        overflow: hidden;
+        transition: all 0.3s ease;
+        background: white;
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+    }
+
+    .department-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
+        border-color: #4361ee;
+    }
+
+    .department-header {
+        padding: 1.25rem;
+        background: #f8f9fa;
+        border-bottom: 1px solid #e9ecef;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        min-height: 60px;
+    }
+
+    .department-code {
+        background: #4361ee;
+        color: white;
+        padding: 0.35rem 1rem;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+    }
+
+    .department-actions {
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    .department-body {
+        padding: 1.5rem;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .department-body h3 {
+        font-size: 1.25rem;
+        color: #2c3e50;
+        margin: 0 0 1rem 0;
+        font-weight: 600;
+        line-height: 1.4;
+    }
+
+    .department-info {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        margin-top: auto;
+    }
+
+    .info-item {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        font-size: 0.9rem;
+        color: #555;
+        line-height: 1.4;
+    }
+
+    .info-item i {
+        color: #4361ee;
+        font-size: 1rem;
+        width: 20px;
+        text-align: center;
+    }
+
+    /* Empty State */
+    .empty-state {
+        text-align: center;
+        padding: 4rem 2rem;
+        background: white;
+        border-radius: 12px;
+        border: 2px dashed #e9ecef;
+        margin-top: 2rem;
+        grid-column: 1 / -1;
+    }
+
+    .empty-state-icon {
+        font-size: 3.5rem;
+        color: #dee2e6;
+        margin-bottom: 1.5rem;
+    }
+
+    .empty-state h3 {
+        font-size: 1.5rem;
+        color: #6c757d;
+        margin-bottom: 0.5rem;
+        font-weight: 600;
+    }
+
+    .empty-state p {
+        color: #95a5a6;
+        margin-bottom: 2rem;
+        font-size: 1rem;
+    }
+
+    /* Button Styles */
+    .btn {
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        font-size: 0.95rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        border: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        text-decoration: none;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #4361ee, #3a56d4);
+        color: white;
+        border: none;
+    }
+
+    .btn-primary:hover {
+        background: linear-gradient(135deg, #3a56d4, #3149b9);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(67, 97, 238, 0.3);
+    }
+
+    .btn-outline {
+        background: white;
+        color: #4361ee;
+        border: 1px solid #4361ee;
+    }
+
+    .btn-outline:hover {
+        background: #f8f9fa;
+        transform: translateY(-1px);
+    }
+
+    .btn-sm {
+        padding: 0.5rem;
+        width: 36px;
+        height: 36px;
+        border-radius: 8px;
+        font-size: 0.85rem;
+    }
+
+    .btn-success {
+        background: #28a745;
+        color: white;
+        border: none;
+    }
+
+    .btn-success:hover {
+        background: #218838;
+        transform: translateY(-1px);
+    }
+
+    .btn-danger {
+        background: #dc3545;
+        color: white;
+        border: none;
+    }
+
+    .btn-danger:hover {
+        background: #c82333;
+        transform: translateY(-1px);
+    }
+
+    /* Modal Styles */
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+        padding: 1rem;
+        backdrop-filter: blur(4px);
+    }
+
+    .modal {
+        background: white;
+        border-radius: 16px;
+        width: 90%;
+        max-width: 500px;
+        max-height: 90vh;
+        overflow-y: auto;
+        animation: modalSlideIn 0.3s ease;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1.5rem;
+        border-bottom: 1px solid #e9ecef;
+        background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+        border-radius: 16px 16px 0 0;
+    }
+
+    .modal-title {
+        margin: 0;
+        font-size: 1.5rem;
+        color: #2c3e50;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .modal-title:before {
+        content: '\f1ad'; /* Department icon */
+        font-family: 'Font Awesome 5 Free';
+        font-weight: 900;
+        font-size: 1.25rem;
+        color: #4361ee;
+    }
+
+    .modal-close {
+        background: rgba(0, 0, 0, 0.05);
+        border: none;
+        font-size: 1.5rem;
+        color: #6c757d;
+        cursor: pointer;
+        padding: 0.5rem;
+        width: 40px;
+        height: 40px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s ease;
+    }
+
+    .modal-close:hover {
+        background: rgba(0, 0, 0, 0.1);
+        color: #2c3e50;
+        transform: rotate(90deg);
+    }
+
+    .modal-content {
+        padding: 1.5rem;
+    }
+
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+
+    .form-group label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 600;
+        color: #495057;
+        font-size: 0.95rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .form-group label:before {
+        font-family: 'Font Awesome 5 Free';
+        font-weight: 900;
+        font-size: 0.9rem;
+        color: #4361ee;
+    }
+
+    .form-group label[for="departmentName"]:before {
+        content: '\f5fc'; /* Building icon */
+    }
+
+    .form-group label[for="departmentCode"]:before {
+        content: '\f02b'; /* Tag icon */
+    }
+
+    .form-group label[for="departmentDescription"]:before {
+        content: '\f15c'; /* File-alt icon */
+    }
+
+    .form-group label[for="hodSelect"]:before {
+        content: '\f0c0'; /* Users icon */
+    }
+
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+        width: 100%;
+        padding: 0.75rem 1rem;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        font-size: 0.95rem;
+        transition: all 0.3s ease;
+        background: white;
+        font-family: inherit;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus {
+        outline: none;
+        border-color: #4361ee;
+        box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.15);
+        background: #f8f9ff;
+    }
+
+    .form-group textarea {
+        resize: vertical;
+        min-height: 100px;
+        line-height: 1.5;
+    }
+
+    .form-group select {
+        appearance: none;
+        background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236c757d' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+        background-repeat: no-repeat;
+        background-position: right 1rem center;
+        background-size: 1em;
+        padding-right: 2.5rem;
+    }
+
+    .help-text {
+        font-size: 0.85rem;
+        color: #6c757d;
+        margin-top: 0.25rem;
+        display: block;
+        font-style: italic;
+    }
+
+    .form-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 1rem;
+        margin-top: 2rem;
+        padding-top: 1.5rem;
+        border-top: 1px solid #e9ecef;
+    }
+
+    /* Loading Overlay */
+    #loadingOverlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.7);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 2000;
+        backdrop-filter: blur(4px);
+    }
+
+    .loading-spinner {
+        text-align: center;
+        color: white;
+    }
+
+    .loading-spinner i {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+        animation: spin 1s linear infinite;
+    }
+
+    .loading-spinner p {
+        font-size: 1.2rem;
+        font-weight: 500;
+    }
+
+    /* Notification Styles */
+    .notification {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 1rem 1.5rem;
+        border-radius: 12px;
+        color: white;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        min-width: 300px;
+        max-width: 400px;
+        z-index: 9999;
+        animation: slideIn 0.3s ease;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        backdrop-filter: blur(10px);
+    }
+
+    .notification.success {
+        background: linear-gradient(135deg, #43e97b, #38f9d7);
+        border-left: 4px solid #28a745;
+    }
+
+    .notification.error {
+        background: linear-gradient(135deg, #fa709a, #fee140);
+        border-left: 4px solid #dc3545;
+    }
+
+    .notification button {
+        background: none;
+        border: none;
+        color: white;
+        font-size: 1.25rem;
+        cursor: pointer;
+        padding: 0 0.5rem;
+        margin-left: 1rem;
+        opacity: 0.8;
+        transition: opacity 0.3s ease;
+    }
+
+    .notification button:hover {
+        opacity: 1;
+    }
+
+    /* Animations */
+    @keyframes slideIn {
+        from {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+
+    @keyframes modalSlideIn {
+        from {
+            opacity: 0;
+            transform: translateY(-30px) scale(0.95);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+    }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .faculty-header {
+            flex-direction: column;
+            text-align: center;
+            padding: 1.5rem;
+        }
+
+        .faculty-avatar {
+            width: 80px;
+            height: 80px;
+            font-size: 2rem;
+        }
+
+        .faculty-details h2 {
+            font-size: 1.5rem;
+            justify-content: center;
+        }
+
+        .faculty-meta {
+            flex-direction: column;
+            gap: 0.75rem;
+            align-items: stretch;
+        }
+
+        .meta-item {
+            justify-content: center;
+        }
+
+        .page-header {
+            flex-direction: column;
+            align-items: stretch;
+            gap: 1rem;
+        }
+        
+        .header-actions {
+            width: 100%;
+            flex-direction: column;
+        }
+        
+        .header-actions .btn {
+            width: 100%;
+        }
+        
+        .departments-section .section-header {
+            flex-direction: column;
+            align-items: stretch;
+            gap: 1rem;
+        }
+        
+        .departments-section .search-box {
+            width: 100%;
+        }
+        
+        .departments-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .modal {
+            width: 95%;
+            max-height: 85vh;
+            margin: 1rem;
+        }
+
+        .modal-header {
+            padding: 1.25rem;
+        }
+
+        .modal-content {
+            padding: 1.25rem;
+        }
+
+        .form-actions {
+            flex-direction: column;
+        }
+
+        .form-actions .btn {
+            width: 100%;
+        }
+    }
+
+    @media (max-width: 576px) {
+        .manage-faculty-page {
+            padding: 15px;
+        }
+        
+        .page-title {
+            font-size: 1.5rem;
+        }
+        
+        .faculty-details h2 {
+            font-size: 1.5rem;
+        }
+        
+        .faculty-avatar {
+            width: 70px;
+            height: 70px;
+            font-size: 1.8rem;
+        }
+        
+        .department-body h3 {
+            font-size: 1.2rem;
+        }
+        
+        .notification {
+            min-width: 250px;
+            max-width: 300px;
+            right: 10px;
+            left: 10px;
+            margin: 0 auto;
+        }
+
+        .modal-title {
+            font-size: 1.3rem;
+        }
+
+        .modal-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 1rem;
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block script %}
+<script>
+    // DOM Ready
+    document.addEventListener('DOMContentLoaded', function() {
+        setupEventListeners();
+    });
+
+    function setupEventListeners() {
+        // Search functionality for departments
+        const searchInput = document.getElementById('searchDepartment');
+        if (searchInput) {
+            searchInput.addEventListener('input', function(e) {
+                filterDepartments(e.target.value);
+            });
+        }
+        
+        // Form submission
+        const departmentForm = document.getElementById('departmentForm');
+        if (departmentForm) {
+            departmentForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                saveDepartment();
+            });
+        }
+    }
+
+    function filterDepartments(searchTerm) {
+        const term = searchTerm.toLowerCase().trim();
+        const cards = document.querySelectorAll('.department-card');
+        
+        cards.forEach(card => {
+            const name = card.getAttribute('data-name') || '';
+            const code = card.getAttribute('data-code') || '';
+            
+            const matches = name.includes(term) || code.includes(term);
+            card.style.display = matches ? 'block' : 'none';
+        });
+        
+        // Show empty state if no matches
+        const visibleCards = Array.from(cards).filter(card => card.style.display !== 'none');
+        const emptyState = document.querySelector('.empty-state');
+        if (emptyState && visibleCards.length === 0) {
+            emptyState.style.display = 'block';
+        } else if (emptyState) {
+            emptyState.style.display = 'none';
+        }
+    }
+
+    function openAddDepartmentModal() {
+        document.getElementById('departmentModalTitle').textContent = 'Add Department';
+        document.getElementById('departmentForm').reset();
+        document.getElementById('departmentId').value = '';
+        document.getElementById('hodSelect').value = '';
+        document.getElementById('departmentModal').style.display = 'flex';
+    }
+
+    function editDepartment(departmentId) {
+        // Find the department card
+        const departmentCard = document.querySelector(`.department-card[data-id="${departmentId}"]`);
+        if (!departmentCard) return;
+        
+        // Get existing data from the card
+        const departmentName = departmentCard.querySelector('h3').textContent;
+        const departmentCode = departmentCard.querySelector('.department-code').textContent;
+        const departmentDescription = departmentCard.getAttribute('data-description') || '';
+        const hodId = departmentCard.getAttribute('data-hod-id') || '';
+        
+        // Get HOD name from the card
+        const hodInfo = departmentCard.querySelector('.info-item:first-child');
+        const hodName = hodInfo ? hodInfo.textContent.replace('HOD:', '').trim() : '';
+        
+        // Set modal title
+        document.getElementById('departmentModalTitle').textContent = 'Edit Department';
+        
+        // Set form values with existing data
+        document.getElementById('departmentId').value = departmentId;
+        document.getElementById('departmentName').value = departmentName;
+        document.getElementById('departmentCode').value = departmentCode;
+        document.getElementById('departmentDescription').value = departmentDescription;
+        
+        // Set HOD select value
+        const hodSelect = document.getElementById('hodSelect');
+        hodSelect.value = '';
+        
+        // Try to find and select the HOD by ID
+        if (hodId && hodId !== '') {
+            hodSelect.value = hodId;
+        }
+        // If no ID, try to match by name
+        else if (hodName && hodName !== 'Not Assigned') {
+            for (let i = 0; i < hodSelect.options.length; i++) {
+                const option = hodSelect.options[i];
+                if (option.textContent.trim() === hodName.trim()) {
+                    hodSelect.value = option.value;
+                    break;
+                }
+            }
+        }
+        
+        // Show modal
+        document.getElementById('departmentModal').style.display = 'flex';
+    }
+
+    function closeDepartmentModal() {
+        document.getElementById('departmentModal').style.display = 'none';
+    }
+
+    function deleteDepartment(departmentId, departmentName) {
+        if (!confirm(`Are you sure you want to delete "${departmentName}"? This action cannot be undone.`)) {
+            return;
+        }
+        
+        showLoading();
+        
+        const deleteUrl = `/api/departments/${departmentId}/delete/`;
+        
+        fetch(deleteUrl, {
+            method: 'DELETE',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken'),
+            }
+        })
+        .then(response => {
+            hideLoading();
+            
+            if (response.status === 204) {
+                // HTTP_204_NO_CONTENT - Success
+                // Remove department card from DOM
+                const departmentCard = document.querySelector(`.department-card[data-id="${departmentId}"]`);
+                if (departmentCard) departmentCard.remove();
+                
+                showNotification(`Department "${departmentName}" deleted successfully!`, 'success');
+                
+                // Check if any departments left
+                const remainingCards = document.querySelectorAll('.department-card');
+                if (remainingCards.length === 0) {
+                    showEmptyState();
+                }
+            } else if (response.status === 404) {
+                // HTTP_404_NOT_FOUND
+                showNotification(`Department not found or already deleted.`, 'error');
+            } else {
+                showNotification(`Failed to delete department. Please try again.`, 'error');
+            }
+        })
+        .catch(error => {
+            hideLoading();
+            console.error('Error deleting department:', error);
+            showNotification('Error deleting department. Please try again.', 'error');
+        });
+    }
+
+    function saveDepartment() {
+        const form = document.getElementById('departmentForm');
+        const formData = new FormData(form);
+        const departmentId = formData.get('id');
+        
+        // Validate
+        if (!formData.get('name')) {
+            alert('Department name is required');
+            return;
+        }
+        if (!formData.get('code')) {
+            alert('Department code is required');
+            return;
+        }
+        
+        showLoading();
+        
+        // Determine URL based on whether we're adding or editing
+        const url = departmentId ? `/api/departments/${departmentId}/update/` : '/api/departments/create/';
+        const method = departmentId ? 'PUT' : 'POST';
+        
+        fetch(url, {
+            method: method,
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken'),
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(Object.fromEntries(formData))
+        })
+        .then(response => {
+            if (method === 'POST' && response.status === 201) {
+                // HTTP_201_CREATED - Success for creation
+                return response.json().then(data => ({ success: true, data }));
+            } else if (method === 'PUT' && response.status === 200) {
+                // HTTP_201_CREATED - Success for update
+                return response.json().then(data => ({ success: true, data }));
+            } else if (response.status === 400) {
+                // HTTP_400_BAD_REQUEST
+                return response.json().then(data => ({ success: false, data }));
+            } else {
+                throw new Error(`Unexpected response status: ${response.status}`);
+            }
+        })
+        .then(result => {
+            hideLoading();
+            
+            if (result.success) {
+                showNotification(`Department ${departmentId ? 'updated' : 'created'} successfully!`, 'success');
+                closeDepartmentModal();
+                // Reload page to reflect changes
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                // Handle validation errors
+                let errorMessage = 'Failed to save department. ';
+                if (result.data && typeof result.data === 'object') {
+                    const errors = [];
+                    for (const [field, messages] of Object.entries(result.data)) {
+                        errors.push(`${field}: ${Array.isArray(messages) ? messages.join(', ') : messages}`);
+                    }
+                    errorMessage += errors.join('; ');
+                }
+                showNotification(errorMessage, 'error');
+            }
+        })
+        .catch(error => {
+            hideLoading();
+            console.error('Error saving department:', error);
+            showNotification('Error saving department. Please try again.', 'error');
+        });
+    }
+
+    function showEmptyState() {
+        // Create empty state if it doesn't exist
+        let emptyState = document.querySelector('.empty-state');
+        if (!emptyState) {
+            const departmentsSection = document.querySelector('.departments-section');
+            emptyState = document.createElement('div');
+            emptyState.className = 'empty-state';
+            emptyState.innerHTML = `
+                <div class="empty-state-icon">
+                    <i class="fas fa-layer-group"></i>
+                </div>
+                <h3>No Departments Found</h3>
+                <p>Add departments to organize this faculty</p>
+                <button class="btn btn-primary" onclick="openAddDepartmentModal()">
+                    <i class="fas fa-plus"></i> Add First Department
+                </button>
+            `;
+            departmentsSection.appendChild(emptyState);
+        }
+        emptyState.style.display = 'block';
+    }
+
+    function showLoading() {
+        document.getElementById('loadingOverlay').style.display = 'flex';
+    }
+
+    function hideLoading() {
+        document.getElementById('loadingOverlay').style.display = 'none';
+    }
+
+    function showNotification(message, type) {
+        // Remove existing notifications
+        document.querySelectorAll('.notification').forEach(n => n.remove());
+        
+        // Create notification
+        const notification = document.createElement('div');
+        notification.className = `notification ${type}`;
+        notification.innerHTML = `
+            <span>${message}</span>
+            <button onclick="this.parentElement.remove()">×</button>
+        `;
+        
+        // Add to page
+        document.body.appendChild(notification);
+        
+        // Auto-remove after 5 seconds
+        setTimeout(() => {
+            if (notification.parentNode) {
+                notification.remove();
+            }
+        }, 5000);
+    }
+
+    // Helper function to get CSRF token
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+</script>
+{% endblock %}

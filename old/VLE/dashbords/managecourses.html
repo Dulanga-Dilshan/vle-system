@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Courses - University VLE</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .courses-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: #fafafa;
+            margin-bottom: 20px;
+        }
+        .courses-table th, .courses-table td {
+            border: 1px solid #ddd;
+            padding: 0; /* Remove default padding for better alignment */
+            text-align: left;
+            vertical-align: middle;
+        }
+        .courses-table th {
+            background: #eee;
+            padding: 10px;
+        }
+        .courses-table td > form,
+        .courses-table td > div {
+            margin: 0;
+            padding: 0;
+        }
+        .courses-table input[type="text"],
+        .courses-table input[type="email"],
+        .courses-table select {
+            width: 100%;
+            box-sizing: border-box;
+            border: none;
+            background: transparent;
+            padding: 10px 12px;
+            font-size: 1em;
+            margin: 0;
+            display: block;
+        }
+        .courses-table input[name="course_name"] {
+            min-width: 250px;
+            max-width: 350px;
+        }
+        .courses-table td {
+            vertical-align: middle;
+        }
+        .courses-table input:focus,
+        .courses-table select:focus {
+            outline: 2px solid #3b2fd4;
+            background: #f0f4ff;
+        }
+        .action-btn {
+            padding: 7px 16px;
+            border-radius: 6px;
+            border: none;
+            font-weight: bold;
+            cursor: pointer;
+            margin-right: 5px;
+            font-size: 1em;
+            display: inline-block;
+        }
+        .edit-btn { background: #2196f3; color: #fff; }
+        .delete-btn { background: #f44336; color: #fff; }
+        .save-btn { background: #4caf50; color: #fff; }
+        /* Flex for actions column */
+        .courses-table .actions-cell {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            padding: 10px;
+        }
+    </style>
+</head>
+<body class="body">
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <i class="fas fa-graduation-cap"></i>
+                <span>University VLE</span>
+            </div>
+            <div class="nav-items">
+                <a href="admin.php" class="logout-btn">
+                    <i class="fas fa-arrow-left"></i> Back to Dashboard
+                </a>
+                <button id="logout-btn" class="logout-btn">
+                    <i class="fas fa-sign-out-alt"></i>Logout
+                </button>
+            </div>
+        </div>
+    </nav>
+    <main class="main-content">
+        <div class="header-section">
+            <h2>Manage Courses</h2>
+            <p>Add, edit, and delete courses offered in the university.</p>
+        </div>
+        <table class="courses-table">
+            <thead>
+                <tr>
+                    <th>Course Code</th>
+                    <th>Course Name</th>
+                    <th>Faculty</th>
+                    <th>Lecturer</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php 
+                    session_start();
+                    if(!isset($_SESSION["role"]) || $_SESSION["role"] != "admin") {
+                        header("Location: ../index.php");
+                        exit;
+                    }
+                    include "../php/config.php";
+
+                    $lecture_names=[];
+                    $lecture_ids = [];
+                    $get_lecctures="
+                        select id,full_name
+                        from staff;
+                    ";
+
+                    $course_details="
+                        select courses.*,staff.full_name
+                        from courses
+                        join staff on Courses.lecture_in_charge=staff.id;
+                    
+                    ";
+
+                    $lecture_info=$conn->query($get_lecctures);
+                    while($lec_data=$lecture_info->fetch_assoc()){
+                        array_push($lecture_names,$lec_data["full_name"]);
+                        array_push($lecture_ids,$lec_data["id"]);
+                    }
+
+
+                    $results=$conn->query($course_details);
+                    while($row=$results->fetch_assoc()){
+                        $course_id=$row["course_id"];
+                        $course_name=$row["course_name"];
+                        $course_code=$row["course_code"];
+                        $faculty=$row["faculty"];
+                        $lecture_in_charge=$row["lecture_in_charge"];
+                        $lecture_in_charge_name=$row["full_name"];
+
+                        echo "
+                        <form method='post' action='../php/update_course.php' style='display:inline;'>
+                        <tr>
+                            <td>
+                                <input type='text' name='course_code' value='$course_code' required>
+                            </td>
+                            <td>
+                                <input type='text' name='course_name' value='$course_name' required>
+                            </td>
+                            <td>
+                                <input type='text' name='faculty' value='$faculty' required>
+                            </td>
+                        ";
+
+
+                        echo "
+                        <td>
+                        <select name='lecturer' required style='min-width:180px;'>
+                            <option value='$lecture_in_charge'>$lecture_in_charge_name</option>";
+
+                        for($i= 0;$i<count($lecture_names);$i++){
+                            if($lecture_ids[$i]!=$lecture_in_charge){
+                                $id=$lecture_ids[$i];
+                                $name=$lecture_names[$i];
+                                echo "<option value='$id'>$name</option>";
+                            }
+                        }
+                        echo "
+                            </select></td>
+                            <td class='actions-cell'>                            
+                            <input type='hidden' name='id' value='$course_id'>
+                            <button type='submit' class='action-btn save-btn'><i class='fas fa-save'></i> Save</button>
+                            </form>
+                            <form method='post' action='../php/delete_course.php' style='display:inline;'>
+                                <input type='hidden' name='id' value='$course_id'>
+                                <button type='submit' class='action-btn delete-btn'><i class='fas fa-trash'></i> Delete</button>
+                            </form>
+                            </td>
+                            </tr>
+                        ";
+                    }
+                    echo "
+                        <tr>
+                        <form method='post' action='../php/add_new_cource.php' style='display:inline;'>
+                        <td><input type='text' name='course_code'  placeholder='Course Code' required></td>
+                        <td><input type='text' name='course_name'  placeholder='Course Name' required></td>
+                        <td><input type='text' name='faculty'  placeholder='Course Faclty' required></td>
+                        <td><select name='lecturer' required style='min-width:180px;'>
+                        <option value='0'>Select Instructer</option>
+                    ";
+
+                    for($i= 0;$i<count($lecture_names);$i++){
+                        $id=$lecture_ids[$i];
+                        $name=$lecture_names[$i];
+                        echo "<option value='$id'>$name</option>";        
+                    }
+
+                    echo "
+                        </select></td>
+                        <td style='text-align:center; vertical-align:middle;'>
+                            <button type='submit' class='action-btn' style='background:#2196f3;color:#fff;width:200px;'>
+                                Add New
+                            </button>
+                        </td>
+                        </tr>
+                    ";
+                ?>
+            </tbody>
+        </table>
+    </main>
+    <footer class="footer">
+        <div class="footer-container">
+            <p>&copy; 2023 University VLE System. All rights reserved.</p>
+            <div class="social-icons">
+                <a href="#"><i class="fab fa-facebook"></i></a>
+                <a href="#"><i class="fab fa-twitter"></i></a>
+                <a href="#"><i class="fab fa-linkedin"></i></a>
+                <a href="#"><i class="fab fa-instagram"></i></a>
+            </div>
+        </div>
+    </footer>
+    <script>
+        document.getElementById('logout-btn').addEventListener('click', () => {
+            window.location.href = '../index.php';
+        });
+    </script>
+</body>
+</html>

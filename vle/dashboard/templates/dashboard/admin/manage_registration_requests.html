@@ -1,0 +1,897 @@
+{% extends "main.html" %}
+
+{% block title %}Registration Requests - University VLE{% endblock %}
+
+{% block navigation %}
+    {% include "admin_navigation.html" %}
+{% endblock %}
+
+{% block body %}
+<div class="registration-requests">
+    <!-- Page Header -->
+    <div class="page-header">
+        <h1 class="page-title">
+            <i class="fas fa-user-check"></i> Registration Requests
+        </h1>
+        <p class="page-subtitle">
+            Review and approve new user registration requests
+        </p>
+    </div>
+
+    <!-- Request Stats -->
+    <div class="request-stats grid grid-4">
+        <div class="stat-card card">
+            <div class="stat-icon" style="background: linear-gradient(135deg, #4361ee, #3a56d4);">
+                <i class="fas fa-user-graduate"></i>
+            </div>
+            <div class="stat-content">
+                <h3 class="stat-value">{{ students|length }}</h3>
+                <p class="stat-label">Student Requests</p>
+            </div>
+        </div>
+        
+        <div class="stat-card card">
+            <div class="stat-icon" style="background: linear-gradient(135deg, #7209b7, #5a0a94);">
+                <i class="fas fa-chalkboard-teacher"></i>
+            </div>
+            <div class="stat-content">
+                <h3 class="stat-value">{{ staff|length }}</h3>
+                <p class="stat-label">Staff Requests</p>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs-container card">
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('students')">
+                <i class="fas fa-user-graduate"></i>
+                <span>Students</span>
+                <span class="tab-badge">{{ students|length }}</span>
+            </button>
+            <button class="tab" onclick="switchTab('staff')">
+                <i class="fas fa-chalkboard-teacher"></i>
+                <span>Staff</span>
+                <span class="tab-badge">{{ staff|length }}</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Student Requests Tab -->
+    <div id="studentsTab" class="tab-content active">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="fas fa-user-graduate"></i> Student Registration Requests
+                </h3>
+                <div class="card-actions">
+                    <button class="btn btn-success" onclick="approveAll('students')">
+                        <i class="fas fa-check-double"></i> Approve All
+                    </button>
+                    <button class="btn btn-outline" onclick="selectAllStudents()">
+                        <i class="fas fa-check-square"></i> Select All
+                    </button>
+                </div>
+            </div>
+            
+            <form method="post" action="{% url 'dashboard:manage_student_requests' %}" id="studentRequestsForm">
+                {% csrf_token %}
+                <div class="table-container">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th style="width: 50px;">
+                                    <input type="checkbox" id="selectAllStudents" onchange="toggleAllStudents()">
+                                </th>
+                                <th>Student Information</th>
+                                <th>Academic Details</th>
+                                <th>Contact Information</th>
+                                <th>ID Photo</th>
+                                <th>Request Date</th>
+                                <th style="width: 180px;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if students %}
+                                {% for student in students %}
+                                <tr>
+                                    <td>
+                                        <input type="checkbox" name="selected_students" value="{{ student.id }}" class="student-checkbox">
+                                    </td>
+                                    <td>
+                                        <div class="user-info">
+                                            <div class="user-avatar student">
+                                                {{ student.first_name|first|upper }}
+                                            </div>
+                                            <div class="user-details">
+                                                <strong>Name: {{ student.first_name }} {{ student.last_name }}</strong>
+                                                <strong>username: {{ student.username }}</strong>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="academic-info">
+                                            <strong>{{ student.faculty_name }}</strong>
+                                            <p>{{ student.department_name }}</p>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="contact-info">
+                                            <p>{{ student.email }}</p>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        {% if student.id_img %}
+                                        <div class="id-photo">
+                                            <img src="{{ student.id_img.url }}" alt="ID Photo" onclick="viewImage('{{ student.id_img.url }}')">
+                                            <button type="button" class="btn btn-sm btn-outline" onclick="viewImage('{{ student.id_img.url }}')">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                        </div>
+                                        {% else %}
+                                        <span class="no-photo">No photo</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <span class="request-date">
+                                            {{ student.date|date:"M d, Y" }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div class="action-buttons">
+                                            <select name="{{ student.id }}" class="status-select" onchange="updateStatus(this, '{{ student.id }}')">
+                                                <option value="none">Select Action</option>
+                                                <option value="approved">Approve</option>
+                                                <option value="denied">Deny</option>
+                                            </select>
+                                            <button type="button" class="btn btn-sm btn-outline" onclick="viewStudentDetails({{ student.id }})">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                            <button type="button" class="btn btn-sm btn-danger" onclick="deleteRequest({{ student.id }}, 'student')">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr>
+                                    <td colspan="7" class="empty-state">
+                                        <i class="fas fa-user-graduate"></i>
+                                        <h4>No Student Requests</h4>
+                                        <p>All student requests have been processed</p>
+                                    </td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="form-actions" style="padding: 1.5rem; border-top: 1px solid var(--gray-light);">
+                    <button type="submit" class="btn btn-primary btn-lg">
+                        <i class="fas fa-check-circle"></i> Submit Decisions
+                    </button>
+                    <button type="button" class="btn btn-outline" onclick="resetForm('student')">
+                        <i class="fas fa-redo"></i> Reset
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Staff Requests Tab -->
+    <div id="staffTab" class="tab-content">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="fas fa-chalkboard-teacher"></i> Staff Registration Requests
+                </h3>
+                <div class="card-actions">
+                    <button class="btn btn-success" onclick="approveAll('staff')">
+                        <i class="fas fa-check-double"></i> Approve All
+                    </button>
+                    <button class="btn btn-outline" onclick="selectAllStaff()">
+                        <i class="fas fa-check-square"></i> Select All
+                    </button>
+                </div>
+            </div>
+            
+            <form method="post" action="{% url 'dashboard:manage_staff_requests' %}" id="staffRequestsForm">
+                {% csrf_token %}
+                <div class="table-container">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th style="width: 50px;">
+                                    <input type="checkbox" id="selectAllStaff" onchange="toggleAllStaff()">
+                                </th>
+                                <th>Staff Information</th>
+                                <th>Role & Department</th>
+                                <th>Contact Information</th>
+                                <th>Request Date</th>
+                                <th style="width: 180px;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if staff %}
+                                {% for stf in staff %}
+                                <tr>
+                                    <td>
+                                        <input type="checkbox" name="selected_staff" value="{{ stf.id }}" class="staff-checkbox">
+                                    </td>
+                                    <td>
+                                        <div class="user-info">
+                                            <div class="user-avatar staff">
+                                                {{ stf.fullname|first|upper }}
+                                            </div>
+                                            <div class="user-details">
+                                                <strong>{{ stf.fullname }}</strong>
+                                                <strong>{{ stf.username }}</strong>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="role-info">
+                                            <strong>{{ stf.staff_type|title }}</strong>
+                                            <p>{{ stf.department_name }}</p>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="contact-info">
+                                            <p>{{ stf.email }}</p>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="request-date">
+                                            {{ stf.date|date:"M d, Y" }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div class="action-buttons">
+                                            <select name="{{ stf.id }}" class="status-select" onchange="updateStatus(this, '{{ stf.id }}')">
+                                                <option value="none">Select Action</option>
+                                                <option value="approved">Approve</option>
+                                                <option value="denied">Deny</option>
+                                            </select>
+                                            <button type="button" class="btn btn-sm btn-outline" onclick="viewStaffDetails({{ stf.id }})">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                            <button type="button" class="btn btn-sm btn-danger" onclick="deleteRequest({{ stf.id }}, 'staff')">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr>
+                                    <td colspan="6" class="empty-state">
+                                        <i class="fas fa-chalkboard-teacher"></i>
+                                        <h4>No Staff Requests</h4>
+                                        <p>All staff requests have been processed</p>
+                                    </td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="form-actions" style="padding: 1.5rem; border-top: 1px solid var(--gray-light);">
+                    <button type="submit" class="btn btn-primary btn-lg">
+                        <i class="fas fa-check-circle"></i> Submit Decisions
+                    </button>
+                    <button type="button" class="btn btn-outline" onclick="resetForm('staff')">
+                        <i class="fas fa-redo"></i> Reset
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+
+</div>
+
+<!-- Image Viewer Modal -->
+<div id="imageViewerTemplate" style="display: none;">
+    <div class="modal-overlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title">ID Photo</h3>
+                <button class="modal-close" onclick="closeModal()">&times;</button>
+            </div>
+            <div class="modal-content" style="text-align: center;">
+                <img id="viewerImage" src="" alt="ID Photo" style="max-width: 100%; border-radius: 8px;">
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block style %}
+<style>
+    .registration-requests {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+
+    /* Request Stats */
+    .request-stats {
+        margin: 1rem 0;
+    }
+
+    /* Tabs - Using existing styles from manage_users */
+
+    /* User Info */
+    .user-info {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .user-avatar {
+        width: 45px;
+        height: 45px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        color: white;
+        font-size: 1.1rem;
+    }
+
+    .user-avatar.student {
+        background: linear-gradient(135deg, #4361ee, #3a56d4);
+    }
+
+    .user-avatar.staff {
+        background: linear-gradient(135deg, #7209b7, #5a0a94);
+    }
+
+    .user-details strong {
+        font-size: 1rem;
+        margin-bottom: 0.25rem;
+        color: black;
+        
+    }
+
+    .user-details strong {
+        font-size: 0.85rem;
+        color: black;
+    }
+
+    /* Academic/Role Info */
+    .academic-info strong,
+    .role-info strong {
+        display: block;
+        font-size: 0.95rem;
+        color: var(--dark);
+        margin-bottom: 0.25rem;
+    }
+
+    .academic-info p,
+    .role-info p {
+        font-size: 0.85rem;
+        color: var(--gray);
+    }
+
+    /* Contact Info */
+    .contact-info p {
+        font-size: 0.9rem;
+        color: var(--dark);
+        margin-bottom: 0.25rem;
+    }
+
+    .contact-info small {
+        font-size: 0.8rem;
+        color: var(--gray-light);
+    }
+
+    /* ID Photo */
+    .id-photo {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .id-photo img {
+        width: 60px;
+        height: 60px;
+        object-fit: cover;
+        border-radius: 8px;
+        border: 2px solid var(--gray-light);
+        cursor: pointer;
+        transition: var(--transition);
+    }
+
+    .id-photo img:hover {
+        border-color: var(--primary);
+        transform: scale(1.05);
+    }
+
+    .id-photo .btn-sm {
+        padding: 4px 8px;
+        font-size: 0.8rem;
+    }
+
+    .no-photo {
+        color: var(--gray-light);
+        font-style: italic;
+        font-size: 0.9rem;
+    }
+
+    /* Request Date */
+    .request-date {
+        font-size: 0.9rem;
+        color: var(--gray);
+    }
+
+    /* Action Buttons */
+    .action-buttons {
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+    }
+
+    .status-select {
+        flex: 1;
+        padding: 6px 12px;
+        border: 2px solid var(--gray-light);
+        border-radius: 6px;
+        font-size: 0.9rem;
+        background: white;
+        cursor: pointer;
+        transition: var(--transition);
+        min-width: 100px;
+    }
+
+    .status-select:focus {
+        outline: none;
+        border-color: var(--primary);
+    }
+
+    .status-select.approved {
+        border-color: var(--success);
+        background: rgba(76, 201, 240, 0.1);
+        color: var(--success-dark);
+    }
+
+    .status-select.denied {
+        border-color: var(--danger);
+        background: rgba(249, 65, 68, 0.1);
+        color: var(--danger);
+    }
+
+    .action-buttons .btn-sm {
+        padding: 6px 10px;
+        min-width: 36px;
+        height: 36px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    /* Form Actions */
+    .form-actions {
+        display: flex;
+        gap: 1rem;
+        justify-content: flex-end;
+        align-items: center;
+    }
+
+    /* Card Actions */
+    .card-actions {
+        display: flex;
+        gap: 0.75rem;
+        align-items: center;
+    }
+
+    /* History List */
+    .history-list {
+        padding: 1.5rem;
+    }
+
+    /* Empty State */
+    .empty-state {
+        text-align: center;
+        padding: 3rem;
+        color: var(--gray);
+    }
+
+    .empty-state i {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+        opacity: 0.5;
+    }
+
+    .empty-state h4 {
+        font-size: 1.25rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .empty-state p {
+        color: var(--gray-light);
+    }
+
+    /* Responsive */
+    @media (max-width: 1024px) {
+        .request-stats {
+            grid-template-columns: repeat(2, 1fr);
+        }
+        
+        .action-buttons {
+            flex-direction: column;
+            align-items: stretch;
+        }
+        
+        .status-select {
+            width: 100%;
+        }
+        
+        .action-buttons .btn-sm {
+            width: 100%;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .user-info {
+            flex-direction: column;
+            text-align: center;
+            align-items: flex-start;
+        }
+        
+        .card-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 1rem;
+        }
+        
+        .card-actions {
+            width: 100%;
+            justify-content: flex-end;
+        }
+        
+        .form-actions {
+            flex-direction: column;
+        }
+        
+        .form-actions .btn {
+            width: 100%;
+        }
+        
+        .id-photo {
+            flex-direction: row;
+            justify-content: flex-start;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .request-stats {
+            grid-template-columns: 1fr;
+        }
+        
+        .page-title {
+            font-size: 1.5rem;
+        }
+        
+        .card-actions {
+            flex-direction: column;
+            align-items: stretch;
+        }
+        
+        .card-actions .btn {
+            width: 100%;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block script %}
+<script>
+    // Tab switching
+    function switchTab(tabName) {
+        // Hide all tabs
+        document.querySelectorAll('.tab-content').forEach(tab => {
+            tab.classList.remove('active');
+        });
+        
+        // Remove active class from all tab buttons
+        document.querySelectorAll('.tab').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        
+        // Show selected tab
+        document.getElementById(tabName + 'Tab').classList.add('active');
+        
+        // Activate selected tab button
+        document.querySelector(`.tab[onclick*="${tabName}"]`).classList.add('active');
+    }
+    
+    // Student selection
+    function selectAllStudents() {
+        const checkboxes = document.querySelectorAll('.student-checkbox');
+        const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+        
+        checkboxes.forEach(cb => {
+            cb.checked = !allChecked;
+        });
+        
+        document.getElementById('selectAllStudents').checked = !allChecked;
+    }
+    
+    function toggleAllStudents() {
+        const selectAll = document.getElementById('selectAllStudents').checked;
+        document.querySelectorAll('.student-checkbox').forEach(cb => {
+            cb.checked = selectAll;
+        });
+    }
+    
+    // Staff selection
+    function selectAllStaff() {
+        const checkboxes = document.querySelectorAll('.staff-checkbox');
+        const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+        
+        checkboxes.forEach(cb => {
+            cb.checked = !allChecked;
+        });
+        
+        document.getElementById('selectAllStaff').checked = !allChecked;
+    }
+    
+    function toggleAllStaff() {
+        const selectAll = document.getElementById('selectAllStaff').checked;
+        document.querySelectorAll('.staff-checkbox').forEach(cb => {
+            cb.checked = selectAll;
+        });
+    }
+    
+    // Status updates
+    function updateStatus(select, requestId) {
+        const value = select.value;
+        
+        // Reset class
+        select.classList.remove('approved', 'denied');
+        
+        // Add appropriate class
+        if (value === 'approved') {
+            select.classList.add('approved');
+        } else if (value === 'denied') {
+            select.classList.add('denied');
+        }
+    }
+    
+    // Approve all requests
+    function approveAll(type) {
+        const count = document.querySelectorAll(`.${type}-checkbox`).length;
+        
+        if (count === 0) {
+            alert(`No ${type} requests to approve.`);
+            return;
+        }
+        
+        if (confirm(`Approve all ${count} ${type} requests?`)) {
+            // Set all status selects to approved
+            document.querySelectorAll(`#${type}Tab .status-select`).forEach(select => {
+                select.value = 'approved';
+                updateStatus(select, '');
+            });
+            
+            // Check all checkboxes
+            document.querySelectorAll(`.${type}-checkbox`).forEach(cb => {
+                cb.checked = true;
+            });
+            
+            // Update select all checkbox
+            document.getElementById(`selectAll${type.charAt(0).toUpperCase() + type.slice(1)}`).checked = true;
+            
+            alert(`All ${type} requests marked for approval. Submit to confirm.`);
+        }
+    }
+    
+    // View student details
+    function viewStudentDetails(studentId) {
+        showModal('Student Details', `
+            <div class="student-details">
+                <div class="detail-section">
+                    <h4>Personal Information</h4>
+                    <div class="detail-grid">
+                        <div class="detail-item">
+                            <label>Full Name:</label>
+                            <span>John Doe</span>
+                        </div>
+                        <div class="detail-item">
+                            <label>Student ID:</label>
+                            <span>S123456</span>
+                        </div>
+                        <div class="detail-item">
+                            <label>Email:</label>
+                            <span>john.doe@example.com</span>
+                        </div>
+                        <div class="detail-item">
+                            <label>Phone:</label>
+                            <span>(123) 456-7890</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="detail-section">
+                    <h4>Academic Information</h4>
+                    <div class="detail-grid">
+                        <div class="detail-item">
+                            <label>Faculty:</label>
+                            <span>Faculty of Computing</span>
+                        </div>
+                        <div class="detail-item">
+                            <label>Department:</label>
+                            <span>Computer Science</span>
+                        </div>
+                        <div class="detail-item">
+                            <label>Year:</label>
+                            <span>1</span>
+                        </div>
+                        <div class="detail-item">
+                            <label>Program:</label>
+                            <span>Bachelor of Science</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="modal-actions" style="margin-top: 1.5rem;">
+                    <button class="btn btn-primary" onclick="quickApprove(${studentId}, 'student')">
+                        <i class="fas fa-check"></i> Quick Approve
+                    </button>
+                    <button class="btn btn-outline" onclick="closeModal()">Close</button>
+                </div>
+            </div>
+        `);
+    }
+    
+    // View staff details
+    function viewStaffDetails(staffId) {
+        showModal('Staff Details', `
+            <div class="staff-details">
+                <div class="detail-section">
+                    <h4>Personal Information</h4>
+                    <div class="detail-grid">
+                        <div class="detail-item">
+                            <label>Full Name:</label>
+                            <span>Jane Smith</span>
+                        </div>
+                        <div class="detail-item">
+                            <label>Staff ID:</label>
+                            <span>T987654</span>
+                        </div>
+                        <div class="detail-item">
+                            <label>Email:</label>
+                            <span>jane.smith@example.com</span>
+                        </div>
+                        <div class="detail-item">
+                            <label>Phone:</label>
+                            <span>(987) 654-3210</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="detail-section">
+                    <h4>Professional Information</h4>
+                    <div class="detail-grid">
+                        <div class="detail-item">
+                            <label>Role:</label>
+                            <span>Lecturer</span>
+                        </div>
+                        <div class="detail-item">
+                            <label>Department:</label>
+                            <span>Computer Science</span>
+                        </div>
+                        <div class="detail-item">
+                            <label>Faculty:</label>
+                            <span>Faculty of Computing</span>
+                        </div>
+                        <div class="detail-item">
+                            <label>Specialization:</label>
+                            <span>Artificial Intelligence</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="modal-actions" style="margin-top: 1.5rem;">
+                    <button class="btn btn-primary" onclick="quickApprove(${staffId}, 'staff')">
+                        <i class="fas fa-check"></i> Quick Approve
+                    </button>
+                    <button class="btn btn-outline" onclick="closeModal()">Close</button>
+                </div>
+            </div>
+        `);
+    }
+    
+    // Quick approve
+    function quickApprove(requestId, type) {
+        // Find the status select for this request
+        const select = document.querySelector(`#${type}Tab select[name="${requestId}"]`);
+        if (select) {
+            select.value = 'approved';
+            updateStatus(select, requestId);
+        }
+        
+        closeModal();
+        alert('Request marked for approval.');
+    }
+    
+    // Delete request
+    function deleteRequest(requestId, type) {
+        if (confirm('Are you sure you want to delete this registration request?')) {
+            showLoading();
+            
+            // Simulate API call
+            setTimeout(() => {
+                hideLoading();
+                alert('Request deleted successfully!');
+                // In real app, would remove the row or reload
+                location.reload();
+            }, 1000);
+        }
+    }
+    
+    // Reset form
+    function resetForm(type) {
+        if (confirm('Reset all selections?')) {
+            document.querySelectorAll(`#${type}Tab .status-select`).forEach(select => {
+                select.value = 'none';
+                select.classList.remove('approved', 'denied');
+            });
+            
+            document.querySelectorAll(`.${type}-checkbox`).forEach(cb => {
+                cb.checked = false;
+            });
+            
+            document.getElementById(`selectAll${type.charAt(0).toUpperCase() + type.slice(1)}`).checked = false;
+        }
+    }
+    
+    // View image
+    function viewImage(imageUrl) {
+        const modal = document.getElementById('imageViewerTemplate').cloneNode(true);
+        modal.style.display = 'block';
+        modal.querySelector('#viewerImage').src = imageUrl;
+        document.body.appendChild(modal);
+    }
+    
+    // Form submission
+    document.getElementById('studentRequestsForm').addEventListener('submit', function(e) {
+        const hasSelection = Array.from(this.querySelectorAll('.status-select')).some(select => 
+            select.value !== 'none'
+        );
+        
+        if (!hasSelection) {
+            e.preventDefault();
+            alert('Please make at least one decision before submitting.');
+            return;
+        }
+        
+        showLoading();
+    });
+    
+    document.getElementById('staffRequestsForm').addEventListener('submit', function(e) {
+        const hasSelection = Array.from(this.querySelectorAll('.status-select')).some(select => 
+            select.value !== 'none'
+        );
+        
+        if (!hasSelection) {
+            e.preventDefault();
+            alert('Please make at least one decision before submitting.');
+            return;
+        }
+        
+        showLoading();
+    });
+    
+    // History filter
+    document.getElementById('historyFilter').addEventListener('change', function() {
+        // In real app, this would filter the history list
+        console.log('Filter changed to:', this.value);
+    });
+</script>
+{% endblock %}

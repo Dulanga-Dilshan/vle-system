@@ -1,0 +1,994 @@
+{% extends "main.html" %}
+
+{% block title %}System Settings - Admin Panel{% endblock %}
+
+{% block navigation %}
+    {% include "admin_navigation.html" %}
+{% endblock %}
+
+{% block body %}
+<div class="system-settings">
+    <!-- Page Header -->
+    <div class="page-header">
+        <h1 class="page-title">
+            <i class="fas fa-cogs"></i> System Settings
+        </h1>
+        <p class="page-subtitle">
+            Configure global system variables and preferences
+        </p>
+    </div>
+
+    <!-- Settings Tabs -->
+    <div class="settings-tabs-container card">
+        <div class="settings-tabs">
+            <button class="tab active" onclick="switchSettingsTab('general')">
+                <i class="fas fa-sliders-h"></i> General
+            </button>
+            <button class="tab" onclick="switchSettingsTab('security')">
+                <i class="fas fa-shield-alt"></i> Security
+            </button>
+            <button class="tab" onclick="switchSettingsTab('users')">
+                <i class="fas fa-users"></i> User Settings
+            </button>
+            <button class="tab" onclick="switchSettingsTab('email')">
+                <i class="fas fa-envelope"></i> Email
+            </button>
+            <button class="tab" onclick="switchSettingsTab('system')">
+                <i class="fas fa-server"></i> System
+            </button>
+        </div>
+    </div>
+
+    <!-- General Settings -->
+    <div id="generalTab" class="settings-tab-content active">
+        <form method="post" action="" class="settings-form">
+            {% csrf_token %}
+            <input type="hidden" name="settings_type" value="general">
+            
+            <div class="settings-section card">
+                <div class="settings-section-header">
+                    <h3><i class="fas fa-globe"></i> General Configuration</h3>
+                </div>
+                <div class="settings-section-body">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">System Name *</label>
+                            <input type="text" name="system_name" class="form-control" value="{{ settings.system_name|default:'University VLE' }}" required>
+                            <div class="form-help">Display name for the application</div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Timezone</label>
+                            <select name="timezone" class="form-control">
+                                {% for tz in timezones %}
+                                <option value="{{ tz }}" {% if settings.timezone == tz %}selected{% endif %}>{{ tz }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Default Language</label>
+                            <select name="default_language" class="form-control">
+                                <option value="en" {% if settings.default_language == 'en' %}selected{% endif %}>English</option>
+                                <option value="si" {% if settings.default_language == 'si' %}selected{% endif %}>Sinhala</option>
+                                <option value="ta" {% if settings.default_language == 'ta' %}selected{% endif %}>Tamil</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Date Format</label>
+                            <select name="date_format" class="form-control">
+                                <option value="Y-m-d" {% if settings.date_format == 'Y-m-d' %}selected{% endif %}>YYYY-MM-DD</option>
+                                <option value="d/m/Y" {% if settings.date_format == 'd/m/Y' %}selected{% endif %}>DD/MM/YYYY</option>
+                                <option value="m/d/Y" {% if settings.date_format == 'm/d/Y' %}selected{% endif %}>MM/DD/YYYY</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">System URL</label>
+                        <input type="url" name="system_url" class="form-control" value="{{ settings.system_url|default:request.build_absolute_uri }}" required>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i> Save General Settings
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Security Settings -->
+    <div id="securityTab" class="settings-tab-content">
+        <form method="post" action="" class="settings-form">
+            {% csrf_token %}
+            <input type="hidden" name="settings_type" value="security">
+            
+            <div class="settings-section card">
+                <div class="settings-section-header">
+                    <h3><i class="fas fa-user-lock"></i> Authentication & Session</h3>
+                </div>
+                <div class="settings-section-body">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Max Inactive Logout Time (minutes) *</label>
+                            <input type="number" name="inactive_logout_minutes" class="form-control" value="{{ settings.inactive_logout_minutes|default:30 }}" min="5" max="480" required>
+                            <div class="form-help">Automatic logout after inactivity (5-480 minutes)</div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Session Lifetime (hours) *</label>
+                            <input type="number" name="session_lifetime_hours" class="form-control" value="{{ settings.session_lifetime_hours|default:24 }}" min="1" max="720" required>
+                            <div class="form-help">Maximum session duration (1-720 hours)</div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Max Login Attempts *</label>
+                            <input type="number" name="max_login_attempts" class="form-control" value="{{ settings.max_login_attempts|default:5 }}" min="1" max="10" required>
+                            <div class="form-help">Maximum failed login attempts before lockout</div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Login Lockout Time (minutes) *</label>
+                            <input type="number" name="login_lockout_minutes" class="form-control" value="{{ settings.login_lockout_minutes|default:15 }}" min="1" max="1440" required>
+                            <div class="form-help">Account lockout duration after max attempts</div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Password Policy</label>
+                        <div class="checkbox-group">
+                            <label class="checkbox">
+                                <input type="checkbox" name="password_require_uppercase" {% if settings.password_require_uppercase %}checked{% endif %}>
+                                <span>Require uppercase letters</span>
+                            </label>
+                            <label class="checkbox">
+                                <input type="checkbox" name="password_require_lowercase" {% if settings.password_require_lowercase %}checked{% endif %}>
+                                <span>Require lowercase letters</span>
+                            </label>
+                            <label class="checkbox">
+                                <input type="checkbox" name="password_require_numbers" {% if settings.password_require_numbers %}checked{% endif %}>
+                                <span>Require numbers</span>
+                            </label>
+                            <label class="checkbox">
+                                <input type="checkbox" name="password_require_special" {% if settings.password_require_special %}checked{% endif %}>
+                                <span>Require special characters</span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Minimum Password Length *</label>
+                            <input type="number" name="min_password_length" class="form-control" value="{{ settings.min_password_length|default:8 }}" min="6" max="32" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Password Expiry (days)</label>
+                            <input type="number" name="password_expiry_days" class="form-control" value="{{ settings.password_expiry_days|default:90 }}" min="0" max="365">
+                            <div class="form-help">Set to 0 for no expiry</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i> Save Security Settings
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- User Settings -->
+    <div id="usersTab" class="settings-tab-content">
+        <form method="post" action="" class="settings-form">
+            {% csrf_token %}
+            <input type="hidden" name="settings_type" value="users">
+            
+            <div class="settings-section card">
+                <div class="settings-section-header">
+                    <h3><i class="fas fa-user-cog"></i> User Management</h3>
+                </div>
+                <div class="settings-section-body">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Default User Password *</label>
+                            <div class="password-input-group">
+                                <input type="password" id="defaultPassword" name="default_user_password" class="form-control" value="{{ settings.default_user_password|default:'password123' }}" required>
+                                <button type="button" class="btn btn-outline btn-sm" onclick="togglePassword('defaultPassword')">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                <button type="button" class="btn btn-outline btn-sm" onclick="generatePassword('defaultPassword')">
+                                    <i class="fas fa-random"></i>
+                                </button>
+                            </div>
+                            <div class="form-help">Default password for new users</div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Force Password Change</label>
+                            <select name="force_password_change" class="form-control">
+                                <option value="true" {% if settings.force_password_change %}selected{% endif %}>Yes, on first login</option>
+                                <option value="false" {% if not settings.force_password_change %}selected{% endif %}>No</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Max Users per Page</label>
+                            <input type="number" name="users_per_page" class="form-control" value="{{ settings.users_per_page|default:50 }}" min="10" max="200">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">User Registration</label>
+                            <select name="user_registration" class="form-control">
+                                <option value="enabled" {% if settings.user_registration == 'enabled' %}selected{% endif %}>Enabled</option>
+                                <option value="disabled" {% if settings.user_registration == 'disabled' %}selected{% endif %}>Disabled (Admin only)</option>
+                                <option value="invite_only" {% if settings.user_registration == 'invite_only' %}selected{% endif %}>Invite Only</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Default User Role</label>
+                        <select name="default_user_role" class="form-control">
+                            <option value="student" {% if settings.default_user_role == 'student' %}selected{% endif %}>Student</option>
+                            <option value="staff" {% if settings.default_user_role == 'staff' %}selected{% endif %}>Staff</option>
+                            <option value="viewer" {% if settings.default_user_role == 'viewer' %}selected{% endif %}>Viewer</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i> Save User Settings
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Email Settings -->
+    <div id="emailTab" class="settings-tab-content">
+        <form method="post" action="" class="settings-form">
+            {% csrf_token %}
+            <input type="hidden" name="settings_type" value="email">
+            
+            <div class="settings-section card">
+                <div class="settings-section-header">
+                    <h3><i class="fas fa-at"></i> Email Configuration</h3>
+                </div>
+                <div class="settings-section-body">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">SMTP Host *</label>
+                            <input type="text" name="smtp_host" class="form-control" value="{{ settings.smtp_host|default:'smtp.gmail.com' }}" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">SMTP Port *</label>
+                            <input type="number" name="smtp_port" class="form-control" value="{{ settings.smtp_port|default:587 }}" required>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">SMTP Username *</label>
+                            <input type="text" name="smtp_username" class="form-control" value="{{ settings.smtp_username|default:'' }}" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">SMTP Password</label>
+                            <div class="password-input-group">
+                                <input type="password" id="smtpPassword" name="smtp_password" class="form-control" value="{{ settings.smtp_password|default:'' }}">
+                                <button type="button" class="btn btn-outline btn-sm" onclick="togglePassword('smtpPassword')">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">From Email *</label>
+                            <input type="email" name="from_email" class="form-control" value="{{ settings.from_email|default:'noreply@university.edu' }}" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">From Name *</label>
+                            <input type="text" name="from_name" class="form-control" value="{{ settings.from_name|default:'University VLE' }}" required>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Email Security</label>
+                        <select name="smtp_security" class="form-control">
+                            <option value="tls" {% if settings.smtp_security == 'tls' %}selected{% endif %}>TLS</option>
+                            <option value="ssl" {% if settings.smtp_security == 'ssl' %}selected{% endif %}>SSL</option>
+                            <option value="none" {% if settings.smtp_security == 'none' %}selected{% endif %}>None</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Test Email Configuration</label>
+                        <div class="test-email-section">
+                            <input type="email" id="testEmail" class="form-control" placeholder="Enter email to test" style="flex: 1;">
+                            <button type="button" class="btn btn-outline" onclick="sendTestEmail()">
+                                <i class="fas fa-paper-plane"></i> Send Test Email
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i> Save Email Settings
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- System Settings -->
+    <div id="systemTab" class="settings-tab-content">
+        <form method="post" action="" class="settings-form">
+            {% csrf_token %}
+            <input type="hidden" name="settings_type" value="system">
+            
+            <div class="settings-section card">
+                <div class="settings-section-header">
+                    <h3><i class="fas fa-server"></i> System Configuration</h3>
+                </div>
+                <div class="settings-section-body">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Maintenance Mode</label>
+                            <select name="maintenance_mode" class="form-control">
+                                <option value="false" {% if not settings.maintenance_mode %}selected{% endif %}>Disabled</option>
+                                <option value="true" {% if settings.maintenance_mode %}selected{% endif %}>Enabled</option>
+                            </select>
+                            <div class="form-help">Enable to restrict access to admins only</div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Debug Mode</label>
+                            <select name="debug_mode" class="form-control">
+                                <option value="false" {% if not settings.debug_mode %}selected{% endif %}>Disabled</option>
+                                <option value="true" {% if settings.debug_mode %}selected{% endif %}>Enabled</option>
+                            </select>
+                            <div class="form-help">Enable for development only</div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Max Upload Size (MB) *</label>
+                            <input type="number" name="max_upload_size" class="form-control" value="{{ settings.max_upload_size|default:10 }}" min="1" max="100" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Allowed File Types</label>
+                            <input type="text" name="allowed_file_types" class="form-control" value="{{ settings.allowed_file_types|default:'.pdf,.doc,.docx,.jpg,.jpeg,.png' }}" placeholder=".pdf,.doc,.jpg,.png">
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Backup Schedule</label>
+                            <select name="backup_schedule" class="form-control">
+                                <option value="daily" {% if settings.backup_schedule == 'daily' %}selected{% endif %}>Daily</option>
+                                <option value="weekly" {% if settings.backup_schedule == 'weekly' %}selected{% endif %}>Weekly</option>
+                                <option value="monthly" {% if settings.backup_schedule == 'monthly' %}selected{% endif %}>Monthly</option>
+                                <option value="manual" {% if settings.backup_schedule == 'manual' %}selected{% endif %}>Manual Only</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Backup Retention (days)</label>
+                            <input type="number" name="backup_retention_days" class="form-control" value="{{ settings.backup_retention_days|default:30 }}" min="1" max="365">
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">System Logs</label>
+                        <div class="checkbox-group">
+                            <label class="checkbox">
+                                <input type="checkbox" name="log_user_activity" {% if settings.log_user_activity %}checked{% endif %}>
+                                <span>Log user activity</span>
+                            </label>
+                            <label class="checkbox">
+                                <input type="checkbox" name="log_system_errors" {% if settings.log_system_errors %}checked{% endif %}>
+                                <span>Log system errors</span>
+                            </label>
+                            <label class="checkbox">
+                                <input type="checkbox" name="log_email_sent" {% if settings.log_email_sent %}checked{% endif %}>
+                                <span>Log email sent</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="settings-section card" style="margin-top: 1.5rem;">
+                <div class="settings-section-header">
+                    <h3><i class="fas fa-exclamation-triangle"></i> System Actions</h3>
+                </div>
+                <div class="settings-section-body">
+                    <div class="danger-actions">
+                        <div class="danger-action-item">
+                            <h4>Clear System Cache</h4>
+                            <p>Clear all cached data to free up memory</p>
+                            <button type="button" class="btn btn-outline" onclick="clearSystemCache()">
+                                <i class="fas fa-broom"></i> Clear Cache
+                            </button>
+                        </div>
+                        
+                        <div class="danger-action-item">
+                            <h4>Run Database Backup</h4>
+                            <p>Create a manual backup of the database</p>
+                            <button type="button" class="btn btn-outline" onclick="runDatabaseBackup()">
+                                <i class="fas fa-database"></i> Backup Now
+                            </button>
+                        </div>
+                        
+                        <div class="danger-action-item">
+                            <h4>View System Logs</h4>
+                            <p>View and download system logs</p>
+                            <button type="button" class="btn btn-outline" onclick="viewSystemLogs()">
+                                <i class="fas fa-file-alt"></i> View Logs
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i> Save System Settings
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Loading Overlay -->
+<div class="loading-overlay" id="loadingOverlay" style="display: none;">
+    <div class="loading-spinner"></div>
+    <div class="loading-text">Saving Settings...</div>
+</div>
+{% endblock %}
+
+{% block style %}
+<style>
+    .system-settings {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+
+    /* Page Header */
+    .page-header {
+        margin-bottom: 1rem;
+    }
+
+    .page-title {
+        font-size: 2rem;
+        color: var(--dark);
+        margin-bottom: 0.5rem;
+    }
+
+    .page-subtitle {
+        color: #666;
+        font-size: 1rem;
+    }
+
+    /* Settings Tabs */
+    .settings-tabs-container {
+        padding: 0;
+        overflow: hidden;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+
+    .settings-tabs {
+        display: flex;
+        border-bottom: 2px solid #f0f0f0;
+        overflow-x: auto;
+    }
+
+    .settings-tabs .tab {
+        padding: 1rem 1.5rem;
+        background: none;
+        border: none;
+        font-size: 0.95rem;
+        font-weight: 500;
+        color: #666;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        transition: all 0.3s ease;
+        position: relative;
+        white-space: nowrap;
+    }
+
+    .settings-tabs .tab:hover {
+        color: #3b2fd4;
+        background: #f8f9ff;
+    }
+
+    .settings-tabs .tab.active {
+        color: #3b2fd4;
+    }
+
+    .settings-tabs .tab.active::after {
+        content: '';
+        position: absolute;
+        bottom: -2px;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: #3b2fd4;
+    }
+
+    /* Tab Content */
+    .settings-tab-content {
+        display: none;
+    }
+
+    .settings-tab-content.active {
+        display: block;
+        animation: fadeIn 0.3s ease;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Settings Sections */
+    .settings-section {
+        margin-bottom: 1.5rem;
+    }
+
+    .settings-section-header {
+        padding: 1.25rem;
+        border-bottom: 1px solid #f0f0f0;
+    }
+
+    .settings-section-header h3 {
+        font-size: 1.1rem;
+        color: var(--dark);
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .settings-section-body {
+        padding: 1.25rem;
+    }
+
+    /* Form Styling */
+    .settings-form {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+
+    .form-row {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1.5rem;
+    }
+
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+
+    .form-label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 600;
+        color: var(--dark);
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 0.75rem 1rem;
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        font-size: 0.95rem;
+        transition: all 0.3s ease;
+    }
+
+    .form-control:focus {
+        outline: none;
+        border-color: #3b2fd4;
+        box-shadow: 0 0 0 3px rgba(59, 47, 212, 0.1);
+    }
+
+    .form-help {
+        font-size: 0.85rem;
+        color: #666;
+        margin-top: 0.25rem;
+    }
+
+    /* Password Input Group */
+    .password-input-group {
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    .password-input-group .form-control {
+        flex: 1;
+    }
+
+    .password-input-group .btn {
+        padding: 0.75rem;
+        min-width: 40px;
+    }
+
+    /* Checkbox Group */
+    .checkbox-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .checkbox {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        cursor: pointer;
+    }
+
+    .checkbox input[type="checkbox"] {
+        width: 18px;
+        height: 18px;
+        accent-color: #3b2fd4;
+    }
+
+    .checkbox span {
+        font-size: 0.95rem;
+        color: var(--dark);
+    }
+
+    /* Test Email Section */
+    .test-email-section {
+        display: flex;
+        gap: 1rem;
+        align-items: center;
+    }
+
+    /* Danger Actions */
+    .danger-actions {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+
+    .danger-action-item {
+        padding: 1rem;
+        background: #f8f9ff;
+        border-radius: 8px;
+        border-left: 4px solid #3b2fd4;
+    }
+
+    .danger-action-item h4 {
+        font-size: 1rem;
+        color: var(--dark);
+        margin-bottom: 0.5rem;
+    }
+
+    .danger-action-item p {
+        font-size: 0.9rem;
+        color: #666;
+        margin-bottom: 1rem;
+    }
+
+    /* Form Actions */
+    .form-actions {
+        display: flex;
+        justify-content: flex-end;
+        margin-top: 1rem;
+    }
+
+    /* Button Styling */
+    .btn {
+        padding: 0.75rem 1.5rem;
+        border: none;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #3b2fd4 0%, #2a1bb7 100%);
+        color: white;
+    }
+
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(59, 47, 212, 0.3);
+    }
+
+    .btn-outline {
+        background: white;
+        color: #3b2fd4;
+        border: 1px solid #3b2fd4;
+    }
+
+    .btn-outline:hover {
+        background: #f8f9ff;
+    }
+
+    .btn-sm {
+        padding: 0.5rem 1rem;
+        font-size: 0.85rem;
+    }
+
+    /* Loading Overlay */
+    .loading-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(255, 255, 255, 0.9);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        z-index: 2000;
+    }
+
+    .loading-spinner {
+        width: 50px;
+        height: 50px;
+        border: 3px solid #f3f3f3;
+        border-top: 3px solid #3b2fd4;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    .loading-text {
+        margin-top: 1rem;
+        color: #3b2fd4;
+        font-weight: 600;
+    }
+
+    /* Responsive */
+    @media (max-width: 1024px) {
+        .form-row {
+            grid-template-columns: 1fr;
+        }
+        
+        .settings-tabs {
+            overflow-x: auto;
+            white-space: nowrap;
+        }
+        
+        .settings-tabs .tab {
+            padding: 1rem;
+            flex-shrink: 0;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .page-title {
+            font-size: 1.5rem;
+        }
+        
+        .test-email-section {
+            flex-direction: column;
+        }
+        
+        .test-email-section .btn {
+            width: 100%;
+        }
+        
+        .password-input-group {
+            flex-direction: column;
+        }
+        
+        .password-input-group .btn {
+            width: 100%;
+        }
+        
+        .form-actions .btn {
+            width: 100%;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .settings-section-header,
+        .settings-section-body {
+            padding: 1rem;
+        }
+        
+        .danger-action-item .btn {
+            width: 100%;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block script %}
+<script>
+    // Tab switching
+    function switchSettingsTab(tabName) {
+        // Hide all tabs
+        document.querySelectorAll('.settings-tab-content').forEach(tab => {
+            tab.classList.remove('active');
+        });
+        
+        // Remove active class from all tab buttons
+        document.querySelectorAll('.settings-tabs .tab').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        
+        // Show selected tab
+        document.getElementById(tabName + 'Tab').classList.add('active');
+        
+        // Activate selected tab button
+        document.querySelector(`.tab[onclick*="${tabName}"]`).classList.add('active');
+    }
+    
+    // Password visibility toggle
+    function togglePassword(inputId) {
+        const input = document.getElementById(inputId);
+        const button = input.nextElementSibling;
+        const icon = button.querySelector('i');
+        
+        if (input.type === 'password') {
+            input.type = 'text';
+            icon.classList.remove('fa-eye');
+            icon.classList.add('fa-eye-slash');
+        } else {
+            input.type = 'password';
+            icon.classList.remove('fa-eye-slash');
+            icon.classList.add('fa-eye');
+        }
+    }
+    
+    // Generate random password
+    function generatePassword(inputId) {
+        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*';
+        let password = '';
+        for (let i = 0; i < 12; i++) {
+            password += chars.charAt(Math.floor(Math.random() * chars.length));
+        }
+        document.getElementById(inputId).value = password;
+    }
+    
+    // Show loading overlay
+    function showLoading() {
+        document.getElementById('loadingOverlay').style.display = 'flex';
+    }
+    
+    function hideLoading() {
+        document.getElementById('loadingOverlay').style.display = 'none';
+    }
+    
+    // Form submission handling
+    document.querySelectorAll('.settings-form').forEach(form => {
+        form.addEventListener('submit', function(e) {
+            showLoading();
+            
+            // Optional: Add validation here
+            const submitBtn = this.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+            submitBtn.disabled = true;
+            
+            // Form will submit normally to Django
+        });
+    });
+    
+    // System Actions
+    function clearSystemCache() {
+        if (confirm('Are you sure you want to clear the system cache?')) {
+            showLoading();
+            fetch('/dashboard/admin/clear-cache/', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                hideLoading();
+                if (data.success) {
+                    alert('System cache cleared successfully!');
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            })
+            .catch(error => {
+                hideLoading();
+                alert('Error clearing cache');
+            });
+        }
+    }
+    
+    function runDatabaseBackup() {
+        if (confirm('Create a database backup now?')) {
+            showLoading();
+            fetch('/dashboard/admin/backup-database/', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                hideLoading();
+                if (data.success) {
+                    alert('Database backup completed successfully!');
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            })
+            .catch(error => {
+                hideLoading();
+                alert('Error creating backup');
+            });
+        }
+    }
+    
+    function viewSystemLogs() {
+        window.open('/dashboard/admin/view-logs/', '_blank');
+    }
+    
+    function sendTestEmail() {
+        const email = document.getElementById('testEmail').value;
+        
+        if (!email || !validateEmail(email)) {
+            alert('Please enter a valid email address');
+            return;
+        }
+        
+        showLoading();
+        fetch('/dashboard/admin/send-test-email/', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ email: email })
+        })
+        .then(response => response.json())
+        .then(data => {
+            hideLoading();
+            if (data.success) {
+                alert('Test email sent successfully!');
+            } else {
+                alert('Error: ' + data.error);
+            }
+        })
+        .catch(error => {
+            hideLoading();
+            alert('Error sending test email');
+        });
+    }
+    
+    function validateEmail(email) {
+        const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return re.test(email);
+    }
+    
+    // Initialize
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize first tab as active
+        switchSettingsTab('general');
+    });
+</script>
+{% endblock %}

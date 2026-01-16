@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Password reset Status</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <style>
+        .status-container {
+            max-width: 600px;
+            margin: 5rem auto;
+            padding: 2rem;
+            border-radius: 0.75rem;
+            background-color: var(--secondary-light);
+            border: 1px solid var(--secondary);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+            text-align: center;
+            font-family: inherit;
+            color: var(--text-dark);
+        }
+
+        .status-container h2 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .status-container p {
+            font-size: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .back-btn {
+            background-color: var(--secondary);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 9999px;
+            font-weight: 500;
+            text-decoration: none;
+            transition: background 0.3s ease;
+            display: inline-block;
+        }
+
+        .back-btn:hover {
+            background-color: #0e9b76;
+        }
+    </style>
+</head>
+<body>
+    <div class="status-container">
+        <h2>✅ Passwd Reset Successful</h2>
+        <p>you can log back in now</p>
+        <a href="../index.php" class="back-btn">← Go Back</a>
+    </div>
+</body>
+</html>

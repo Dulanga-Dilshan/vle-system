@@ -1,0 +1,533 @@
+<nav class="navbar">
+    <div class="nav-container">
+        <div class="nav-logo">
+            <i class="fas fa-graduation-cap"></i>
+            <span>University VLE</span>
+        </div>
+        
+        <!-- Mobile Menu Toggle -->
+        <button class="mobile-menu-toggle" id="mobileMenuToggle">
+            <i class="fas fa-bars"></i>
+        </button>
+        
+        <div class="nav-items" id="navItems">
+            <!-- Quick Actions Dropdown -->
+            <div class="dropdown">
+                <button class="nav-link dropdown-toggle">
+                    <i class="fas fa-bolt"></i> Quick Actions
+                    <i class="fas fa-chevron-down dropdown-icon"></i>
+                </button>
+                <div class="dropdown-menu">
+                    <a href="{% url 'dashboard:manage_users' %}" class="dropdown-item">
+                        <i class="fas fa-user-plus"></i> Add User
+                    </a>
+                    <a href="{% url 'dashboard:post_annousment' %}" class="dropdown-item">
+                        <i class="fas fa-bullhorn"></i> New Announcement
+                    </a>
+                    <a href="{% url 'dashboard:manage_requests' %}" class="dropdown-item">
+                        <i class="fas fa-user-check"></i> Approve Requests
+                    </a>
+                    <div class="dropdown-divider"></div>
+                    <a href="{% url 'dashboard:system_state' %}" class="dropdown-item">
+                        <i class="fas fa-chart-line"></i> View Reports
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Notifications -->
+            <div class="dropdown">
+                <button class="nav-link notification-btn">
+                    <i class="fas fa-bell"></i>
+                    {% if notifications_count > 0 %}
+                    <span class="notification-badge">{{ notifications_count }}</span>
+                    {% endif %}
+                </button>
+                <div class="dropdown-menu notification-dropdown">
+                    <div class="notification-header">
+                        <h4>Notifications</h4>
+                        <a href="#" class="mark-all-read">Mark all as read</a>
+                    </div>
+                    <div class="notification-list">
+                        <!-- Notification items would go here -->
+                        <div class="notification-item unread">
+                            <i class="fas fa-user-plus notification-icon"></i>
+                            <div class="notification-content">
+                                <div class="notification-title">New registration request</div>
+                                <div class="notification-time">5 minutes ago</div>
+                            </div>
+                        </div>
+                        <div class="notification-item">
+                            <i class="fas fa-exclamation-triangle notification-icon warning"></i>
+                            <div class="notification-content">
+                                <div class="notification-title">System backup completed</div>
+                                <div class="notification-time">2 hours ago</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="notification-footer">
+                        <a href="#" class="view-all">View all notifications</a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- User Profile -->
+            <div class="dropdown">
+                <button class="user-profile-btn">
+                    <div class="user-avatar">{{ avetar }}</div>
+                    <div class="user-info">
+                        <span class="user-name">{{ name }}</span>
+                        <span class="user-role">Administrator</span>
+                    </div>
+                    <i class="fas fa-chevron-down dropdown-icon"></i>
+                </button>
+                <div class="dropdown-menu">
+                    <div class="dropdown-header">
+                        <div class="user-avatar-large">{{ avetar }}</div>
+                        <div>
+                            <div class="user-name">{{ name }}</div>
+                            <div class="user-email">{{ request.user.email|default:"admin@university.edu" }}</div>
+                        </div>
+                    </div>
+                    <div class="dropdown-divider"></div>
+                    <a href="{% url 'dashboard:route' %}" class="dropdown-item">
+                        <i class="fas fa-tachometer-alt"></i> Dashboard
+                    </a>
+                    <a href="#" class="dropdown-item" onclick="showChangePasswordModal()">
+                        <i class="fas fa-key"></i> Change Password
+                    </a>
+                    <a href="#" class="dropdown-item">
+                        <i class="fas fa-cog"></i> Settings
+                    </a>
+                    <div class="dropdown-divider"></div>
+                    <a href="{% url 'Users:logout' %}" class="dropdown-item logout-item">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<style>
+    .navbar {
+        background: linear-gradient(135deg, #3b2fd4 0%, #2a1bb7 100%);
+        color: white;
+        padding: 0 30px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        position: sticky;
+        top: 0;
+        z-index: 1000;
+    }
+    
+    .nav-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 0;
+    }
+    
+    .nav-logo {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        font-size: 1.4em;
+        font-weight: 700;
+        padding: 20px 0;
+    }
+    
+    .nav-logo i {
+        font-size: 1.5em;
+    }
+    
+    .nav-items {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+    }
+    
+    .dropdown {
+        position: relative;
+    }
+    
+    .nav-link, .user-profile-btn {
+        background: transparent;
+        border: none;
+        color: white;
+        padding: 12px 18px;
+        border-radius: 8px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+    
+    .nav-link:hover, .user-profile-btn:hover {
+        background: rgba(255, 255, 255, 0.1);
+    }
+    
+    .dropdown-icon {
+        font-size: 0.8em;
+        transition: transform 0.3s ease;
+    }
+    
+    .dropdown:hover .dropdown-icon {
+        transform: rotate(180deg);
+    }
+    
+    .dropdown-menu {
+        position: absolute;
+        top: 100%;
+        right: 0;
+        background: white;
+        min-width: 250px;
+        border-radius: 12px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+        opacity: 0;
+        visibility: hidden;
+        transform: translateY(10px);
+        transition: all 0.3s ease;
+        z-index: 1000;
+    }
+    
+    .dropdown:hover .dropdown-menu {
+        opacity: 1;
+        visibility: visible;
+        transform: translateY(0);
+    }
+    
+    .dropdown-header {
+        padding: 20px;
+        background: #f8f9ff;
+        border-radius: 12px 12px 0 0;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+    }
+    
+    .user-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: white;
+        color: #3b2fd4;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 1.1em;
+    }
+    
+    .user-avatar-large {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #3b2fd4 0%, #2a1bb7 100%);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 1.5em;
+    }
+    
+    .user-info {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .user-name {
+        font-weight: 600;
+        font-size: 0.95em;
+    }
+    
+    .user-role {
+        font-size: 0.85em;
+        opacity: 0.8;
+    }
+    
+    .user-email {
+        font-size: 0.85em;
+        color: #666;
+    }
+    
+    .dropdown-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 15px 20px;
+        color: #333;
+        text-decoration: none;
+        transition: all 0.3s ease;
+    }
+    
+    .dropdown-item:hover {
+        background: #f8f9ff;
+        color: #3b2fd4;
+    }
+    
+    .dropdown-item i {
+        width: 20px;
+        color: #666;
+    }
+    
+    .dropdown-divider {
+        height: 1px;
+        background: #f0f0f0;
+        margin: 5px 0;
+    }
+    
+    .logout-item {
+        color: #f44336;
+    }
+    
+    .logout-item i {
+        color: #f44336;
+    }
+    
+    .notification-btn {
+        position: relative;
+        padding: 12px;
+    }
+    
+    .notification-badge {
+        position: absolute;
+        top: 5px;
+        right: 5px;
+        background: #f44336;
+        color: white;
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        font-size: 0.7em;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .notification-dropdown {
+        min-width: 350px;
+    }
+    
+    .notification-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 20px;
+        border-bottom: 1px solid #f0f0f0;
+    }
+    
+    .notification-header h4 {
+        margin: 0;
+        color: #333;
+    }
+    
+    .mark-all-read {
+        font-size: 0.9em;
+        color: #3b2fd4;
+        text-decoration: none;
+    }
+    
+    .notification-list {
+        max-height: 300px;
+        overflow-y: auto;
+    }
+    
+    .notification-item {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        padding: 15px 20px;
+        border-bottom: 1px solid #f8f8f8;
+        transition: background 0.3s ease;
+    }
+    
+    .notification-item:hover {
+        background: #f8f9ff;
+    }
+    
+    .notification-item.unread {
+        background: #f0f7ff;
+    }
+    
+    .notification-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: #e8f5e9;
+        color: #4caf50;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1em;
+    }
+    
+    .notification-icon.warning {
+        background: #fff3e0;
+        color: #ff9800;
+    }
+    
+    .notification-content {
+        flex: 1;
+    }
+    
+    .notification-title {
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 5px;
+    }
+    
+    .notification-time {
+        font-size: 0.85em;
+        color: #888;
+    }
+    
+    .notification-footer {
+        padding: 15px 20px;
+        text-align: center;
+        border-top: 1px solid #f0f0f0;
+    }
+    
+    .view-all {
+        color: #3b2fd4;
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 0.9em;
+    }
+    
+    .mobile-menu-toggle {
+        display: none;
+        background: transparent;
+        border: none;
+        color: white;
+        font-size: 1.5em;
+        cursor: pointer;
+        padding: 10px;
+    }
+    
+    @media (max-width: 768px) {
+        .navbar {
+            padding: 0 15px;
+        }
+        
+        .mobile-menu-toggle {
+            display: block;
+        }
+        
+        .nav-items {
+            position: fixed;
+            top: 70px;
+            right: -100%;
+            flex-direction: column;
+            background: white;
+            width: 100%;
+            max-width: 300px;
+            height: calc(100vh - 70px);
+            padding: 20px;
+            box-shadow: -5px 0 15px rgba(0,0,0,0.1);
+            transition: right 0.3s ease;
+            gap: 10px;
+        }
+        
+        .nav-items.active {
+            right: 0;
+        }
+        
+        .nav-link, .user-profile-btn {
+            color: #333;
+            width: 100%;
+            justify-content: space-between;
+        }
+        
+        .dropdown-menu {
+            position: static;
+            opacity: 1;
+            visibility: visible;
+            transform: none;
+            box-shadow: none;
+            border: 1px solid #f0f0f0;
+            margin-top: 10px;
+        }
+        
+        .notification-dropdown {
+            min-width: 100%;
+        }
+    }
+</style>
+
+<script>
+    // Mobile menu toggle
+    document.getElementById('mobileMenuToggle').addEventListener('click', function() {
+        document.getElementById('navItems').classList.toggle('active');
+    });
+    
+    // Close mobile menu when clicking outside
+    document.addEventListener('click', function(event) {
+        const navItems = document.getElementById('navItems');
+        const menuToggle = document.getElementById('mobileMenuToggle');
+        
+        if (!navItems.contains(event.target) && !menuToggle.contains(event.target)) {
+            navItems.classList.remove('active');
+        }
+    });
+    
+    // Change password modal (reuse from previous implementation)
+    function showChangePasswordModal() {
+        // Your existing change password modal code here
+        const modal = document.createElement('div');
+        modal.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        `;
+        
+        modal.innerHTML = `
+            <div style="background: white; padding: 30px; border-radius: 12px; width: 90%; max-width: 500px;">
+                <h3 style="margin-top: 0; color: #3b2fd4;">
+                    <i class="fas fa-key"></i> Change Password
+                </h3>
+                <form id="passwordForm" style="display: flex; flex-direction: column; gap: 20px;">
+                    <div>
+                        <label style="display: block; margin-bottom: 8px; font-weight: 600;">Current Password</label>
+                        <input type="password" required style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px;">
+                    </div>
+                    <div>
+                        <label style="display: block; margin-bottom: 8px; font-weight: 600;">New Password</label>
+                        <input type="password" required style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px;">
+                    </div>
+                    <div>
+                        <label style="display: block; margin-bottom: 8px; font-weight: 600;">Confirm New Password</label>
+                        <input type="password" required style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px;">
+                    </div>
+                    <div style="display: flex; gap: 15px; margin-top: 20px;">
+                        <button type="submit" style="flex: 1; background: #3b2fd4; color: white; border: none; padding: 12px; border-radius: 8px; font-weight: 600; cursor: pointer;">
+                            Change Password
+                        </button>
+                        <button type="button" onclick="this.closest('div[style*=\\'background: rgba\\']').remove()" style="flex: 1; background: #666; color: white; border: none; padding: 12px; border-radius: 8px; font-weight: 600; cursor: pointer;">
+                            Cancel
+                        </button>
+                    </div>
+                </form>
+            </div>
+        `;
+        
+        document.body.appendChild(modal);
+        
+        modal.querySelector('#passwordForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            alert('Password change request would be processed here.');
+            modal.remove();
+        });
+    }
+</script>

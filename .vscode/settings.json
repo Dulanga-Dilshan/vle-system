@@ -1,0 +1,12 @@
+{
+    "python.analysis.extraPaths": [
+        "./vle"
+    ],
+
+    "javascript.validate.enable": false ,
+    "typescript.validate.enable": false,
+    "html.validate.scripts": false,
+    "html.validate.styles": false,
+    
+
+}

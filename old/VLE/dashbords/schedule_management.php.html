@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Schedule Management | VLE</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="page-container">
+        <!-- Navigation -->
+        <nav class="navbar">
+            <div class="nav-container">
+                <div class="nav-logo">
+                    <i class="fas fa-calendar-alt"></i>
+                    <span>VLE System</span>
+                </div>
+                <div class="nav-items">
+                    <div class="user-profile">
+                        <div class="user-avatar">AD</div>
+                        <span>Admin</span>
+                    </div>
+                    <a href="#" class="logout-btn">
+                        <i class="fas fa-sign-out-alt"></i>
+                        <span>Logout</span>
+                    </a>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="header-section">
+                <h2><i class="fas fa-calendar-alt"></i> Schedule Management</h2>
+                <div class="card-actions">
+                    <button class="action-btn">
+                        <i class="fas fa-plus"></i> Add Schedule
+                    </button>
+                </div>
+            </div>
+
+            <div class="cards-container">
+                <!-- Timetable Card -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3><i class="fas fa-table purple-icon"></i> Timetables</h3>
+                    </div>
+                    <p>Manage all class schedules and room assignments.</p>
+                    <div class="schedule-list">
+                        <div class="schedule-item">
+                            <span class="time">09:00 - 11:00</span>
+                            <div class="class-info">
+                                <h3>Mathematics 101</h3>
+                                <p>Room A12 | Prof. Smith</p>
+                            </div>
+                            <button class="join-btn">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                        </div>
+                        <div class="schedule-item">
+                            <span class="time">11:30 - 13:30</span>
+                            <div class="class-info">
+                                <h3>Computer Science</h3>
+                                <p>Lab B05 | Dr. Johnson</p>
+                            </div>
+                            <button class="join-btn">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        <a href="#" class="view-all">View All Timetables →</a>
+                    </div>
+                </div>
+
+                <!-- Room Management Card -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3><i class="fas fa-door-open blue-icon"></i> Room Management</h3>
+                    </div>
+                    <p>View and manage room availability and assignments.</p>
+                    <div class="materials-grid">
+                        <div class="material-item">
+                            <div class="material-icon">
+                                <i class="fas fa-chalkboard"></i>
+                            </div>
+                            <div class="material-info">
+                                <h3>Lecture Hall A</h3>
+                                <p>Capacity: 120</p>
+                            </div>
+                        </div>
+                        <div class="material-item">
+                            <div class="material-icon">
+                                <i class="fas fa-flask"></i>
+                            </div>
+                            <div class="material-info">
+                                <h3>Science Lab B</h3>
+                                <p>Capacity: 30</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        <a href="#" class="view-all">Manage All Rooms →</a>
+                    </div>
+                </div>
+
+                <!-- Conflicts Card -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3><i class="fas fa-exclamation-triangle yellow-icon"></i> Schedule Conflicts</h3>
+                    </div>
+                    <p>Resolve overlapping schedules and room assignments.</p>
+                    <div class="notice-list">
+                        <div class="notice-item important">
+                            <div class="notice-icon">
+                                <i class="fas fa-exclamation"></i>
+                            </div>
+                            <div class="notice-content">
+                                <h3>Room A12 Double Booking</h3>
+                                <p>Math 101 and Physics 201 both scheduled at 09:00</p>
+                                <span class="notice-time">Today</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-actions">
+                        <button class="action-btn">
+                            <i class="fas fa-check"></i> Resolve
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <div class="footer-container">
+                <p>&copy; 2023 Virtual Learning Environment</p>
+                <div class="social-icons">
+                    <a href="#"><i class="fab fa-facebook-f"></i></a>
+                    <a href="#"><i class="fab fa-twitter"></i></a>
+                    <a href="#"><i class="fab fa-linkedin-in"></i></a>
+                </div>
+            </div>
+        </footer>
+    </div>
+</body>
+</html>

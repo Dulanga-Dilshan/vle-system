@@ -1,0 +1,721 @@
+{% comment %} register_successful.html {% endcomment %}
+{% extends "main.html" %}
+
+{% block title %}Registration Successful - University VLE{% endblock %}
+
+{% block body %}
+<div class="success-container">
+    <!-- Success Background -->
+    <div class="success-background">
+        <div class="success-shapes">
+            <div class="success-shape shape-1"></div>
+            <div class="success-shape shape-2"></div>
+            <div class="success-shape shape-3"></div>
+            <div class="success-shape shape-4"></div>
+        </div>
+        
+        <div class="success-content">
+            <!-- Success Icon -->
+            <div class="success-icon">
+                <div class="icon-circle">
+                    <i class="fas fa-check"></i>
+                </div>
+                <div class="icon-ring"></div>
+            </div>
+            
+            <!-- Success Message -->
+            <h1 class="success-title">Registration Submitted Successfully!</h1>
+            <p class="success-message">
+                Thank you for registering with the University Virtual Learning Environment.
+                Your application has been received and is pending administrative review.
+            </p>
+            
+            <!-- Next Steps -->
+            <div class="next-steps">
+                <h3>What Happens Next?</h3>
+                <div class="steps-timeline">
+                    <div class="timeline-step">
+                        <div class="step-marker">
+                            <div class="step-number">1</div>
+                        </div>
+                        <div class="step-content">
+                            <h4>Administrative Review</h4>
+                            <p>Our administrative team will review your registration details within 1-2 business days.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="timeline-step">
+                        <div class="step-marker">
+                            <div class="step-number">2</div>
+                        </div>
+                        <div class="step-content">
+                            <h4>Account Activation</h4>
+                            <p>Once approved, your account will be activated and you'll receive a confirmation email.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="timeline-step">
+                        <div class="step-marker">
+                            <div class="step-number">3</div>
+                        </div>
+                        <div class="step-content">
+                            <h4>Access Platform</h4>
+                            <p>Use your credentials to log in and access courses, materials, and learning resources.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Important Information -->
+            <div class="important-info">
+                <div class="info-card">
+                    <div class="info-icon">
+                        <i class="fas fa-envelope"></i>
+                    </div>
+                    <div class="info-content">
+                        <h4>Check Your Email</h4>
+                        <p>You'll receive updates about your registration status at the email address you provided.</p>
+                    </div>
+                </div>
+                
+                <div class="info-card">
+                    <div class="info-icon">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <div class="info-content">
+                        <h4>Processing Time</h4>
+                        <p>Registration review typically takes 1-2 business days. You'll be notified once complete.</p>
+                    </div>
+                </div>
+                
+                <div class="info-card">
+                    <div class="info-icon">
+                        <i class="fas fa-question-circle"></i>
+                    </div>
+                    <div class="info-content">
+                        <h4>Need Help?</h4>
+                        <p>Contact our admissions team if you have questions about your registration.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Action Buttons -->
+            <div class="success-actions">
+                <a href="{% url 'Users:login' %}" class="btn btn-primary btn-lg">
+                    <i class="fas fa-sign-in-alt"></i>
+                    Go to Login Page
+                </a>
+                <a href="/" class="btn btn-outline">
+                    <i class="fas fa-home"></i>
+                    Return to Home
+                </a>
+                <button class="btn btn-outline" onclick="resendConfirmation()">
+                    <i class="fas fa-redo"></i>
+                    Resend Confirmation
+                </button>
+            </div>
+            
+            <!-- Contact Information -->
+            <div class="contact-info">
+                <p>
+                    <i class="fas fa-phone"></i>
+                    <strong>Admissions Office:</strong> +1 (555) 123-4567
+                </p>
+                <p>
+                    <i class="fas fa-envelope"></i>
+                    <strong>Email:</strong> admissions@university.edu
+                </p>
+                <p>
+                    <i class="fas fa-clock"></i>
+                    <strong>Office Hours:</strong> Mon-Fri, 9:00 AM - 5:00 PM
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block style %}
+<style>
+    .success-container {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, #f5f7ff 0%, #e3e9ff 100%);
+        padding: 2rem;
+    }
+
+    .success-background {
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+        max-width: 800px;
+        width: 100%;
+        padding: 3rem;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .success-shapes {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        pointer-events: none;
+    }
+
+    .success-shape {
+        position: absolute;
+        border-radius: 50%;
+        background: linear-gradient(135deg, rgba(67, 97, 238, 0.1) 0%, rgba(114, 9, 183, 0.1) 100%);
+    }
+
+    .success-shape.shape-1 {
+        width: 150px;
+        height: 150px;
+        top: -75px;
+        right: -75px;
+    }
+
+    .success-shape.shape-2 {
+        width: 100px;
+        height: 100px;
+        bottom: -50px;
+        left: -50px;
+    }
+
+    .success-shape.shape-3 {
+        width: 80px;
+        height: 80px;
+        top: 40%;
+        right: 10%;
+    }
+
+    .success-shape.shape-4 {
+        width: 60px;
+        height: 60px;
+        bottom: 30%;
+        left: 10%;
+    }
+
+    /* Success Icon */
+    .success-icon {
+        position: relative;
+        width: 120px;
+        height: 120px;
+        margin: 0 auto 2rem;
+    }
+
+    .icon-circle {
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(135deg, #4361ee, #7209b7);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 3rem;
+        color: white;
+        position: relative;
+        z-index: 2;
+        animation: pulse 2s infinite;
+    }
+
+    .icon-ring {
+        position: absolute;
+        top: -10px;
+        left: -10px;
+        right: -10px;
+        bottom: -10px;
+        border: 3px solid rgba(67, 97, 238, 0.2);
+        border-radius: 50%;
+        animation: ringPulse 2s infinite;
+    }
+
+    @keyframes pulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+        100% { transform: scale(1); }
+    }
+
+    @keyframes ringPulse {
+        0% { 
+            transform: scale(1);
+            opacity: 1;
+        }
+        100% { 
+            transform: scale(1.3);
+            opacity: 0;
+        }
+    }
+
+    /* Success Message */
+    .success-title {
+        font-size: 2.25rem;
+        color: var(--dark);
+        text-align: center;
+        margin-bottom: 1rem;
+        font-weight: 700;
+    }
+
+    .success-message {
+        font-size: 1.1rem;
+        color: var(--gray);
+        text-align: center;
+        max-width: 600px;
+        margin: 0 auto 3rem;
+        line-height: 1.6;
+    }
+
+    /* Next Steps */
+    .next-steps {
+        margin-bottom: 3rem;
+    }
+
+    .next-steps h3 {
+        font-size: 1.5rem;
+        color: var(--dark);
+        text-align: center;
+        margin-bottom: 2rem;
+        font-weight: 600;
+    }
+
+    .steps-timeline {
+        position: relative;
+        max-width: 600px;
+        margin: 0 auto;
+    }
+
+    .steps-timeline::before {
+        content: '';
+        position: absolute;
+        left: 30px;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: var(--primary-light);
+    }
+
+    .timeline-step {
+        display: flex;
+        gap: 2rem;
+        margin-bottom: 2.5rem;
+        position: relative;
+    }
+
+    .timeline-step:last-child {
+        margin-bottom: 0;
+    }
+
+    .step-marker {
+        position: relative;
+        z-index: 2;
+    }
+
+    .step-number {
+        width: 60px;
+        height: 60px;
+        background: var(--primary);
+        color: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
+        font-weight: 600;
+        box-shadow: 0 4px 12px rgba(67, 97, 238, 0.3);
+    }
+
+    .step-content {
+        flex: 1;
+        padding-top: 0.5rem;
+    }
+
+    .step-content h4 {
+        font-size: 1.1rem;
+        color: var(--dark);
+        margin-bottom: 0.5rem;
+        font-weight: 600;
+    }
+
+    .step-content p {
+        color: var(--gray);
+        font-size: 0.95rem;
+        line-height: 1.5;
+        margin: 0;
+    }
+
+    /* Important Information */
+    .important-info {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 3rem;
+    }
+
+    .info-card {
+        background: var(--light);
+        border-radius: 12px;
+        padding: 1.5rem;
+        display: flex;
+        align-items: flex-start;
+        gap: 1rem;
+        transition: var(--transition);
+        border: 1px solid var(--gray-light);
+    }
+
+    .info-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+        border-color: var(--primary);
+    }
+
+    .info-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 10px;
+        background: linear-gradient(135deg, #4361ee, #3a56d4);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
+        flex-shrink: 0;
+    }
+
+    .info-card:nth-child(2) .info-icon {
+        background: linear-gradient(135deg, #7209b7, #5a0a94);
+    }
+
+    .info-card:nth-child(3) .info-icon {
+        background: linear-gradient(135deg, #4cc9f0, #00b4d8);
+    }
+
+    .info-content h4 {
+        font-size: 1rem;
+        color: var(--dark);
+        margin-bottom: 0.5rem;
+        font-weight: 600;
+    }
+
+    .info-content p {
+        color: var(--gray);
+        font-size: 0.9rem;
+        line-height: 1.4;
+        margin: 0;
+    }
+
+    /* Action Buttons */
+    .success-actions {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        align-items: center;
+        margin-bottom: 3rem;
+    }
+
+    .success-actions .btn-lg {
+        padding: 1rem 2rem;
+        font-size: 1.1rem;
+        font-weight: 600;
+        min-width: 250px;
+    }
+
+    .success-actions .btn-outline {
+        padding: 0.75rem 1.5rem;
+    }
+
+    /* Contact Information */
+    .contact-info {
+        text-align: center;
+        padding-top: 2rem;
+        border-top: 1px solid var(--gray-light);
+    }
+
+    .contact-info p {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.75rem;
+        color: var(--gray);
+        margin-bottom: 0.75rem;
+        font-size: 0.95rem;
+    }
+
+    .contact-info p:last-child {
+        margin-bottom: 0;
+    }
+
+    .contact-info i {
+        color: var(--primary);
+        font-size: 1.1rem;
+    }
+
+    .contact-info strong {
+        color: var(--dark);
+        font-weight: 600;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .success-background {
+            padding: 2rem;
+        }
+        
+        .success-title {
+            font-size: 1.75rem;
+        }
+        
+        .steps-timeline::before {
+            left: 25px;
+        }
+        
+        .timeline-step {
+            gap: 1.5rem;
+        }
+        
+        .step-number {
+            width: 50px;
+            height: 50px;
+            font-size: 1.1rem;
+        }
+        
+        .important-info {
+            grid-template-columns: 1fr;
+        }
+        
+        .success-actions {
+            flex-direction: column;
+        }
+        
+        .success-actions .btn {
+            width: 100%;
+            max-width: 300px;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .success-background {
+            padding: 1.5rem;
+        }
+        
+        .success-title {
+            font-size: 1.5rem;
+        }
+        
+        .success-message {
+            font-size: 1rem;
+        }
+        
+        .timeline-step {
+            flex-direction: column;
+            gap: 1rem;
+            text-align: center;
+        }
+        
+        .steps-timeline::before {
+            display: none;
+        }
+        
+        .step-marker {
+            align-self: center;
+        }
+        
+        .contact-info p {
+            flex-direction: column;
+            gap: 0.25rem;
+            text-align: center;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block script %}
+<script>
+    // Page entrance animation
+    document.addEventListener('DOMContentLoaded', function() {
+        // Animate success elements sequentially
+        const elements = document.querySelectorAll('.success-icon, .success-title, .success-message, .timeline-step, .info-card, .success-actions, .contact-info');
+        
+        elements.forEach((element, index) => {
+            element.style.opacity = '0';
+            element.style.transform = 'translateY(20px)';
+            
+            setTimeout(() => {
+                element.style.transition = 'all 0.6s cubic-bezier(0.4, 0, 0.2, 1)';
+                element.style.opacity = '1';
+                element.style.transform = 'translateY(0)';
+            }, 200 * (index + 1));
+        });
+        
+        // Start pulse animation after a delay
+        setTimeout(() => {
+            const iconCircle = document.querySelector('.icon-circle');
+            iconCircle.style.animation = 'pulse 2s infinite';
+            
+            const iconRing = document.querySelector('.icon-ring');
+            iconRing.style.animation = 'ringPulse 2s infinite';
+        }, 1000);
+    });
+    
+    // Resend confirmation
+    function resendConfirmation() {
+        showLoading();
+        
+        // Simulate API call
+        setTimeout(() => {
+            hideLoading();
+            
+            showModal('Confirmation Resent', `
+                <div class="confirmation-message">
+                    <div style="text-align: center; margin-bottom: 1.5rem;">
+                        <i class="fas fa-envelope-open-text" style="font-size: 3rem; color: var(--primary); margin-bottom: 1rem;"></i>
+                        <h3>Confirmation Email Sent</h3>
+                    </div>
+                    <p>A new confirmation email has been sent to your registered email address. Please check your inbox (and spam folder).</p>
+                    <div class="modal-actions" style="margin-top: 1.5rem;">
+                        <button class="btn btn-primary" onclick="closeModal()">OK</button>
+                    </div>
+                </div>
+            `);
+        }, 1500);
+    }
+    
+    // Print registration details
+    function printConfirmation() {
+        const printContent = `
+            <div style="padding: 2rem; font-family: Arial, sans-serif;">
+                <h1 style="color: #4361ee; border-bottom: 2px solid #4361ee; padding-bottom: 1rem;">
+                    <i class="fas fa-university"></i> University VLE - Registration Confirmation
+                </h1>
+                <div style="margin: 2rem 0; padding: 1.5rem; background: #f8f9ff; border-radius: 8px;">
+                    <h2 style="color: #333; margin-bottom: 1rem;">✅ Registration Submitted Successfully</h2>
+                    <p>Your registration request has been received and is pending administrative review.</p>
+                </div>
+                <h3 style="color: #333; margin: 1.5rem 0 1rem 0;">Next Steps:</h3>
+                <ol style="margin-left: 1.5rem; color: #555;">
+                    <li style="margin-bottom: 0.5rem;">Administrative review (1-2 business days)</li>
+                    <li style="margin-bottom: 0.5rem;">Account activation notification</li>
+                    <li style="margin-bottom: 0.5rem;">Access to learning platform</li>
+                </ol>
+                <div style="margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid #ddd; color: #666; font-size: 0.9rem;">
+                    <p>📞 Admissions Office: +1 (555) 123-4567</p>
+                    <p>✉️ Email: admissions@university.edu</p>
+                    <p>🕒 Office Hours: Mon-Fri, 9:00 AM - 5:00 PM</p>
+                </div>
+                <div style="margin-top: 2rem; color: #888; font-size: 0.8rem; text-align: center;">
+                    <p>Printed on ${new Date().toLocaleDateString()} at ${new Date().toLocaleTimeString()}</p>
+                </div>
+            </div>
+        `;
+        
+        const printWindow = window.open('', '_blank');
+        printWindow.document.write(`
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>Registration Confirmation - University VLE</title>
+                <style>
+                    body { margin: 0; padding: 0; font-family: Arial, sans-serif; }
+                    @media print {
+                        body { padding: 20px; }
+                    }
+                </style>
+            </head>
+            <body>
+                ${printContent}
+                <script>
+                    window.onload = function() {
+                        window.print();
+                        window.onafterprint = function() {
+                            window.close();
+                        };
+                    };
+                <\/script>
+            </body>
+            </html>
+        `);
+        printWindow.document.close();
+    }
+    
+    // Download confirmation
+    function downloadConfirmation() {
+        showLoading();
+        
+        // Simulate PDF generation
+        setTimeout(() => {
+            hideLoading();
+            
+            showModal('Download Confirmation', `
+                <div class="download-options">
+                    <h4>Download Registration Confirmation</h4>
+                    <p>Select your preferred format:</p>
+                    <div class="download-buttons" style="display: flex; flex-direction: column; gap: 1rem; margin: 1.5rem 0;">
+                        <button class="btn btn-primary" onclick="downloadFormat('pdf')">
+                            <i class="fas fa-file-pdf"></i> Download as PDF
+                        </button>
+                        <button class="btn btn-outline" onclick="downloadFormat('text')">
+                            <i class="fas fa-file-alt"></i> Download as Text File
+                        </button>
+                    </div>
+                    <div class="modal-actions">
+                        <button class="btn btn-outline" onclick="closeModal()">Cancel</button>
+                    </div>
+                </div>
+            `);
+        }, 1000);
+    }
+    
+    function downloadFormat(format) {
+        showLoading();
+        
+        setTimeout(() => {
+            hideLoading();
+            closeModal();
+            
+            // Create a fake download
+            const content = `University VLE - Registration Confirmation\n\n` +
+                           `Status: Submitted Successfully\n` +
+                           `Date: ${new Date().toLocaleDateString()}\n` +
+                           `Time: ${new Date().toLocaleTimeString()}\n\n` +
+                           `Your registration request has been received and is pending administrative review.\n` +
+                           `You will be notified via email once your account is activated.\n\n` +
+                           `Contact Information:\n` +
+                           `Admissions Office: +1 (555) 123-4567\n` +
+                           `Email: admissions@university.edu`;
+            
+            const blob = new Blob([content], { type: 'text/plain' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `registration_confirmation.${format}`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+            
+            alert('Confirmation downloaded successfully!');
+        }, 1500);
+    }
+    
+    // Add print button dynamically
+    document.addEventListener('DOMContentLoaded', function() {
+        const actionsDiv = document.querySelector('.success-actions');
+        const printButton = document.createElement('button');
+        printButton.className = 'btn btn-outline';
+        printButton.innerHTML = '<i class="fas fa-print"></i> Print Confirmation';
+        printButton.onclick = printConfirmation;
+        
+        const downloadButton = document.createElement('button');
+        downloadButton.className = 'btn btn-outline';
+        downloadButton.innerHTML = '<i class="fas fa-download"></i> Download';
+        downloadButton.onclick = downloadConfirmation;
+        
+        // Insert before the last button
+        actionsDiv.insertBefore(downloadButton, actionsDiv.lastChild);
+        actionsDiv.insertBefore(printButton, actionsDiv.lastChild);
+    });
+</script>
+{% endblock %}
