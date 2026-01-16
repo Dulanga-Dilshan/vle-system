@@ -7,8 +7,6 @@ from Users import models as user_models
 from . import permissions
 from django.shortcuts import get_object_or_404
 
-# Create your views here.
-
 
 @api_view(['GET'])
 def test_api(request):

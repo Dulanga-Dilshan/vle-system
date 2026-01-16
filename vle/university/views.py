@@ -194,4 +194,7 @@ def manage_batches(request):
 
 
 def manage_batch(request,id:int):
-    return render(request,'dashboard/admin/manage_batch.html')
+    context = {}
+    context['students'] = user_models.Student.objects.filter(batch=id)
+    context['batch'] = get_object_or_404(university_models.Batch,id=id)
+    return render(request,'dashboard/admin/manage_batch.html',context)

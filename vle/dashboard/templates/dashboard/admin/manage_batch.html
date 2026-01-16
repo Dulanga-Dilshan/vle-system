@@ -1,267 +1,499 @@
 {% extends "main.html" %}
 
-{% block title %}Batch Management - University VLE{% endblock %}
+{% block title %}{{ batch.name }} - Batch Management - University VLE{% endblock %}
 
 {% block navigation %}
     {% include "admin_navigation.html" %}
 {% endblock %}
 
 {% block body %}
-<div class="batches-management">
+<div class="batch-detail-management">
     <!-- Page Header -->
     <div class="page-header">
-        <h1 class="page-title">
-            <i class="fas fa-calendar-alt"></i> Batch Management
-        </h1>
+        <div class="header-left">
+            <h1 class="page-title">
+                <i class="fas fa-calendar-alt"></i> {{ batch.name }}
+            </h1>
+            <p class="page-subtitle">
+                Manage students and academic progression
+            </p>
+        </div>
         <div class="header-actions">
-            <div class="search-box">
-                <i class="fas fa-search"></i>
-                <input type="text" id="searchBatch" placeholder="Search batches...">
-            </div>
-            <button class="btn btn-primary" onclick="openAddBatchModal()">
-                <i class="fas fa-plus"></i> Add Batch
+            <a href="{% url 'dashboard:manage_batches' %}" class="btn btn-outline">
+                <i class="fas fa-arrow-left"></i> Back to Batches
+            </a>
+            <button class="btn btn-primary" onclick="openAddStudentsModal()">
+                <i class="fas fa-user-plus"></i> Add Students
             </button>
         </div>
     </div>
 
-    <!-- Statistics Cards -->
-    <div class="stats-grid">
-        <div class="stat-card">
-            <div class="stat-icon">
-                <i class="fas fa-calendar"></i>
-            </div>
-            <div class="stat-content">
-                <h3 id="totalBatches">{{ batches|length|default:"0" }}</h3>
-                <p>Total Batches</p>
-            </div>
-        </div>
-        
-        <div class="stat-card">
-            <div class="stat-icon">
-                <i class="fas fa-users"></i>
-            </div>
-            <div class="stat-content">
-                <h3>{{ active_students_count|default:"0" }}</h3>
-                <p>Active Students</p>
-            </div>
-        </div>
-        
-        <div class="stat-card">
-            <div class="stat-icon">
-                <i class="fas fa-chalkboard-teacher"></i>
-            </div>
-            <div class="stat-content">
-                <h3>{{ ongoing_batches|default:"0" }}</h3>
-                <p>Ongoing Batches</p>
+    <!-- Batch Info Card -->
+    <div class="batch-info-card card">
+        <div class="batch-header-info">
+            <div class="batch-avatar">{{ batch.course.name|first|upper }}</div>
+            <div class="batch-details">
+                <h2>{{ batch.name }}</h2>
+                <div class="batch-meta">
+                    <span class="meta-item">
+                        <i class="fas fa-book"></i>
+                        Course: {{ batch.course.name|default:"Not Assigned" }}
+                    </span>
+                    <span class="meta-item">
+                        <i class="fas fa-calendar"></i>
+                        Intake Year: {{ batch.intake_year }}
+                    </span>
+                    <span class="meta-item">
+                        <i class="fas fa-users"></i>
+                        Students: {{ students|length }}
+                    </span>
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- View Options -->
-    <div class="view-options-container">
-        <div class="view-options">
-            <span class="view-option active" onclick="changeView('grid')">
-                <i class="fas fa-th-large"></i> Grid View
-            </span>
-            <span class="view-option" onclick="changeView('list')">
-                <i class="fas fa-list"></i> List View
-            </span>
+    <!-- Tabs Navigation -->
+    <div class="tabs-container">
+        <div class="tabs">
+            <button class="tab-btn active" data-tab="students-tab">
+                <i class="fas fa-users"></i> Students
+            </button>
+            <button class="tab-btn" data-tab="progress-tab">
+                <i class="fas fa-chart-line"></i> Progress & Semesters
+            </button>
         </div>
     </div>
 
-    <!-- Batches Grid View -->
-    <div class="batches-grid" id="gridView">
-        {% if batches %}
-            {% for batch in batches %}
-            <div class="batch-card" 
-                 data-id="{{ batch.id }}" 
-                 data-name="{{ batch.name|lower }}" 
-                 data-course="{{ batch.course.name|default:''|lower }}"
-                 data-intake-year="{{ batch.intake_year }}"
-                 data-course-id="{{ batch.course.id|default:'' }}"
-                 data-is-active="{{ batch.is_active|yesno:'true,false' }}">
-                <div class="batch-header">
-                    <div class="batch-year">{{ batch.intake_year }}</div>
-                    <div class="header-top-actions">
-                        <div class="status-badge {% if batch.is_active %}active{% else %}inactive{% endif %}">
-                            {% if batch.is_active %}Active{% else %}Inactive{% endif %}
-                        </div>
-                        <button class="btn-delete-batch" onclick="deleteBatch(event, {{ batch.id }}, '{{ batch.name }}')">
-                            <i class="fas fa-trash"></i>
-                        </button>
+    <!-- Students Tab -->
+    <div class="tab-content active" id="students-tab">
+        <div class="students-management">
+            <div class="section-header">
+                <h2>
+                    <i class="fas fa-users"></i> Batch Students
+                </h2>
+                <div class="student-actions">
+                    <div class="search-box">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="searchStudent" placeholder="Search students...">
                     </div>
-                </div>
-                <div class="batch-body">
-                    <h4>{{ batch.name }}</h4>
-                    <p class="batch-course">Course: {{ batch.course.name|default:"No Course" }}</p>
-                    <div class="batch-info">
-                        <div class="info-row">
-                            <span class="info-label">Intake Year:</span>
-                            <span class="info-value intake-year">{{ batch.intake_year }}</span>
-                        </div>
-                        <div class="info-row">
-                            <span class="info-label">Course:</span>
-                            <span class="info-value course-name">{{ batch.course.name|default:"N/A" }}</span>
-                        </div>
-                        <div class="info-row">
-                            <span class="info-label">Students:</span>
-                            <span class="info-value student-count">{{ batch.student_count|default:"0" }}</span>
-                        </div>
-                    </div>
-                </div>
-                <div class="batch-footer">
-                    <!-- View Button - Go to batch detail page -->
-                    <a href="{% url 'dashboard:batch_detail' batch.id %}" class="btn btn-view">
-                        <i class="fas fa-eye"></i> View
-                    </a>
-                    
-                    <!-- Edit Button - Open edit modal -->
-                    <button class="btn btn-edit" onclick="editBatch({{ batch.id }})">
-                        <i class="fas fa-edit"></i> Edit
+                    <button class="btn btn-outline" onclick="openCSVUploadModal()">
+                        <i class="fas fa-file-upload"></i> Bulk Upload
                     </button>
                 </div>
             </div>
-            {% endfor %}
-        {% else %}
-            <div class="empty-state" style="grid-column: 1 / -1;">
-                <div class="empty-state-icon">
-                    <i class="fas fa-calendar-alt"></i>
+
+            <!-- Student Selection Actions -->
+            <div class="bulk-actions" id="bulkActions" style="display: none;">
+                <div class="bulk-actions-content">
+                    <span id="selectedCount">0</span> students selected
+                    <div class="bulk-buttons">
+                        <button class="btn btn-sm btn-outline" onclick="clearSelection()">
+                            Clear
+                        </button>
+                        <button class="btn btn-sm btn-danger" onclick="removeSelectedStudents()">
+                            <i class="fas fa-trash"></i> Remove Selected
+                        </button>
+                        <button class="btn btn-sm btn-primary" onclick="updateSelectedProgress()">
+                            <i class="fas fa-forward"></i> Update Progress
+                        </button>
+                    </div>
                 </div>
-                <h3>No Batches Found</h3>
-                <p>Get started by adding your first batch</p>
-                <button class="btn btn-primary" onclick="openAddBatchModal()">
-                    <i class="fas fa-plus"></i> Add First Batch
+            </div>
+
+            {% if students %}
+            <div class="students-table">
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th width="50">
+                                    <input type="checkbox" id="selectAll" onchange="toggleSelectAll(this)">
+                                </th>
+                                <th>Student</th>
+                                <th>Student ID</th>
+                                <th>Email</th>
+                                <th>Current Progress</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for student in students %}
+                            <tr data-student-id="{{ student.id }}" data-progress="{{ student.progress_year|default:'1.1' }}">
+                                <td>
+                                    <input type="checkbox" class="student-checkbox" value="{{ student.id }}">
+                                </td>
+                                <td>
+                                    <div class="student-info-cell">
+                                        <div class="student-avatar">
+                                            {{ student.name|first|upper }}
+                                        </div>
+                                        <div>
+                                            <strong>{{ student.name }}</strong>
+                                            <small>Joined: {{ student.joined_date|date:"M d, Y"|default:"N/A" }}</small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>{{ student.username|default:"-" }}</td>
+                                <td>{{ student.username.email|default:"-" }}</td>
+                                <td>
+                                    <span class="progress-badge" data-progress="{{ student.progress_year|default:'1.1' }}">
+                                        {{ student.progress_year|default:"1.1" }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <div class="action-buttons">
+                                        <button class="btn btn-sm btn-outline" onclick="updateStudentProgress({{ student.id }}, '{{ student.fullname }}')" title="Update Progress">
+                                            <i class="fas fa-forward"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-danger" onclick="removeStudent({{ student.id }}, '{{ student.fullname }}')" title="Remove from Batch">
+                                            <i class="fas fa-user-minus"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <div class="empty-state-icon">
+                    <i class="fas fa-users"></i>
+                </div>
+                <h3>No Students in Batch</h3>
+                <p>Add students to start managing this batch</p>
+                <button class="btn btn-primary" onclick="openAddStudentsModal()">
+                    <i class="fas fa-user-plus"></i> Add Students
                 </button>
             </div>
-        {% endif %}
-        
-        <!-- Add Batch Card -->
-        <div class="batch-card add-card" onclick="openAddBatchModal()">
-            <div class="add-card-content">
-                <div class="add-icon">
-                    <i class="fas fa-plus"></i>
-                </div>
-                <h4>Add New Batch</h4>
-                <p>Create a new batch</p>
-            </div>
+            {% endif %}
         </div>
     </div>
 
-    <!-- Batches List View -->
-    <div class="batches-table" id="listView" style="display: none;">
-        <div class="table-container">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Batch Name</th>
-                        <th>Course</th>
-                        <th>Intake Year</th>
-                        <th>Students</th>
-                        <th>Status</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for batch in batches %}
-                    <tr data-id="{{ batch.id }}" 
-                        data-name="{{ batch.name|lower }}" 
-                        data-course="{{ batch.course.name|default:''|lower }}"
-                        data-intake-year="{{ batch.intake_year }}"
-                        data-course-id="{{ batch.course.id|default:'' }}"
-                        data-is-active="{{ batch.is_active|yesno:'true,false' }}">
-                        <td>
-                            <div class="batch-info-cell">
-                                <div class="batch-year-circle">{{ batch.intake_year }}</div>
-                                <div>
-                                    <strong>{{ batch.name }}</strong>
-                                    <small>{{ batch.course.name|default:"" }}</small>
+    <!-- Progress & Semesters Tab -->
+    <div class="tab-content" id="progress-tab">
+        <div class="progress-management">
+            <div class="section-header">
+                <h2>
+                    <i class="fas fa-chart-line"></i> Academic Progress
+                </h2>
+                <div class="progress-actions">
+                    <button class="btn btn-primary" onclick="advanceEntireBatch()">
+                        <i class="fas fa-forward"></i> Advance Entire Batch
+                    </button>
+                </div>
+            </div>
+
+            <!-- Progress Timeline -->
+            <div class="progress-timeline">
+                <div class="timeline-header">
+                    <h3>Semester Progression</h3>
+                    <small>Click on a semester to view students in that stage</small>
+                </div>
+                
+                <div class="timeline">
+                    {% for year in "1234"|make_list %}
+                    <div class="timeline-year">
+                        <div class="year-header">
+                            <h4>Year {{ year }}</h4>
+                            <span class="year-stats">
+                                {{ students_by_year.year|default:0 }} students
+                            </span>
+                        </div>
+                        <div class="semester-grid">
+                            {% for semester in "12"|make_list %}
+                            {% with progress=year|add:'.'|add:semester %}
+                            <div class="semester-card" data-progress="{{ progress }}" onclick="viewStudentsInProgress('{{ progress }}')">
+                                <div class="semester-header">
+                                    <h5>{{ progress }}</h5>
+                                    <span class="student-count">
+                                        
+                                    </span>
+                                </div>
+                                <div class="semester-body">
+                                    <div class="progress-indicator">
+                            
+                                        <div class="progress-bar" style="width: {{ percentage|default:0 }}%"></div>
+                                    </div>
+                                    <small>{{ percentage|default:0 }}% of batch</small>
                                 </div>
                             </div>
-                        </td>
-                        <td>{{ batch.course.name|default:"-" }}</td>
-                        <td>{{ batch.intake_year }}</td>
-                        <td>
-                            <span class="count-badge">{{ batch.student_count|default:"0" }}</span>
-                        </td>
-                        <td>
-                            <span class="status-badge {% if batch.is_active %}active{% else %}inactive{% endif %}">
-                                {% if batch.is_active %}Active{% else %}Inactive{% endif %}
-                            </span>
-                        </td>
-                        <td>
-                            <div class="action-buttons">
-                                <!-- View Button -->
-                                <a href="{% url 'dashboard:batch_detail' batch.id %}" class="btn btn-sm btn-view" title="View Batch">
-                                    <i class="fas fa-eye"></i>
-                                </a>
-                                
-                                <!-- Edit Button -->
-                                <button class="btn btn-sm btn-edit" onclick="editBatch({{ batch.id }})" title="Edit Batch">
-                                    <i class="fas fa-edit"></i>
-                                </button>
-                                
-                                <!-- Delete Button -->
-                                <button class="btn btn-sm btn-danger" onclick="deleteBatch(event, {{ batch.id }}, '{{ batch.name }}')" title="Delete Batch">
-                                    <i class="fas fa-trash"></i>
-                                </button>
-                            </div>
-                        </td>
-                    </tr>
+                            {% endwith %}
+                            {% endfor %}
+                        </div>
+                    </div>
                     {% endfor %}
-                </tbody>
-            </table>
+                </div>
+            </div>
+
+            <!-- Progress Statistics -->
+            <div class="progress-stats">
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-user-graduate"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3>{{ students_by_progress.4.2|default:0 }}</h3>
+                        <p>Final Year Students</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-running"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3>{{ average_progress|default:"1.1" }}</h3>
+                        <p>Average Progress</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-flag-checkered"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3>{{ completion_rate|default:0 }}%</h3>
+                        <p>Completion Rate</p>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>
 
-<!-- Add/Edit Batch Modal -->
-<div class="modal-overlay" id="batchModal" style="display: none;">
+<!-- Add Students Modal -->
+<div class="modal-overlay" id="addStudentsModal" style="display: none;">
     <div class="modal">
         <div class="modal-header">
-            <h3 class="modal-title" id="modalTitle">Add New Batch</h3>
-            <button class="modal-close" onclick="closeModal()">&times;</button>
+            <h3 class="modal-title">Add Students to Batch</h3>
+            <button class="modal-close" onclick="closeAddStudentsModal()">&times;</button>
         </div>
         <div class="modal-content">
-            <form id="batchForm" method="post" action="">
-                {% csrf_token %}
-                <input type="hidden" id="batchId" name="id">
+            <div class="add-methods">
+                <div class="method-card" onclick="showAddMethod('search')">
+                    <div class="method-icon">
+                        <i class="fas fa-search"></i>
+                    </div>
+                    <h4>Search Existing Students</h4>
+                    <p>Add students already in the system</p>
+                </div>
                 
+                <div class="method-card" onclick="showAddMethod('new')">
+                    <div class="method-icon">
+                        <i class="fas fa-user-plus"></i>
+                    </div>
+                    <h4>Add New Students</h4>
+                    <p>Create new student accounts</p>
+                </div>
+            </div>
+
+            <!-- Search Existing Students Form -->
+            <div class="method-content" id="searchMethod" style="display: none;">
+                <form id="searchStudentsForm">
+                    <div class="form-group">
+                        <label for="studentSearch">Search Students</label>
+                        <div class="search-with-button">
+                            <input type="text" id="studentSearch" placeholder="Search by name, ID, or email...">
+                            <button type="button" class="btn btn-primary" onclick="searchStudents()">
+                                <i class="fas fa-search"></i> Search
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="search-results" id="searchResults" style="display: none;">
+                        <h4>Search Results</h4>
+                        <div class="results-list" id="resultsList"></div>
+                    </div>
+                    
+                    <div class="selected-students" id="selectedStudents" style="display: none;">
+                        <h4>Selected Students</h4>
+                        <div class="selected-list" id="selectedList"></div>
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-outline" onclick="closeAddStudentsModal()">Cancel</button>
+                        <button type="button" class="btn btn-primary" onclick="addSelectedStudents()">
+                            <i class="fas fa-user-plus"></i> Add Selected
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Add New Students Form -->
+            <div class="method-content" id="newMethod" style="display: none;">
+                <form id="newStudentsForm">
+                    <div class="form-group">
+                        <label for="newStudents">Student Details (One per line)</label>
+                        <textarea id="newStudents" rows="6" placeholder="Format: Full Name, Student ID, Email
+Example:
+John Doe, S12345, john@example.com
+Jane Smith, S12346, jane@example.com"></textarea>
+                        <small class="help-text">Enter student details separated by commas. One student per line.</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="initialProgress">Initial Progress</label>
+                        <select id="initialProgress">
+                            <option value="1.1">Year 1 Semester 1 (1.1)</option>
+                            <option value="1.2">Year 1 Semester 2 (1.2)</option>
+                            <option value="2.1">Year 2 Semester 1 (2.1)</option>
+                            <option value="2.2">Year 2 Semester 2 (2.2)</option>
+                            <option value="3.1">Year 3 Semester 1 (3.1)</option>
+                            <option value="3.2">Year 3 Semester 2 (3.2)</option>
+                            <option value="4.1">Year 4 Semester 1 (4.1)</option>
+                            <option value="4.2">Year 4 Semester 2 (4.2)</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-outline" onclick="closeAddStudentsModal()">Cancel</button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Create & Add Students
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- CSV Upload Modal -->
+<div class="modal-overlay" id="csvUploadModal" style="display: none;">
+    <div class="modal">
+        <div class="modal-header">
+            <h3 class="modal-title">Bulk Upload Students</h3>
+            <button class="modal-close" onclick="closeCSVUploadModal()">&times;</button>
+        </div>
+        <div class="modal-content">
+            <div class="upload-instructions">
+                <div class="instruction-card">
+                    <div class="instruction-icon">
+                        <i class="fas fa-file-download"></i>
+                    </div>
+                    <div class="instruction-content">
+                        <h4>Download Template</h4>
+                        <p>Use our template to ensure proper formatting</p>
+                        <button class="btn btn-outline" onclick="downloadCSVTemplate()">
+                            <i class="fas fa-download"></i> Download Template
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="instruction-card">
+                    <div class="instruction-icon">
+                        <i class="fas fa-edit"></i>
+                    </div>
+                    <div class="instruction-content">
+                        <h4>Fill Student Data</h4>
+                        <p>Add student information to the template</p>
+                        <small>Required columns: full_name, student_id, email</small>
+                    </div>
+                </div>
+            </div>
+            
+            <form id="csvUploadForm" enctype="multipart/form-data">
                 <div class="form-group">
-                    <label for="batchName">Batch Name *</label>
-                    <input type="text" id="batchName" name="name" placeholder="e.g., 2023-2024 Batch, Computer Science 2024" required>
+                    <label for="csvFile">Upload CSV File</label>
+                    <div class="file-upload-area" id="fileUploadArea">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                        <p>Drag & drop CSV file or click to browse</p>
+                        <input type="file" id="csvFile" accept=".csv" style="display: none;">
+                        <button type="button" class="btn btn-outline" onclick="document.getElementById('csvFile').click()">
+                            Browse Files
+                        </button>
+                    </div>
+                    <div class="file-preview" id="filePreview" style="display: none;">
+                        <div class="file-info">
+                            <i class="fas fa-file-csv"></i>
+                            <div>
+                                <strong id="fileName"></strong>
+                                <small id="fileSize"></small>
+                            </div>
+                            <button type="button" class="btn btn-sm btn-danger" onclick="clearFile()">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    </div>
                 </div>
                 
                 <div class="form-group">
-                    <label for="batchCode">Course *</label>
-                    <select id="batchCode" name="course" required>
-                        <option value="">Select Course</option>
-                        {% if courses %}
-                            {% for course in courses %}
-                            <option value="{{ course.id }}">{{ course.name }}</option>
-                            {% endfor %}
-                        {% endif %}
+                    <label for="csvProgress">Initial Progress for Uploaded Students</label>
+                    <select id="csvProgress">
+                        <option value="1.1">Year 1 Semester 1 (1.1)</option>
+                        <option value="1.2" selected>Year 1 Semester 2 (1.2)</option>
+                        <option value="2.1">Year 2 Semester 1 (2.1)</option>
+                        <option value="2.2">Year 2 Semester 2 (2.2)</option>
                     </select>
-                    <small class="help-text">Select the course for this batch</small>
                 </div>
                 
+                <div class="upload-preview" id="uploadPreview" style="display: none;">
+                    <h4>Upload Preview</h4>
+                    <div class="preview-table">
+                        <table>
+                            <thead id="previewHeaders"></thead>
+                            <tbody id="previewRows"></tbody>
+                        </table>
+                    </div>
+                    <div class="preview-summary" id="previewSummary"></div>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="button" class="btn btn-outline" onclick="closeCSVUploadModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="uploadBtn" disabled>
+                        <i class="fas fa-upload"></i> Upload & Process
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Update Progress Modal -->
+<div class="modal-overlay" id="updateProgressModal" style="display: none;">
+    <div class="modal">
+        <div class="modal-header">
+            <h3 class="modal-title" id="progressModalTitle">Update Student Progress</h3>
+            <button class="modal-close" onclick="closeProgressModal()">&times;</button>
+        </div>
+        <div class="modal-content">
+            <form id="updateProgressForm">
+                <input type="hidden" id="studentIds" name="student_ids">
+                
                 <div class="form-group">
-                    <label for="startYear">Intake Year *</label>
-                    <input type="number" id="startYear" name="intake_year" min="2000" max="2100" required placeholder="e.g., 2023">
+                    <label for="newProgress">New Academic Progress</label>
+                    <div class="progress-selector">
+                        <div class="progress-options">
+                            {% for year in "1234"|make_list %}
+                            <div class="progress-year">
+                                <h5>Year {{ year }}</h5>
+                                <div class="semester-options">
+                                    {% for semester in "12"|make_list %}
+                                    {% with progress=year|add:'.'|add:semester %}
+                                    <label class="progress-option">
+                                        <input type="radio" name="progress" value="{{ progress }}">
+                                        <span class="option-label">{{ progress }}</span>
+                                    </label>
+                                    {% endwith %}
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
                 </div>
                 
                 <div class="form-group">
                     <label class="checkbox-label">
-                        <input type="checkbox" id="isActive" name="is_active" checked>
+                        <input type="checkbox" id="notifyStudent" name="notify_student">
                         <span class="checkmark"></span>
-                        Active Batch
+                        Notify student(s) about progress update
                     </label>
-                    <small class="help-text">Uncheck to make this batch inactive</small>
                 </div>
-                                
+                
                 <div class="form-actions">
-                    <button type="button" class="btn btn-outline" onclick="closeModal()">Cancel</button>
+                    <button type="button" class="btn btn-outline" onclick="closeProgressModal()">Cancel</button>
                     <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-save"></i> Save Batch
+                        <i class="fas fa-save"></i> Update Progress
                     </button>
                 </div>
             </form>
@@ -280,11 +512,9 @@
 
 {% block style %}
 <style>
-    /* Main Container */
-    .batches-management {
+    /* Batch Detail Management */
+    .batch-detail-management {
         padding: 20px;
-        background: #f8f9fa;
-        min-height: 100vh;
     }
 
     /* Page Header */
@@ -297,13 +527,23 @@
         gap: 1rem;
     }
 
+    .header-left {
+        flex: 1;
+    }
+
     .page-title {
-        font-size: 2rem;
+        font-size: 1.75rem;
         color: #2c3e50;
-        margin: 0;
+        margin: 0 0 0.5rem 0;
         display: flex;
         align-items: center;
         gap: 0.75rem;
+    }
+
+    .page-subtitle {
+        font-size: 0.95rem;
+        color: #7f8c8d;
+        margin: 0;
     }
 
     .header-actions {
@@ -312,9 +552,139 @@
         align-items: center;
     }
 
+    /* Batch Info Card */
+    .batch-info-card {
+        margin-bottom: 2rem;
+        border-radius: 12px;
+        overflow: hidden;
+        border: 1px solid #e9ecef;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    }
+
+    .batch-header-info {
+        display: flex;
+        align-items: center;
+        gap: 1.5rem;
+        padding: 1.5rem;
+        background: linear-gradient(135deg, #4cc9f0 0%, #4895ef 100%);
+        color: white;
+    }
+
+    .batch-avatar {
+        width: 70px;
+        height: 70px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.2);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2rem;
+        font-weight: 600;
+        flex-shrink: 0;
+        border: 3px solid rgba(255, 255, 255, 0.3);
+    }
+
+    .batch-details h2 {
+        font-size: 1.5rem;
+        margin: 0 0 0.5rem 0;
+        color: white;
+        font-weight: 600;
+    }
+
+    .batch-meta {
+        display: flex;
+        gap: 1.5rem;
+        flex-wrap: wrap;
+    }
+
+    .meta-item {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.95rem;
+        background: rgba(255, 255, 255, 0.1);
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+    }
+
+    /* Tabs */
+    .tabs-container {
+        margin-bottom: 2rem;
+        background: white;
+        border-radius: 12px;
+        border: 1px solid #e9ecef;
+    }
+
+    .tabs {
+        display: flex;
+        border-bottom: 1px solid #e9ecef;
+    }
+
+    .tab-btn {
+        flex: 1;
+        padding: 1rem 1.5rem;
+        background: none;
+        border: none;
+        border-bottom: 3px solid transparent;
+        font-size: 1rem;
+        font-weight: 500;
+        color: #6c757d;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        transition: all 0.3s ease;
+    }
+
+    .tab-btn:hover {
+        background: #f8f9fa;
+        color: #4361ee;
+    }
+
+    .tab-btn.active {
+        color: #4361ee;
+        border-bottom-color: #4361ee;
+        background: #f8f9ff;
+    }
+
+    .tab-content {
+        display: none;
+    }
+
+    .tab-content.active {
+        display: block;
+    }
+
+    /* Students Management */
+    .students-management .section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .students-management .section-header h2 {
+        font-size: 1.5rem;
+        color: #2c3e50;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .student-actions {
+        display: flex;
+        gap: 1rem;
+        align-items: center;
+    }
+
     .search-box {
         position: relative;
-        width: 300px;
+        width: 250px;
     }
 
     .search-box i {
@@ -331,390 +701,37 @@
         border: 1px solid #ddd;
         border-radius: 8px;
         font-size: 0.95rem;
-        background: white;
-        transition: all 0.3s ease;
     }
 
-    .search-box input:focus {
-        outline: none;
-        border-color: #4361ee;
-        box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.1);
-    }
-
-    /* Statistics Grid */
-    .stats-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-        gap: 1.5rem;
-        margin-bottom: 2rem;
-    }
-
-    .stat-card {
-        background: white;
-        border-radius: 12px;
-        padding: 1.5rem;
-        display: flex;
-        align-items: center;
-        gap: 1rem;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-        transition: all 0.3s ease;
-        border: 1px solid #eee;
-    }
-
-    .stat-card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
-    }
-
-    .stat-icon {
-        width: 60px;
-        height: 60px;
-        border-radius: 12px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.5rem;
-        color: white;
-        flex-shrink: 0;
-    }
-
-    .stat-card:nth-child(1) .stat-icon {
-        background: linear-gradient(135deg, #4361ee, #3a56d4);
-    }
-
-    .stat-card:nth-child(2) .stat-icon {
-        background: linear-gradient(135deg, #7209b7, #5a0a94);
-    }
-
-    .stat-card:nth-child(3) .stat-icon {
-        background: linear-gradient(135deg, #4cc9f0, #4895ef);
-    }
-
-    .stat-content h3 {
-        font-size: 2rem;
-        font-weight: 700;
-        color: #2c3e50;
-        margin-bottom: 0.25rem;
-        line-height: 1;
-    }
-
-    .stat-content p {
-        color: #7f8c8d;
-        font-size: 0.9rem;
-        margin: 0;
-    }
-
-    /* View Options */
-    .view-options-container {
-        margin-bottom: 1.5rem;
-        background: white;
-        padding: 1rem;
-        border-radius: 12px;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-        border: 1px solid #eee;
-    }
-
-    .view-options {
-        display: inline-flex;
-        background: #f8f9fa;
-        padding: 0.25rem;
+    /* Bulk Actions */
+    .bulk-actions {
+        background: #e3f2fd;
         border-radius: 8px;
-        gap: 0.25rem;
+        margin-bottom: 1.5rem;
+        padding: 1rem;
+        border: 1px solid #bbdefb;
     }
 
-    .view-option {
-        padding: 0.5rem 1rem;
-        border-radius: 6px;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        color: #7f8c8d;
-        font-size: 0.9rem;
-        transition: all 0.3s ease;
-    }
-
-    .view-option:hover {
-        background: white;
-        color: #4361ee;
-    }
-
-    .view-option.active {
-        background: #4361ee;
-        color: white;
-    }
-
-    /* Batches Grid */
-    .batches-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-        gap: 1.5rem;
-    }
-
-    /* Batch Card */
-    .batch-card {
-        background: white;
-        border-radius: 12px;
-        overflow: hidden;
-        border: 1px solid #eee;
-        transition: all 0.3s ease;
-        display: flex;
-        flex-direction: column;
-    }
-
-    .batch-card:not(.add-card):hover {
-        transform: translateY(-4px);
-        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
-        border-color: #4361ee;
-    }
-
-    /* Batch Header */
-    .batch-header {
-        padding: 1.5rem;
-        background: linear-gradient(135deg, #4cc9f0 0%, #4895ef 100%);
-        color: white;
-        position: relative;
+    .bulk-actions-content {
         display: flex;
         justify-content: space-between;
         align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
     }
 
-    .batch-year {
-        font-size: 2rem;
-        font-weight: 700;
-        opacity: 0.9;
+    .bulk-actions-content span {
+        font-weight: 600;
+        color: #1976d2;
     }
 
-    .header-top-actions {
+    .bulk-buttons {
         display: flex;
         gap: 0.5rem;
-        align-items: center;
     }
 
-    .status-badge {
-        padding: 0.25rem 0.75rem;
-        border-radius: 20px;
-        font-size: 0.75rem;
-        font-weight: 600;
-        text-transform: uppercase;
-        background: rgba(255, 255, 255, 0.2);
-        color: white;
-    }
-
-    .status-badge.active {
-        background: rgba(76, 201, 240, 0.3);
-    }
-
-    .status-badge.inactive {
-        background: rgba(156, 163, 175, 0.3);
-    }
-
-    .btn-delete-batch {
-        background: rgba(255, 255, 255, 0.2);
-        border: none;
-        color: white;
-        width: 30px;
-        height: 30px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        font-size: 0.9rem;
-        flex-shrink: 0;
-    }
-
-    .btn-delete-batch:hover {
-        background: rgba(255, 255, 255, 0.3);
-        transform: scale(1.1);
-    }
-
-    /* Batch Body */
-    .batch-body {
-        padding: 1.5rem;
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-    }
-
-    .batch-body h4 {
-        font-size: 1.25rem;
-        font-weight: 600;
-        color: #2c3e50;
-        margin-bottom: 0.25rem;
-        line-height: 1.4;
-    }
-
-    .batch-course {
-        font-size: 0.9rem;
-        color: #7f8c8d;
-        margin-bottom: 1rem;
-    }
-
-    /* Batch Info */
-    .batch-info {
-        margin-top: auto;
-        padding-top: 1rem;
-        border-top: 1px solid #f0f0f0;
-    }
-
-    .info-row {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 0.5rem 0;
-    }
-
-    .info-row:first-child {
-        padding-top: 0;
-    }
-
-    .info-row:last-child {
-        padding-bottom: 0;
-    }
-
-    .info-label {
-        font-size: 0.85rem;
-        color: #7f8c8d;
-        font-weight: 500;
-    }
-
-    .info-value {
-        font-weight: 600;
-        color: #2c3e50;
-        text-align: right;
-        max-width: 60%;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-    }
-
-    .intake-year {
-        color: #4361ee;
-    }
-
-    .course-name {
-        color: #7209b7;
-    }
-
-    .student-count {
-        color: #4cc9f0;
-        font-size: 1.1rem;
-    }
-
-    /* Batch Footer - ADJUSTED FOR 2 BUTTONS */
-    .batch-footer {
-        padding: 1rem 1.5rem;
-        background: #f8f9fa;
-        border-top: 1px solid #eee;
-        display: flex;
-        gap: 0.5rem;
-        flex-wrap: nowrap;
-    }
-
-    /* Button Styles - ADJUSTED FOR 2 BUTTONS */
-    .batch-footer .btn {
-        flex: 1;
-        min-width: 0;
-        padding: 0.75rem 0.5rem;
-        border: none;
-        border-radius: 6px;
-        cursor: pointer;
-        font-size: 0.85rem;
-        font-weight: 500;
-        transition: all 0.3s ease;
-        text-align: center;
-        text-decoration: none;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        gap: 0.375rem;
-        white-space: nowrap;
-        overflow: hidden;
-    }
-
-    /* View Button */
-    .btn-view {
-        background: #4361ee;
-        color: white;
-        border: 1px solid #3a56d4;
-    }
-
-    .btn-view:hover {
-        background: #3a56d4;
-        color: white;
-        transform: translateY(-1px);
-        box-shadow: 0 4px 8px rgba(67, 97, 238, 0.2);
-    }
-
-    /* Edit Button */
-    .btn-edit {
-        background: #f8f9fa;
-        color: #2c3e50;
-        border: 1px solid #ddd;
-    }
-
-    .btn-edit:hover {
-        background: #e9ecef;
-        transform: translateY(-1px);
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    }
-
-    /* Add Batch Card */
-    .batch-card.add-card {
-        background: transparent;
-        border: 2px dashed #ddd;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        min-height: 200px;
-        cursor: pointer;
-        transition: all 0.3s ease;
-    }
-
-    .batch-card.add-card:hover {
-        border-color: #4361ee;
-        background: rgba(67, 97, 238, 0.05);
-    }
-
-    .add-card-content {
-        text-align: center;
-        padding: 2rem;
-    }
-
-    .add-icon {
-        width: 60px;
-        height: 60px;
-        border-radius: 50%;
-        background: #4361ee;
-        color: white;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.5rem;
-        margin: 0 auto 1rem;
-        transition: all 0.3s ease;
-    }
-
-    .batch-card.add-card:hover .add-icon {
-        transform: scale(1.1);
-    }
-
-    .add-card-content h4 {
-        color: #2c3e50;
-        margin-bottom: 0.5rem;
-        font-size: 1.1rem;
-    }
-
-    .add-card-content p {
-        color: #7f8c8d;
-        font-size: 0.9rem;
-        margin: 0;
-    }
-
-    /* Batches Table */
-    .batches-table {
+    /* Students Table */
+    .students-table {
         background: white;
         border-radius: 12px;
         overflow: hidden;
@@ -726,13 +743,13 @@
         overflow-x: auto;
     }
 
-    .batches-table table {
+    .students-table table {
         width: 100%;
         border-collapse: collapse;
         min-width: 800px;
     }
 
-    .batches-table th {
+    .students-table th {
         background: #f8f9fa;
         padding: 1rem;
         text-align: left;
@@ -742,55 +759,55 @@
         white-space: nowrap;
     }
 
-    .batches-table td {
+    .students-table td {
         padding: 1rem;
         border-bottom: 1px solid #eee;
         vertical-align: middle;
     }
 
-    .batches-table tr:hover {
+    .students-table tr:hover {
         background: #f8f9fa;
     }
 
-    .batches-table tr:last-child td {
+    .students-table tr:last-child td {
         border-bottom: none;
     }
 
-    /* Table Cell Styles */
-    .batch-info-cell {
+    /* Student Info Cell */
+    .student-info-cell {
         display: flex;
         align-items: center;
         gap: 1rem;
         min-width: 200px;
     }
 
-    .batch-year-circle {
-        width: 50px;
-        height: 50px;
+    .student-avatar {
+        width: 40px;
+        height: 40px;
         border-radius: 50%;
-        background: linear-gradient(135deg, #4cc9f0 0%, #4895ef 100%);
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         color: white;
         display: flex;
         align-items: center;
         justify-content: center;
         font-weight: 600;
-        font-size: 1.1rem;
+        font-size: 1rem;
         flex-shrink: 0;
     }
 
-    .batch-info-cell > div {
+    .student-info-cell > div {
         flex: 1;
         min-width: 0;
     }
 
-    .batch-info-cell strong {
+    .student-info-cell strong {
         display: block;
         font-size: 0.95rem;
         color: #2c3e50;
         margin-bottom: 0.25rem;
     }
 
-    .batch-info-cell small {
+    .student-info-cell small {
         display: block;
         font-size: 0.85rem;
         color: #7f8c8d;
@@ -799,21 +816,22 @@
         text-overflow: ellipsis;
     }
 
-    .count-badge {
-        background: #e3f2fd;
-        color: #1976d2;
+    /* Progress Badge */
+    .progress-badge {
+        display: inline-block;
         padding: 0.25rem 0.75rem;
         border-radius: 20px;
-        font-weight: 600;
         font-size: 0.85rem;
-        display: inline-block;
+        font-weight: 600;
+        background: #e3f2fd;
+        color: #1976d2;
+        border: 1px solid #bbdefb;
     }
 
-    /* Table Action Buttons - REMOVED STUDENTS BUTTON */
+    /* Action Buttons */
     .action-buttons {
         display: flex;
         gap: 0.5rem;
-        justify-content: flex-start;
     }
 
     .action-buttons .btn-sm {
@@ -827,65 +845,180 @@
         align-items: center;
         justify-content: center;
         transition: all 0.3s ease;
-        flex-shrink: 0;
     }
 
-    .action-buttons .btn-view {
-        background: #4361ee;
-        color: white;
+    /* Progress Management */
+    .progress-management .section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+        flex-wrap: wrap;
+        gap: 1rem;
     }
 
-    .action-buttons .btn-view:hover {
-        background: #3a56d4;
-        transform: translateY(-1px);
-    }
-
-    .action-buttons .btn-edit {
-        background: #f8f9fa;
+    .progress-management .section-header h2 {
+        font-size: 1.5rem;
         color: #2c3e50;
-        border: 1px solid #ddd;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
     }
 
-    .action-buttons .btn-edit:hover {
-        background: #e9ecef;
-        transform: translateY(-1px);
-    }
-
-    .action-buttons .btn-danger {
-        background: #dc3545;
-        color: white;
-    }
-
-    .action-buttons .btn-danger:hover {
-        background: #c82333;
-        transform: translateY(-1px);
-    }
-
-    /* Empty State */
-    .empty-state {
-        text-align: center;
-        padding: 4rem 2rem;
+    /* Progress Timeline */
+    .progress-timeline {
         background: white;
         border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
         border: 1px solid #eee;
-        grid-column: 1 / -1;
     }
 
-    .empty-state-icon {
-        font-size: 4rem;
-        color: #ddd;
+    .timeline-header {
         margin-bottom: 1.5rem;
     }
 
-    .empty-state h3 {
-        font-size: 1.5rem;
-        color: #7f8c8d;
+    .timeline-header h3 {
+        font-size: 1.25rem;
+        color: #2c3e50;
+        margin: 0 0 0.5rem 0;
+    }
+
+    .timeline-year {
+        margin-bottom: 2rem;
+        padding-bottom: 1.5rem;
+        border-bottom: 1px solid #eee;
+    }
+
+    .timeline-year:last-child {
+        margin-bottom: 0;
+        padding-bottom: 0;
+        border-bottom: none;
+    }
+
+    .year-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+    }
+
+    .year-header h4 {
+        font-size: 1.1rem;
+        color: #2c3e50;
+        margin: 0;
+    }
+
+    .year-stats {
+        font-size: 0.9rem;
+        color: #6c757d;
+        background: #f8f9fa;
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+    }
+
+    .semester-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+    }
+
+    .semester-card {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 1rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        border: 1px solid #e9ecef;
+    }
+
+    .semester-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        border-color: #4361ee;
+        background: #f8f9ff;
+    }
+
+    .semester-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.75rem;
+    }
+
+    .semester-header h5 {
+        font-size: 1rem;
+        color: #2c3e50;
+        margin: 0;
+    }
+
+    .student-count {
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: #4361ee;
+        background: white;
+        padding: 0.2rem 0.6rem;
+        border-radius: 20px;
+        border: 1px solid #4361ee;
+    }
+
+    .progress-indicator {
+        height: 6px;
+        background: #e9ecef;
+        border-radius: 3px;
+        overflow: hidden;
         margin-bottom: 0.5rem;
     }
 
-    .empty-state p {
-        color: #95a5a6;
-        margin-bottom: 2rem;
+    .progress-bar {
+        height: 100%;
+        background: linear-gradient(90deg, #4cc9f0, #4895ef);
+        border-radius: 3px;
+        transition: width 0.3s ease;
+    }
+
+    /* Progress Statistics */
+    .progress-stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1.5rem;
+        margin-top: 2rem;
+    }
+
+    .progress-stats .stat-card {
+        background: white;
+        border-radius: 12px;
+        padding: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        border: 1px solid #eee;
+    }
+
+    .progress-stats .stat-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
+        color: white;
+    }
+
+    .progress-stats .stat-card:nth-child(1) .stat-icon {
+        background: linear-gradient(135deg, #4361ee, #3a56d4);
+    }
+
+    .progress-stats .stat-card:nth-child(2) .stat-icon {
+        background: linear-gradient(135deg, #7209b7, #5a0a94);
+    }
+
+    .progress-stats .stat-card:nth-child(3) .stat-icon {
+        background: linear-gradient(135deg, #4cc9f0, #4895ef);
     }
 
     /* Modal Styles */
@@ -907,7 +1040,7 @@
         background: white;
         border-radius: 12px;
         width: 90%;
-        max-width: 500px;
+        max-width: 800px;
         max-height: 90vh;
         overflow-y: auto;
         animation: modalSlideIn 0.3s ease;
@@ -938,15 +1071,508 @@
         transition: all 0.3s ease;
     }
 
-    .modal-close:hover {
+        .modal-close:hover {
         background: #f8f9fa;
-        color: #2c3e50;
+        color: #e74c3c;
     }
 
     .modal-content {
         padding: 1.5rem;
     }
 
+    /* Add Students Modal */
+    .add-methods {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+
+    .method-card {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 1.5rem;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        border: 1px solid #e9ecef;
+    }
+
+    .method-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        border-color: #4361ee;
+        background: #f8f9ff;
+    }
+
+    .method-icon {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #4361ee, #3a56d4);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        margin: 0 auto 1rem auto;
+    }
+
+    .method-card h4 {
+        margin: 0 0 0.5rem 0;
+        color: #2c3e50;
+    }
+
+    .method-card p {
+        margin: 0;
+        color: #6c757d;
+        font-size: 0.9rem;
+    }
+
+    .method-content {
+        display: none;
+    }
+
+    .search-with-button {
+        display: flex;
+        gap: 1rem;
+    }
+
+    .search-with-button input {
+        flex: 1;
+    }
+
+    .search-results, .selected-students {
+        margin-top: 1.5rem;
+    }
+
+    .search-results h4, .selected-students h4 {
+        font-size: 1rem;
+        color: #2c3e50;
+        margin-bottom: 1rem;
+    }
+
+    .results-list, .selected-list {
+        max-height: 200px;
+        overflow-y: auto;
+        border: 1px solid #eee;
+        border-radius: 8px;
+        padding: 0.5rem;
+    }
+
+    .student-result-item, .selected-student-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.75rem;
+        border-bottom: 1px solid #eee;
+        transition: background 0.3s ease;
+    }
+
+    .student-result-item:hover, .selected-student-item:hover {
+        background: #f8f9fa;
+    }
+
+    .student-result-item:last-child, .selected-student-item:last-child {
+        border-bottom: none;
+    }
+
+    .student-result-info {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+
+    .student-result-name {
+        font-weight: 600;
+        color: #2c3e50;
+    }
+
+    .student-result-email {
+        font-size: 0.85rem;
+        color: #6c757d;
+    }
+
+    /* Upload Instructions */
+    .upload-instructions {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+
+    .instruction-card {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 1.5rem;
+        border: 1px solid #e9ecef;
+    }
+
+    .instruction-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 10px;
+        background: linear-gradient(135deg, #4361ee, #3a56d4);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
+        margin-bottom: 1rem;
+    }
+
+    .instruction-content h4 {
+        margin: 0 0 0.5rem 0;
+        color: #2c3e50;
+    }
+
+    .instruction-content p {
+        margin: 0 0 0.5rem 0;
+        color: #6c757d;
+        font-size: 0.9rem;
+    }
+
+    .instruction-content small {
+        color: #95a5a6;
+    }
+
+    /* File Upload */
+    .file-upload-area {
+        border: 2px dashed #ddd;
+        border-radius: 8px;
+        padding: 2rem;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        background: #f8f9fa;
+    }
+
+    .file-upload-area:hover {
+        border-color: #4361ee;
+        background: #f8f9ff;
+    }
+
+    .file-upload-area i {
+        font-size: 2rem;
+        color: #4361ee;
+        margin-bottom: 1rem;
+    }
+
+    .file-upload-area p {
+        margin: 0 0 1rem 0;
+        color: #6c757d;
+    }
+
+    .file-preview {
+        margin-top: 1rem;
+    }
+
+    .file-info {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 1rem;
+        background: #f8f9fa;
+        border-radius: 8px;
+        border: 1px solid #e9ecef;
+    }
+
+    .file-info i {
+        font-size: 1.5rem;
+        color: #4361ee;
+    }
+
+    .preview-table {
+        overflow-x: auto;
+        margin-bottom: 1rem;
+    }
+
+    .preview-table table {
+        width: 100%;
+        border-collapse: collapse;
+        min-width: 600px;
+    }
+
+    .preview-table th, .preview-table td {
+        padding: 0.75rem;
+        border: 1px solid #eee;
+        text-align: left;
+    }
+
+    .preview-table th {
+        background: #f8f9fa;
+        font-weight: 600;
+    }
+
+    /* Progress Selector */
+    .progress-selector {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 1rem;
+    }
+
+    .progress-year {
+        margin-bottom: 1rem;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid #eee;
+    }
+
+    .progress-year:last-child {
+        margin-bottom: 0;
+        padding-bottom: 0;
+        border-bottom: none;
+    }
+
+    .progress-year h5 {
+        margin: 0 0 0.75rem 0;
+        color: #2c3e50;
+    }
+
+    .semester-options {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+        gap: 0.5rem;
+    }
+
+    .progress-option {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        cursor: pointer;
+    }
+
+    .progress-option input[type="radio"] {
+        display: none;
+    }
+
+    .option-label {
+        display: block;
+        padding: 0.5rem;
+        text-align: center;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        font-size: 0.9rem;
+        transition: all 0.3s ease;
+    }
+
+    .progress-option input[type="radio"]:checked + .option-label {
+        background: #4361ee;
+        color: white;
+        border-color: #4361ee;
+    }
+
+    .progress-option:hover .option-label {
+        border-color: #4361ee;
+        background: #f8f9ff;
+    }
+
+    /* Loading Overlay */
+    #loadingOverlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(255, 255, 255, 0.9);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 2000;
+    }
+
+    .loading-spinner {
+        text-align: center;
+    }
+
+    .loading-spinner i {
+        font-size: 3rem;
+        color: #4361ee;
+        margin-bottom: 1rem;
+    }
+
+    .loading-spinner p {
+        color: #2c3e50;
+        font-weight: 500;
+    }
+
+    /* Empty State */
+    .empty-state {
+        text-align: center;
+        padding: 4rem 2rem;
+        background: white;
+        border-radius: 12px;
+        border: 1px solid #eee;
+    }
+
+    .empty-state-icon {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #4361ee, #3a56d4);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2rem;
+        margin: 0 auto 1.5rem auto;
+    }
+
+    .empty-state h3 {
+        font-size: 1.5rem;
+        color: #2c3e50;
+        margin: 0 0 0.5rem 0;
+    }
+
+    .empty-state p {
+        color: #6c757d;
+        margin: 0 0 1.5rem 0;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .page-header {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .header-actions {
+            width: 100%;
+            justify-content: flex-start;
+        }
+
+        .batch-header-info {
+            flex-direction: column;
+            text-align: center;
+            gap: 1rem;
+        }
+
+        .batch-meta {
+            justify-content: center;
+        }
+
+        .tabs {
+            overflow-x: auto;
+        }
+
+        .tab-btn {
+            white-space: nowrap;
+            padding: 1rem;
+        }
+
+        .students-management .section-header {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .student-actions {
+            width: 100%;
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .search-box {
+            width: 100%;
+        }
+
+        .modal {
+            width: 95%;
+            margin: 1rem;
+        }
+    }
+
+    /* Animations */
+    @keyframes modalSlideIn {
+        from {
+            opacity: 0;
+            transform: translateY(-20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* Checkbox Styling */
+    .checkbox-label {
+        display: flex;
+        align-items: center;
+        cursor: pointer;
+        gap: 0.5rem;
+    }
+
+    .checkmark {
+        width: 20px;
+        height: 20px;
+        border: 2px solid #ddd;
+        border-radius: 4px;
+        position: relative;
+        transition: all 0.3s ease;
+    }
+
+    .checkbox-label input:checked + .checkmark {
+        background: #4361ee;
+        border-color: #4361ee;
+    }
+
+    .checkbox-label input:checked + .checkmark::after {
+        content: '✓';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        color: white;
+        font-size: 12px;
+    }
+
+    /* Button Styles */
+    .btn {
+        padding: 0.75rem 1.5rem;
+        border: none;
+        border-radius: 8px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #4361ee, #3a56d4);
+        color: white;
+    }
+
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(67, 97, 238, 0.3);
+    }
+
+    .btn-outline {
+        background: transparent;
+        color: #4361ee;
+        border: 1px solid #4361ee;
+    }
+
+    .btn-outline:hover {
+        background: #4361ee;
+        color: white;
+    }
+
+    .btn-danger {
+        background: linear-gradient(135deg, #e74c3c, #c0392b);
+        color: white;
+    }
+
+    .btn-danger:hover {
+        background: #c0392b;
+    }
+
+    .btn-sm {
+        padding: 0.5rem 1rem;
+        font-size: 0.875rem;
+    }
+
+    /* Form Elements */
     .form-group {
         margin-bottom: 1.5rem;
     }
@@ -962,12 +1588,11 @@
     .form-group select,
     .form-group textarea {
         width: 100%;
-        padding: 0.75rem 1rem;
+        padding: 0.75rem;
         border: 1px solid #ddd;
         border-radius: 8px;
         font-size: 0.95rem;
-        background: white;
-        transition: all 0.3s ease;
+        transition: border-color 0.3s ease;
     }
 
     .form-group input:focus,
@@ -978,63 +1603,11 @@
         box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.1);
     }
 
-    .checkbox-label {
-        display: flex;
-        align-items: center;
-        cursor: pointer;
-        position: relative;
-        padding-left: 2rem;
-        margin-bottom: 0.5rem;
-    }
-
-    .checkbox-label input {
-        position: absolute;
-        opacity: 0;
-        cursor: pointer;
-        height: 0;
-        width: 0;
-    }
-
-    .checkmark {
-        position: absolute;
-        left: 0;
-        height: 20px;
-        width: 20px;
-        background-color: #eee;
-        border-radius: 4px;
-        transition: all 0.3s ease;
-    }
-
-    .checkbox-label:hover input ~ .checkmark {
-        background-color: #ccc;
-    }
-
-    .checkbox-label input:checked ~ .checkmark {
-        background-color: #4361ee;
-    }
-
-    .checkmark:after {
-        content: "";
-        position: absolute;
-        display: none;
-        left: 7px;
-        top: 3px;
-        width: 6px;
-        height: 12px;
-        border: solid white;
-        border-width: 0 2px 2px 0;
-        transform: rotate(45deg);
-    }
-
-    .checkbox-label input:checked ~ .checkmark:after {
-        display: block;
-    }
-
     .help-text {
-        font-size: 0.85rem;
-        color: #95a5a6;
-        margin-top: 0.25rem;
         display: block;
+        margin-top: 0.25rem;
+        font-size: 0.85rem;
+        color: #6c757d;
     }
 
     .form-actions {
@@ -1045,446 +1618,648 @@
         padding-top: 1.5rem;
         border-top: 1px solid #eee;
     }
-
-    /* Loading Overlay */
-    #loadingOverlay {
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: rgba(0, 0, 0, 0.7);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        z-index: 2000;
-    }
-
-    .loading-spinner {
-        text-align: center;
-        color: white;
-    }
-
-    .loading-spinner i {
-        font-size: 3rem;
-        margin-bottom: 1rem;
-        animation: spin 1s linear infinite;
-    }
-
-    .loading-spinner p {
-        font-size: 1.2rem;
-    }
-
-    /* Notification Styles */
-    .notification {
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        padding: 1rem 1.5rem;
-        border-radius: 8px;
-        color: white;
-        font-weight: 500;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        min-width: 300px;
-        max-width: 400px;
-        z-index: 9999;
-        animation: slideIn 0.3s ease;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    }
-
-    .notification.success {
-        background: linear-gradient(135deg, #43e97b, #38f9d7);
-    }
-
-    .notification.error {
-        background: linear-gradient(135deg, #fa709a, #fee140);
-    }
-
-    .notification button {
-        background: none;
-        border: none;
-        color: white;
-        font-size: 1.25rem;
-        cursor: pointer;
-        padding: 0 0.5rem;
-        margin-left: 1rem;
-    }
-
-    @keyframes spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
-    }
-
-    @keyframes slideIn {
-        from {
-            transform: translateX(100%);
-            opacity: 0;
-        }
-        to {
-            transform: translateX(0);
-            opacity: 1;
-        }
-    }
-
-    @keyframes modalSlideIn {
-        from {
-            opacity: 0;
-            transform: translateY(-20px);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
-
-    /* Responsive */
-    @media (max-width: 1024px) {
-        .batches-grid {
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-        }
-    }
-
-    @media (max-width: 768px) {
-        .page-header {
-            flex-direction: column;
-            align-items: flex-start;
-        }
-        
-        .header-actions {
-            width: 100%;
-            flex-direction: column;
-        }
-        
-        .search-box {
-            width: 100%;
-        }
-        
-        .stats-grid {
-            grid-template-columns: repeat(2, 1fr);
-        }
-        
-        .batches-grid {
-            grid-template-columns: 1fr;
-        }
-        
-        .batch-footer {
-            flex-wrap: wrap;
-        }
-        
-        .batch-footer .btn {
-            min-width: calc(50% - 0.25rem); /* Changed from 33.333% to 50% for 2 buttons */
-            flex: none;
-            padding: 0.75rem 0.5rem;
-            font-size: 0.8rem;
-        }
-        
-        .action-buttons {
-            flex-wrap: wrap;
-            gap: 0.375rem;
-        }
-        
-        .action-buttons .btn-sm {
-            width: 32px;
-            height: 32px;
-            font-size: 0.8rem;
-        }
-    }
-
-    @media (max-width: 480px) {
-        .stats-grid {
-            grid-template-columns: 1fr;
-        }
-        
-        .view-options {
-            width: 100%;
-        }
-        
-        .view-option {
-            flex: 1;
-            justify-content: center;
-            padding: 0.5rem;
-            font-size: 0.8rem;
-        }
-        
-        .batch-footer .btn {
-            min-width: 100%;
-            margin-bottom: 0.5rem;
-        }
-        
-        .batch-footer .btn:last-child {
-            margin-bottom: 0;
-        }
-        
-        .info-value {
-            font-size: 0.9rem;
-        }
-    }
 </style>
 {% endblock %}
 
 {% block script %}
 <script>
-    // Global variables
-    let currentView = 'grid';
-    
-    // DOM Ready
-    document.addEventListener('DOMContentLoaded', function() {
-        setupEventListeners();
-        updateStats();
+    // Tab Management
+    document.querySelectorAll('.tab-btn').forEach(button => {
+        button.addEventListener('click', () => {
+            const tabId = button.getAttribute('data-tab');
+            
+            // Update tab buttons
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            button.classList.add('active');
+            
+            // Update tab content
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            document.getElementById(tabId).classList.add('active');
+        });
     });
 
-    function setupEventListeners() {
-        // Search functionality
-        const searchInput = document.getElementById('searchBatch');
-        if (searchInput) {
-            searchInput.addEventListener('input', function(e) {
-                filterBatches(e.target.value);
-            });
-        }
-        
-        // Form submission
-        const batchForm = document.getElementById('batchForm');
-        if (batchForm) {
-            batchForm.addEventListener('submit', function(e) {
-                e.preventDefault();
-                saveBatch();
-            });
-        }
+    // Modal Management
+    function openAddStudentsModal() {
+        document.getElementById('addStudentsModal').style.display = 'flex';
+        resetAddStudentsModal();
     }
 
-    function updateStats() {
-        // Update statistics from data
-        const totalBatches = document.querySelectorAll('.batch-card:not(.add-card)').length;
-        document.getElementById('totalBatches').textContent = totalBatches;
+    function closeAddStudentsModal() {
+        document.getElementById('addStudentsModal').style.display = 'none';
     }
 
-    function changeView(view) {
-        currentView = view;
-        const gridView = document.getElementById('gridView');
-        const listView = document.getElementById('listView');
-        const viewOptions = document.querySelectorAll('.view-option');
-        
-        viewOptions.forEach(option => option.classList.remove('active'));
-        event.target.closest('.view-option').classList.add('active');
-        
-        if (view === 'grid') {
-            gridView.style.display = 'grid';
-            listView.style.display = 'none';
-        } else {
-            gridView.style.display = 'none';
-            listView.style.display = 'block';
-        }
-    }
-
-    function filterBatches(searchTerm) {
-        const term = searchTerm.toLowerCase().trim();
-        
-        if (currentView === 'grid') {
-            // Filter grid view
-            const cards = document.querySelectorAll('.batch-card:not(.add-card)');
-            let visibleCount = 0;
-            
-            cards.forEach(card => {
-                const name = card.getAttribute('data-name') || '';
-                const course = card.getAttribute('data-course') || '';
-                const year = card.getAttribute('data-intake-year') || '';
-                
-                const matches = name.includes(term) || 
-                               course.includes(term) || 
-                               year.toString().includes(term);
-                card.style.display = matches ? 'flex' : 'none';
-                if (matches) visibleCount++;
-            });
-            
-            // Show empty state if no matches
-            const emptyState = document.querySelector('.empty-state');
-            if (emptyState) {
-                emptyState.style.display = visibleCount === 0 ? 'block' : 'none';
-            }
-        } else {
-            // Filter list view
-            const rows = document.querySelectorAll('#listView tbody tr');
-            rows.forEach(row => {
-                const name = row.getAttribute('data-name') || '';
-                const course = row.getAttribute('data-course') || '';
-                const year = row.getAttribute('data-intake-year') || '';
-                
-                const matches = name.includes(term) || 
-                               course.includes(term) || 
-                               year.toString().includes(term);
-                row.style.display = matches ? '' : 'none';
-            });
-        }
-    }
-
-    function openAddBatchModal() {
-        document.getElementById('modalTitle').textContent = 'Add New Batch';
-        document.getElementById('batchForm').reset();
-        document.getElementById('batchId').value = '';
-        document.getElementById('isActive').checked = true;
-        document.getElementById('batchModal').style.display = 'flex';
-    }
-
-    function editBatch(batchId) {
-        // Find the batch card
-        const batchCard = document.querySelector(`.batch-card[data-id="${batchId}"]`);
-        const batchRow = document.querySelector(`tr[data-id="${batchId}"]`);
-        
-        // Use whichever is available
-        const batchElement = batchCard || batchRow;
-        if (!batchElement) return;
-        
-        // Get current data from data attributes
-        const batchName = batchElement.getAttribute('data-name') || '';
-        const courseId = batchElement.getAttribute('data-course-id') || '';
-        const intakeYear = batchElement.getAttribute('data-intake-year') || '';
-        const isActive = batchElement.getAttribute('data-is-active') === 'true';
-        
-        // Set modal title
-        document.getElementById('modalTitle').textContent = 'Edit Batch';
-        
-        // Set form values with existing data
-        document.getElementById('batchId').value = batchId;
-        document.getElementById('batchName').value = batchName;
-        document.getElementById('batchCode').value = courseId;
-        document.getElementById('startYear').value = intakeYear;
-        document.getElementById('isActive').checked = isActive;
-        
-        // Show modal
-        document.getElementById('batchModal').style.display = 'flex';
-    }
-
-    function closeModal() {
-        document.getElementById('batchModal').style.display = 'none';
-    }
-
-    function deleteBatch(event, batchId, batchName) {
-        event.stopPropagation();
-
-        // 1️⃣ Ask for confirmation
-        if (!confirm(`Are you sure you want to delete "${batchName}"? This action cannot be undone.`)) {
-            return;
-        }
-
-        fetch(`/api/batches/${batchId}/delete/`, {
-            method: 'DELETE',
-            headers: {
-                'X-CSRFToken': getCookie('csrftoken'),
-            }
-        })
-        .then(response => {
-
-            if (!response.ok) {
-                throw new Error('Failed to delete batch');
-            }
-
-            // ✅ Notification on success
-            showNotification(`Batch "${batchName}" deleted successfully!`, 'success');
-
-            // ✅ Remove batch from DOM if exists
-            const batchCard = document.querySelector(`.batch-card[data-id="${batchId}"]`);
-            const batchRow  = document.querySelector(`tr[data-id="${batchId}"]`);
-
-            if (batchCard) batchCard.remove();
-            if (batchRow)  batchRow.remove();
-        })
-        .catch(error => {
-            console.error('Error deleting batch:', error);
-            showNotification('Error deleting batch. Please try again.', 'error');
+    function showAddMethod(method) {
+        document.querySelectorAll('.method-content').forEach(content => {
+            content.style.display = 'none';
         });
+        document.getElementById(method + 'Method').style.display = 'block';
     }
 
-    function saveBatch() {
-        const form = document.getElementById('batchForm');
-        const formData = new FormData(form);
-        const batchId = formData.get('id');
+    function resetAddStudentsModal() {
+        document.querySelectorAll('.method-content').forEach(content => {
+            content.style.display = 'none';
+        });
+        document.querySelector('.add-methods').style.display = 'grid';
+    }
+
+    // CSV Upload Modal
+    function openCSVUploadModal() {
+        document.getElementById('csvUploadModal').style.display = 'flex';
+    }
+
+    function closeCSVUploadModal() {
+        document.getElementById('csvUploadModal').style.display = 'none';
+        resetCSVUpload();
+    }
+
+    function downloadCSVTemplate() {
+        const csvContent = 'full_name,student_id,email\nJohn Doe,S12345,john@example.com\nJane Smith,S12346,jane@example.com';
+        const blob = new Blob([csvContent], { type: 'text/csv' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'student_template.csv';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+    }
+
+    // Student Management Functions
+    function toggleSelectAll(checkbox) {
+        const studentCheckboxes = document.querySelectorAll('.student-checkbox');
+        studentCheckboxes.forEach(cb => {
+            cb.checked = checkbox.checked;
+        });
+        updateBulkActions();
+    }
+
+    function updateBulkActions() {
+        const selectedCount = document.querySelectorAll('.student-checkbox:checked').length;
+        const bulkActions = document.getElementById('bulkActions');
         
-        // Validate
-        if (!formData.get('name')) {
-            alert('Batch name is required');
-            return;
+        if (selectedCount > 0) {
+            bulkActions.style.display = 'block';
+            document.getElementById('selectedCount').textContent = selectedCount;
+        } else {
+            bulkActions.style.display = 'none';
         }
-        
-        if (!formData.get('course')) {
-            alert('Course is required');
-            return;
-        }
-        
-        if (!formData.get('intake_year')) {
-            alert('Intake year is required');
-            return;
-        }
-        
-        // Determine URL based on whether we're adding or editing
-        const url = batchId ? `/api/batches/${batchId}/update/` : '/api/batches/create/';
-        const method = batchId ? 'PUT' : 'POST';
-        
-        fetch(url, {
-            method: method,
-            headers: {
-                'X-CSRFToken': getCookie('csrftoken'),
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(Object.fromEntries(formData))
-        })
-        .then(response => {
-            return response.json().then(data => {
-                if (!response.ok) {
-                    throw data;  // pass error object to catch
+    }
+
+    function clearSelection() {
+        document.querySelectorAll('.student-checkbox').forEach(cb => {
+            cb.checked = false;
+        });
+        document.getElementById('selectAll').checked = false;
+        updateBulkActions();
+    }
+
+    // API Functions
+    async function searchStudents() {
+        const searchTerm = document.getElementById('studentSearch').value;
+        if (!searchTerm.trim()) return;
+
+        showLoading();
+        try {
+            const response = await fetch(`/api/students/search/?q=${encodeURIComponent(searchTerm)}`, {
+                headers: {
+                    'X-CSRFToken': getCSRFToken(),
+                    'Accept': 'application/json'
                 }
-                return data;     // success, pass data along
             });
-        })
-        .then(data => {
-            showNotification(`Batch ${batchId ? 'updated' : 'created'} successfully!`, 'success');
-            closeModal();
-            setTimeout(() => location.reload(), 1000);
-        })
-        .catch(error => {
-            console.error('Error saving batch:', error);
-            showNotification(`Failed to save batch: ${error.message || 'Unknown error'}`, 'error');
+            const data = await response.json();
+            displaySearchResults(data);
+        } catch (error) {
+            showError('Error searching students: ' + error.message);
+        } finally {
+            hideLoading();
+        }
+    }
+
+    function displaySearchResults(students) {
+        const resultsList = document.getElementById('resultsList');
+        resultsList.innerHTML = '';
+        
+        if (students.length === 0) {
+            resultsList.innerHTML = '<p class="text-muted">No students found</p>';
+        } else {
+            students.forEach(student => {
+                const div = document.createElement('div');
+                div.className = 'student-result-item';
+                div.innerHTML = `
+                    <div class="student-result-info">
+                        <span class="student-result-name">${student.fullname}</span>
+                        <span class="student-result-email">${student.email}</span>
+                    </div>
+                    <button class="btn btn-sm btn-primary" onclick="selectStudent(${student.id}, '${student.fullname}', '${student.email}')">
+                        <i class="fas fa-plus"></i> Select
+                    </button>
+                `;
+                resultsList.appendChild(div);
+            });
+        }
+        
+        document.getElementById('searchResults').style.display = 'block';
+    }
+
+    const selectedStudents = new Map();
+
+    function selectStudent(id, name, email) {
+        if (selectedStudents.has(id)) return;
+        
+        selectedStudents.set(id, { name, email });
+        updateSelectedList();
+    }
+
+    function removeSelectedStudent(id) {
+        selectedStudents.delete(id);
+        updateSelectedList();
+    }
+
+    function updateSelectedList() {
+        const selectedList = document.getElementById('selectedList');
+        selectedList.innerHTML = '';
+        
+        if (selectedStudents.size === 0) {
+            document.getElementById('selectedStudents').style.display = 'none';
+            return;
+        }
+        
+        selectedStudents.forEach((student, id) => {
+            const div = document.createElement('div');
+            div.className = 'selected-student-item';
+            div.innerHTML = `
+                <div class="student-result-info">
+                    <span class="student-result-name">${student.name}</span>
+                    <span class="student-result-email">${student.email}</span>
+                </div>
+                <button class="btn btn-sm btn-danger" onclick="removeSelectedStudent(${id})">
+                    <i class="fas fa-times"></i>
+                </button>
+            `;
+            selectedList.appendChild(div);
+        });
+        
+        document.getElementById('selectedStudents').style.display = 'block';
+    }
+
+    async function addSelectedStudents() {
+        if (selectedStudents.size === 0) {
+            showError('Please select at least one student');
+            return;
+        }
+
+        const studentIds = Array.from(selectedStudents.keys());
+        
+        showLoading();
+        try {
+            const response = await fetch(`/api/batches/${batchId}/add-students/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCSRFToken()
+                },
+                body: JSON.stringify({
+                    student_ids: studentIds
+                })
+            });
+            
+            if (response.ok) {
+                showSuccess('Students added successfully!');
+                setTimeout(() => {
+                    location.reload();
+                }, 1500);
+            } else {
+                const error = await response.json();
+                throw new Error(error.message || 'Failed to add students');
+            }
+        } catch (error) {
+            showError('Error adding students: ' + error.message);
+        } finally {
+            hideLoading();
+        }
+    }
+
+    // CSV File Handling
+    function setupCSVUpload() {
+        const fileInput = document.getElementById('csvFile');
+        const uploadArea = document.getElementById('fileUploadArea');
+        
+        fileInput.addEventListener('change', handleFileSelect);
+        
+        uploadArea.addEventListener('click', () => fileInput.click());
+        
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.style.borderColor = '#4361ee';
+            uploadArea.style.background = '#f8f9ff';
+        });
+        
+        uploadArea.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            uploadArea.style.borderColor = '#ddd';
+            uploadArea.style.background = '#f8f9fa';
+        });
+        
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.style.borderColor = '#ddd';
+            uploadArea.style.background = '#f8f9fa';
+            
+            if (e.dataTransfer.files.length) {
+                fileInput.files = e.dataTransfer.files;
+                handleFileSelect();
+            }
         });
     }
 
-    function showNotification(message, type) {
-        // Remove existing notifications
-        document.querySelectorAll('.notification').forEach(n => n.remove());
+    function handleFileSelect() {
+        const file = document.getElementById('csvFile').files[0];
+        if (!file) return;
         
-        // Create notification
-        const notification = document.createElement('div');
-        notification.className = `notification ${type}`;
-        notification.innerHTML = `
-            <span>${message}</span>
-            <button onclick="this.parentElement.remove()">×</button>
+        // Validate file type
+        if (!file.name.endsWith('.csv')) {
+            showError('Please select a CSV file');
+            return;
+        }
+        
+        // Update file info
+        document.getElementById('fileName').textContent = file.name;
+        document.getElementById('fileSize').textContent = formatFileSize(file.size);
+        document.getElementById('filePreview').style.display = 'block';
+        
+        // Preview CSV
+        previewCSV(file);
+    }
+
+    function previewCSV(file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const csvData = e.target.result;
+            const rows = csvData.split('\n');
+            
+            if (rows.length === 0) {
+                showError('CSV file is empty');
+                return;
+            }
+            
+            // Parse headers
+            const headers = rows[0].split(',').map(h => h.trim());
+            
+            // Display preview
+            displayCSVPreview(headers, rows.slice(1));
+        };
+        reader.readAsText(file);
+    }
+
+    function displayCSVPreview(headers, rows) {
+        const previewHeaders = document.getElementById('previewHeaders');
+        const previewRows = document.getElementById('previewRows');
+        const previewSummary = document.getElementById('previewSummary');
+        
+        // Clear previous preview
+        previewHeaders.innerHTML = '';
+        previewRows.innerHTML = '';
+        
+        // Add headers
+        const headerRow = document.createElement('tr');
+        headers.forEach(header => {
+            const th = document.createElement('th');
+            th.textContent = header;
+            headerRow.appendChild(th);
+        });
+        previewHeaders.appendChild(headerRow);
+        
+        // Add first 5 rows for preview
+        const displayRows = rows.slice(0, 5).filter(row => row.trim());
+        displayRows.forEach(row => {
+            const cells = row.split(',');
+            const tr = document.createElement('tr');
+            cells.forEach(cell => {
+                const td = document.createElement('td');
+                td.textContent = cell.trim();
+                tr.appendChild(td);
+            });
+            previewRows.appendChild(tr);
+        });
+        
+        // Update summary
+        const totalRows = rows.filter(row => row.trim()).length;
+        previewSummary.innerHTML = `
+            Previewing ${Math.min(5, totalRows)} of ${totalRows} rows
+            ${totalRows > 5 ? '<br><small>Only first 5 rows shown</small>' : ''}
         `;
         
-        // Add to page
-        document.body.appendChild(notification);
-        
-        // Auto-remove after 5 seconds
-        setTimeout(() => {
-            if (notification.parentNode) {
-                notification.remove();
-            }
-        }, 5000);
+        document.getElementById('uploadPreview').style.display = 'block';
+        document.getElementById('uploadBtn').disabled = false;
     }
 
-    // Helper function to get CSRF token
-    function getCookie(name) {
-        let cookieValue = null;
-        if (document.cookie && document.cookie !== '') {
-            const cookies = document.cookie.split(';');
-            for (let i = 0; i < cookies.length; i++) {
-                const cookie = cookies[i].trim();
-                if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                    break;
-                }
-            }
+    async function uploadCSV() {
+        const fileInput = document.getElementById('csvFile');
+        const progress = document.getElementById('csvProgress').value;
+        
+        if (!fileInput.files.length) {
+            showError('Please select a CSV file');
+            return;
         }
-        return cookieValue;
+        
+        const formData = new FormData();
+        formData.append('csv_file', fileInput.files[0]);
+        formData.append('initial_progress', progress);
+        
+        showLoading();
+        try {
+            const response = await fetch(`/api/batches/${batchId}/upload-students/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCSRFToken()
+                },
+                body: formData
+            });
+            
+            if (response.ok) {
+                const result = await response.json();
+                showSuccess(`Successfully uploaded ${result.added} students`);
+                setTimeout(() => {
+                    location.reload();
+                }, 1500);
+            } else {
+                const error = await response.json();
+                throw new Error(error.message || 'Failed to upload students');
+            }
+        } catch (error) {
+            showError('Error uploading students: ' + error.message);
+        } finally {
+            hideLoading();
+        }
     }
+
+    // Student Progress Management
+    function updateStudentProgress(studentId, studentName) {
+        document.getElementById('studentIds').value = studentId;
+        document.getElementById('progressModalTitle').textContent = `Update Progress for ${studentName}`;
+        document.getElementById('updateProgressModal').style.display = 'flex';
+    }
+
+    function updateSelectedProgress() {
+        const selectedCheckboxes = document.querySelectorAll('.student-checkbox:checked');
+        if (selectedCheckboxes.length === 0) {
+            showError('Please select at least one student');
+            return;
+        }
+        
+        const studentIds = Array.from(selectedCheckboxes).map(cb => cb.value);
+        document.getElementById('studentIds').value = studentIds.join(',');
+        document.getElementById('progressModalTitle').textContent = `Update Progress for ${studentIds.length} Students`;
+        document.getElementById('updateProgressModal').style.display = 'flex';
+    }
+
+    function closeProgressModal() {
+        document.getElementById('updateProgressModal').style.display = 'none';
+    }
+
+    async function updateProgress() {
+        const studentIds = document.getElementById('studentIds').value.split(',').filter(id => id);
+        const progress = document.querySelector('input[name="progress"]:checked')?.value;
+        const notifyStudent = document.getElementById('notifyStudent').checked;
+        
+        if (!progress) {
+            showError('Please select a progress level');
+            return;
+        }
+        
+        showLoading();
+        try {
+            const response = await fetch(`/api/batches/${batchId}/update-progress/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCSRFToken()
+                },
+                body: JSON.stringify({
+                    student_ids: studentIds,
+                    progress_year: progress,
+                    notify_student: notifyStudent
+                })
+            });
+            
+            if (response.ok) {
+                showSuccess('Progress updated successfully!');
+                setTimeout(() => {
+                    location.reload();
+                }, 1500);
+            } else {
+                const error = await response.json();
+                throw new Error(error.message || 'Failed to update progress');
+            }
+        } catch (error) {
+            showError('Error updating progress: ' + error.message);
+        } finally {
+            hideLoading();
+        }
+    }
+
+    function removeStudent(studentId, studentName) {
+        if (confirm(`Are you sure you want to remove ${studentName} from this batch?`)) {
+            showLoading();
+            fetch(`/api/batches/${batchId}/remove-student/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCSRFToken()
+                },
+                body: JSON.stringify({ student_id: studentId })
+            })
+            .then(response => {
+                if (response.ok) {
+                    showSuccess('Student removed successfully!');
+                    setTimeout(() => location.reload(), 1500);
+                } else {
+                    throw new Error('Failed to remove student');
+                }
+            })
+            .catch(error => {
+                showError('Error removing student: ' + error.message);
+            })
+            .finally(() => hideLoading());
+        }
+    }
+
+    function removeSelectedStudents() {
+        const selectedCheckboxes = document.querySelectorAll('.student-checkbox:checked');
+        if (selectedCheckboxes.length === 0) {
+            showError('Please select at least one student');
+            return;
+        }
+        
+        const studentIds = Array.from(selectedCheckboxes).map(cb => cb.value);
+        const studentCount = studentIds.length;
+        
+        if (confirm(`Are you sure you want to remove ${studentCount} student(s) from this batch?`)) {
+            showLoading();
+            fetch(`/api/batches/${batchId}/remove-students/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCSRFToken()
+                },
+                body: JSON.stringify({ student_ids: studentIds })
+            })
+            .then(response => {
+                if (response.ok) {
+                    showSuccess(`${studentCount} student(s) removed successfully!`);
+                    setTimeout(() => location.reload(), 1500);
+                } else {
+                    throw new Error('Failed to remove students');
+                }
+            })
+            .catch(error => {
+                showError('Error removing students: ' + error.message);
+            })
+            .finally(() => hideLoading());
+        }
+    }
+
+    function advanceEntireBatch() {
+        if (confirm('Are you sure you want to advance the entire batch to the next semester? This action cannot be undone.')) {
+            showLoading();
+            fetch(`/api/batches/${batchId}/advance-batch/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCSRFToken()
+                }
+            })
+            .then(response => {
+                if (response.ok) {
+                    showSuccess('Batch advanced successfully!');
+                    setTimeout(() => location.reload(), 1500);
+                } else {
+                    throw new Error('Failed to advance batch');
+                }
+            })
+            .catch(error => {
+                showError('Error advancing batch: ' + error.message);
+            })
+            .finally(() => hideLoading());
+        }
+    }
+
+    function viewStudentsInProgress(progress) {
+        // Show modal with students in this progress
+        showLoading();
+        fetch(`/api/batches/${batchId}/students-by-progress/?progress=${progress}`)
+        .then(response => response.json())
+        .then(students => {
+            hideLoading();
+            showProgressStudentsModal(progress, students);
+        })
+        .catch(error => {
+            hideLoading();
+            showError('Error loading students: ' + error.message);
+        });
+    }
+
+    function showProgressStudentsModal(progress, students) {
+        const modalContent = `
+            <div class="modal-overlay" style="display: flex;">
+                <div class="modal" style="max-width: 600px;">
+                    <div class="modal-header">
+                        <h3 class="modal-title">Students in ${progress}</h3>
+                        <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">&times;</button>
+                    </div>
+                    <div class="modal-content">
+                        <div class="students-list">
+                            ${students.length > 0 ? 
+                                students.map(student => `
+                                    <div class="student-item">
+                                        <div class="student-avatar">${student.fullname.charAt(0)}</div>
+                                        <div class="student-info">
+                                            <strong>${student.fullname}</strong>
+                                            <small>${student.email}</small>
+                                        </div>
+                                    </div>
+                                `).join('') :
+                                '<p class="text-muted">No students in this progress level</p>'
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        document.body.insertAdjacentHTML('beforeend', modalContent);
+    }
+
+    // Utility Functions
+    function getCSRFToken() {
+        return document.querySelector('[name=csrfmiddlewaretoken]').value;
+    }
+
+    function showLoading() {
+        document.getElementById('loadingOverlay').style.display = 'flex';
+    }
+
+    function hideLoading() {
+        document.getElementById('loadingOverlay').style.display = 'none';
+    }
+
+    function showSuccess(message) {
+        alertify.success(message);
+    }
+
+    function showError(message) {
+        alertify.error(message);
+    }
+
+    function formatFileSize(bytes) {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', () => {
+        // Setup event listeners
+        document.querySelectorAll('.student-checkbox').forEach(cb => {
+            cb.addEventListener('change', updateBulkActions);
+        });
+        
+        // Setup forms
+        document.getElementById('newStudentsForm')?.addEventListener('submit', (e) => {
+            e.preventDefault();
+            createNewStudents();
+        });
+        
+        document.getElementById('csvUploadForm')?.addEventListener('submit', (e) => {
+            e.preventDefault();
+            uploadCSV();
+        });
+        
+        document.getElementById('updateProgressForm')?.addEventListener('submit', (e) => {
+            e.preventDefault();
+            updateProgress();
+        });
+        
+        // Setup CSV upload
+        setupCSVUpload();
+        
+        // Initialize search
+        document.getElementById('searchStudent')?.addEventListener('input', (e) => {
+            const searchTerm = e.target.value.toLowerCase();
+            const rows = document.querySelectorAll('.students-table tbody tr');
+            
+            rows.forEach(row => {
+                const text = row.textContent.toLowerCase();
+                row.style.display = text.includes(searchTerm) ? '' : 'none';
+            });
+        });
+    });
 </script>
 {% endblock %}
