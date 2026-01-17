@@ -96,3 +96,38 @@ def delete_batch(request,id:int):
     batch = get_object_or_404(university_models.Batch,id=id)
     batch.delete()
     return response.Response(status=status.HTTP_204_NO_CONTENT)
+
+
+@api_view(['POST'])
+@permission_classes([permissions.IsFacultyAdminstrator])
+def add_students_to_batch(request,id):
+    student_ids = request.data['student_ids']
+    batch = get_object_or_404(university_models.Batch,id=id)
+    for student_id in student_ids:
+        student = get_object_or_404(user_models.Student,id=student_id)
+        if student.department_name != batch.course.department:
+            return response.Response({'massage':'not allowed on other departments'},status=status.HTTP_400_BAD_REQUEST)
+        
+        student.batch = batch
+        student.save()
+    
+    return response.Response({'success': True,'added': len(student_ids),'message': f'Added {len(student_ids)} students to batch {batch.name}'},status=status.HTTP_201_CREATED)
+
+
+@api_view(['POST'])
+@permission_classes([permissions.IsFacultyAdminstrator])
+def remove_student_from_batch(request,id):
+    student_ids = []
+    if type(request.data['student_ids']) == list:
+        student_ids=request.data['student_ids']
+    else:
+        student_ids.append(request.data['student_ids'])
+    
+    for student_id in student_ids:
+        student = get_object_or_404(user_models.Student,id=student_id)
+        student.batch = None
+        student.save()
+
+    batch = get_object_or_404(university_models.Batch,id=id)
+
+    return response.Response({'success': True,'added': 1,'message': f'removed {len(student_ids)} students from batch {batch.name}'},status=status.HTTP_201_CREATED)

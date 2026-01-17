@@ -142,10 +142,10 @@
                                 </td>
                                 <td>
                                     <div class="action-buttons">
-                                        <button class="btn btn-sm btn-outline" onclick="updateStudentProgress({{ student.id }}, '{{ student.fullname }}')" title="Update Progress">
+                                        <button class="btn btn-sm btn-outline" onclick="updateStudentProgress({{ student.id }}, '{{ student.name }}')" title="Update Progress">
                                             <i class="fas fa-forward"></i>
                                         </button>
-                                        <button class="btn btn-sm btn-danger" onclick="removeStudent({{ student.id }}, '{{ student.fullname }}')" title="Remove from Batch">
+                                        <button class="btn btn-sm btn-danger" onclick="removeStudent({{ student.id }}, '{{ student.name }}')" title="Remove from Batch">
                                             <i class="fas fa-user-minus"></i>
                                         </button>
                                     </div>
@@ -208,15 +208,14 @@
                                 <div class="semester-header">
                                     <h5>{{ progress }}</h5>
                                     <span class="student-count">
-                                        
+                                        1
                                     </span>
                                 </div>
                                 <div class="semester-body">
                                     <div class="progress-indicator">
-                            
-                                        <div class="progress-bar" style="width: {{ percentage|default:0 }}%"></div>
+                                        <div class="progress-bar" style="width: 1%"></div>
                                     </div>
-                                    <small>{{ percentage|default:0 }}% of batch</small>
+                                    <small>1% of batch</small>
                                 </div>
                             </div>
                             {% endwith %}
@@ -269,89 +268,105 @@
             <button class="modal-close" onclick="closeAddStudentsModal()">&times;</button>
         </div>
         <div class="modal-content">
-            <div class="add-methods">
-                <div class="method-card" onclick="showAddMethod('search')">
-                    <div class="method-icon">
-                        <i class="fas fa-search"></i>
-                    </div>
-                    <h4>Search Existing Students</h4>
-                    <p>Add students already in the system</p>
-                </div>
-                
-                <div class="method-card" onclick="showAddMethod('new')">
-                    <div class="method-icon">
-                        <i class="fas fa-user-plus"></i>
-                    </div>
-                    <h4>Add New Students</h4>
-                    <p>Create new student accounts</p>
+            <div class="modal-subheader">
+                <h4>Select Students to Add</h4>
+                <div class="search-box modal-search">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="studentSearch" placeholder="Search students by name, ID, or email..." oninput="filterStudents()">
                 </div>
             </div>
-
-            <!-- Search Existing Students Form -->
-            <div class="method-content" id="searchMethod" style="display: none;">
-                <form id="searchStudentsForm">
-                    <div class="form-group">
-                        <label for="studentSearch">Search Students</label>
-                        <div class="search-with-button">
-                            <input type="text" id="studentSearch" placeholder="Search by name, ID, or email...">
-                            <button type="button" class="btn btn-primary" onclick="searchStudents()">
-                                <i class="fas fa-search"></i> Search
-                            </button>
+            
+            <!-- Student Selection Options -->
+            <div class="student-selection-options">
+                <div class="select-all">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="selectAllStudents" onchange="toggleSelectAllModal(this)">
+                        <span class="checkmark"></span>
+                        Select All Visible
+                    </label>
+                </div>
+                <div class="selected-info">
+                    <span id="selectedStudentsCount">0</span> selected
+                </div>
+            </div>
+            
+            <!-- Students List -->
+            <div class="students-list-container">
+                {% if all_students %}
+                <div class="students-list" id="studentsList">
+                    {% for student in all_students %}
+                    <div class="student-select-item" data-student-id="{{ student.id }}">
+                        <div class="student-info">
+                            <label class="checkbox-label">
+                                <input type="checkbox" class="student-select-checkbox" 
+                                       value="{{ student.id }}"
+                                       onchange="updateSelectionCount()">
+                                <span class="checkmark"></span>
+                            </label>
+                            <div class="student-avatar-small">
+                                {{ student.name|first|upper }}
+                            </div>
+                            <div class="student-details">
+                                <strong>{{ student.name }}</strong>
+                                <small>{{ student.username.email|default:"No email" }}</small>
+                                {% if student.username %}
+                                <small class="student-id">ID: {{ student.username }}</small>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="student-status">
+                            {% if student.batch %}
+                                {% if student.batch.id == batch.id %}
+                                <span class="status-badge status-current-batch">
+                                    <i class="fas fa-check-circle"></i> Already in this batch
+                                </span>
+                                {% else %}
+                                <span class="status-badge status-other-batch" title="Current Batch: {{ student.batch.name }}">
+                                    <i class="fas fa-calendar-alt"></i> {{ student.batch.name }}
+                                </span>
+                                {% if student.batch.progression_year %}
+                                <small class="batch-info">
+                                    Progress: {{ student.batch.progression_year }}
+                                </small>
+                                {% endif %}
+                                {% endif %}
+                            {% else %}
+                            <span class="status-badge status-unassigned">Unassigned</span>
+                            {% endif %}
                         </div>
                     </div>
-                    
-                    <div class="search-results" id="searchResults" style="display: none;">
-                        <h4>Search Results</h4>
-                        <div class="results-list" id="resultsList"></div>
-                    </div>
-                    
-                    <div class="selected-students" id="selectedStudents" style="display: none;">
-                        <h4>Selected Students</h4>
-                        <div class="selected-list" id="selectedList"></div>
-                    </div>
-                    
-                    <div class="form-actions">
-                        <button type="button" class="btn btn-outline" onclick="closeAddStudentsModal()">Cancel</button>
-                        <button type="button" class="btn btn-primary" onclick="addSelectedStudents()">
-                            <i class="fas fa-user-plus"></i> Add Selected
-                        </button>
-                    </div>
-                </form>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="empty-state-small">
+                    <i class="fas fa-users"></i>
+                    <h4>No Students Available</h4>
+                    <p>All students are already in this batch</p>
+                </div>
+                {% endif %}
             </div>
-
-            <!-- Add New Students Form -->
-            <div class="method-content" id="newMethod" style="display: none;">
-                <form id="newStudentsForm">
-                    <div class="form-group">
-                        <label for="newStudents">Student Details (One per line)</label>
-                        <textarea id="newStudents" rows="6" placeholder="Format: Full Name, Student ID, Email
-Example:
-John Doe, S12345, john@example.com
-Jane Smith, S12346, jane@example.com"></textarea>
-                        <small class="help-text">Enter student details separated by commas. One student per line.</small>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="initialProgress">Initial Progress</label>
-                        <select id="initialProgress">
-                            <option value="1.1">Year 1 Semester 1 (1.1)</option>
-                            <option value="1.2">Year 1 Semester 2 (1.2)</option>
-                            <option value="2.1">Year 2 Semester 1 (2.1)</option>
-                            <option value="2.2">Year 2 Semester 2 (2.2)</option>
-                            <option value="3.1">Year 3 Semester 1 (3.1)</option>
-                            <option value="3.2">Year 3 Semester 2 (3.2)</option>
-                            <option value="4.1">Year 4 Semester 1 (4.1)</option>
-                            <option value="4.2">Year 4 Semester 2 (4.2)</option>
-                        </select>
-                    </div>
-                    
-                    <div class="form-actions">
-                        <button type="button" class="btn btn-outline" onclick="closeAddStudentsModal()">Cancel</button>
-                        <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-save"></i> Create & Add Students
-                        </button>
-                    </div>
-                </form>
+            
+            <!-- Note for transferring students -->
+            <div class="transfer-note">
+                <i class="fas fa-info-circle"></i>
+                <p>Students already in other batches will be transferred to this batch. Their academic progress will be preserved.</p>
+            </div>
+            
+            <!-- Modal Actions -->
+            <div class="modal-actions">
+                <div class="selected-summary" id="selectedSummary">
+                    <i class="fas fa-users"></i>
+                    <span id="totalSelectedCount">0</span> student(s) selected
+                    <button type="button" class="btn btn-sm btn-outline" onclick="clearAllSelection()">
+                        <i class="fas fa-times"></i> Clear All
+                    </button>
+                </div>
+                <div class="action-buttons">
+                    <button type="button" class="btn btn-outline" onclick="closeAddStudentsModal()">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="addSelectedStudents()" id="addStudentsBtn" disabled>
+                        <i class="fas fa-user-plus"></i> Add Selected Students
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -657,6 +672,28 @@ Jane Smith, S12346, jane@example.com"></textarea>
         display: block;
     }
 
+    /* Modal Subheader */
+    .modal-subheader {
+        margin-bottom: 1.5rem;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid #e9ecef;
+    }
+
+    .modal-subheader h4 {
+        margin: 0 0 1rem 0;
+        font-size: 1.1rem;
+        color: #2c3e50;
+    }
+
+    .modal-search {
+        width: 100%;
+    }
+
+    .modal-search input {
+        width: 100%;
+        padding: 0.75rem 1rem 0.75rem 3rem;
+    }
+
     /* Students Management */
     .students-management .section-header {
         display: flex;
@@ -701,6 +738,13 @@ Jane Smith, S12346, jane@example.com"></textarea>
         border: 1px solid #ddd;
         border-radius: 8px;
         font-size: 0.95rem;
+        transition: border-color 0.3s ease;
+    }
+
+    .search-box input:focus {
+        outline: none;
+        border-color: #4361ee;
+        box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.1);
     }
 
     /* Bulk Actions */
@@ -795,6 +839,20 @@ Jane Smith, S12346, jane@example.com"></textarea>
         flex-shrink: 0;
     }
 
+    .student-avatar-small {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        font-size: 0.9rem;
+        flex-shrink: 0;
+    }
+
     .student-info-cell > div {
         flex: 1;
         min-width: 0;
@@ -816,6 +874,217 @@ Jane Smith, S12346, jane@example.com"></textarea>
         text-overflow: ellipsis;
     }
 
+    .student-details {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .student-details strong {
+        display: block;
+        font-size: 0.95rem;
+        color: #2c3e50;
+        margin-bottom: 0.125rem;
+    }
+
+    .student-details small {
+        display: block;
+        font-size: 0.85rem;
+        color: #6c757d;
+    }
+
+    .student-id {
+        font-family: monospace;
+        background: #f8f9fa;
+        padding: 0.125rem 0.25rem;
+        border-radius: 4px;
+        display: inline-block;
+        font-size: 0.8rem;
+    }
+
+    /* Students List Container */
+    .students-list-container {
+        background: #f8f9fa;
+        border-radius: 8px;
+        border: 1px solid #e9ecef;
+        max-height: 400px;
+        overflow-y: auto;
+        margin-bottom: 1rem;
+    }
+
+    .student-selection-options {
+        padding: 0.75rem 1.5rem;
+        background: white;
+        border-bottom: 1px solid #e9ecef;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .select-all {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .selected-info {
+        font-size: 0.9rem;
+        color: #4361ee;
+        font-weight: 500;
+    }
+
+    .students-list {
+        max-height: 300px;
+        overflow-y: auto;
+    }
+
+    .student-select-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.75rem 1.5rem;
+        border-bottom: 1px solid #e9ecef;
+        background: white;
+        transition: background 0.3s ease;
+    }
+
+    .student-select-item:hover {
+        background: #f8f9ff;
+    }
+
+    .student-select-item:last-child {
+        border-bottom: none;
+    }
+
+    .student-info {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        flex: 1;
+    }
+
+    .student-status {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 0.25rem;
+        margin-left: 1rem;
+        min-width: 150px;
+        text-align: right;
+    }
+
+    .status-badge {
+        display: inline-block;
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 500;
+        white-space: nowrap;
+    }
+
+    .status-unassigned {
+        background: #e3f2fd;
+        color: #1976d2;
+        border: 1px solid #bbdefb;
+    }
+
+    .status-other-batch {
+        background: #fff3e0;
+        color: #f57c00;
+        border: 1px solid #ffe0b2;
+    }
+
+    .status-current-batch {
+        background: #e8f5e9;
+        color: #2e7d32;
+        border: 1px solid #c8e6c9;
+    }
+
+    .status-badge i {
+        margin-right: 0.25rem;
+    }
+
+    .batch-info {
+        font-size: 0.75rem;
+        color: #95a5a6;
+    }
+
+    .transfer-note {
+        padding: 0.75rem 1.5rem;
+        background: #fff3e0;
+        border-radius: 8px;
+        border: 1px solid #ffe0b2;
+        display: flex;
+        align-items: flex-start;
+        gap: 0.75rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .transfer-note i {
+        color: #f57c00;
+        margin-top: 0.125rem;
+    }
+
+    .transfer-note p {
+        margin: 0;
+        font-size: 0.85rem;
+        color: #5d4037;
+        flex: 1;
+    }
+
+    .empty-state-small {
+        text-align: center;
+        padding: 2rem;
+        background: white;
+        border-radius: 8px;
+        border: 1px solid #e9ecef;
+    }
+
+    .empty-state-small i {
+        font-size: 2rem;
+        color: #95a5a6;
+        margin-bottom: 1rem;
+    }
+
+    .empty-state-small h4 {
+        font-size: 1rem;
+        color: #2c3e50;
+        margin: 0 0 0.5rem 0;
+    }
+
+    .empty-state-small p {
+        color: #6c757d;
+        margin: 0 0 1rem 0;
+        font-size: 0.9rem;
+    }
+
+    .modal-actions {
+        margin-top: 1.5rem;
+        padding-top: 1.5rem;
+        border-top: 1px solid #e9ecef;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .selected-summary {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        font-weight: 500;
+        color: #2c3e50;
+    }
+
+    .selected-summary i {
+        color: #4361ee;
+    }
+
+    .action-buttons {
+        display: flex;
+        gap: 0.75rem;
+    }
+
     /* Progress Badge */
     .progress-badge {
         display: inline-block;
@@ -829,11 +1098,6 @@ Jane Smith, S12346, jane@example.com"></textarea>
     }
 
     /* Action Buttons */
-    .action-buttons {
-        display: flex;
-        gap: 0.5rem;
-    }
-
     .action-buttons .btn-sm {
         width: 36px;
         height: 36px;
@@ -1071,126 +1335,13 @@ Jane Smith, S12346, jane@example.com"></textarea>
         transition: all 0.3s ease;
     }
 
-        .modal-close:hover {
+    .modal-close:hover {
         background: #f8f9fa;
         color: #e74c3c;
     }
 
     .modal-content {
         padding: 1.5rem;
-    }
-
-    /* Add Students Modal */
-    .add-methods {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-        gap: 1rem;
-        margin-bottom: 2rem;
-    }
-
-    .method-card {
-        background: #f8f9fa;
-        border-radius: 8px;
-        padding: 1.5rem;
-        text-align: center;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        border: 1px solid #e9ecef;
-    }
-
-    .method-card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-        border-color: #4361ee;
-        background: #f8f9ff;
-    }
-
-    .method-icon {
-        width: 60px;
-        height: 60px;
-        border-radius: 50%;
-        background: linear-gradient(135deg, #4361ee, #3a56d4);
-        color: white;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.5rem;
-        margin: 0 auto 1rem auto;
-    }
-
-    .method-card h4 {
-        margin: 0 0 0.5rem 0;
-        color: #2c3e50;
-    }
-
-    .method-card p {
-        margin: 0;
-        color: #6c757d;
-        font-size: 0.9rem;
-    }
-
-    .method-content {
-        display: none;
-    }
-
-    .search-with-button {
-        display: flex;
-        gap: 1rem;
-    }
-
-    .search-with-button input {
-        flex: 1;
-    }
-
-    .search-results, .selected-students {
-        margin-top: 1.5rem;
-    }
-
-    .search-results h4, .selected-students h4 {
-        font-size: 1rem;
-        color: #2c3e50;
-        margin-bottom: 1rem;
-    }
-
-    .results-list, .selected-list {
-        max-height: 200px;
-        overflow-y: auto;
-        border: 1px solid #eee;
-        border-radius: 8px;
-        padding: 0.5rem;
-    }
-
-    .student-result-item, .selected-student-item {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 0.75rem;
-        border-bottom: 1px solid #eee;
-        transition: background 0.3s ease;
-    }
-
-    .student-result-item:hover, .selected-student-item:hover {
-        background: #f8f9fa;
-    }
-
-    .student-result-item:last-child, .selected-student-item:last-child {
-        border-bottom: none;
-    }
-
-    .student-result-info {
-        display: flex;
-        flex-direction: column;
-        gap: 0.25rem;
-    }
-
-    .student-result-name {
-        font-weight: 600;
-        color: #2c3e50;
-    }
-
-    .student-result-email {
-        font-size: 0.85rem;
-        color: #6c757d;
     }
 
     /* Upload Instructions */
@@ -1230,10 +1381,6 @@ Jane Smith, S12346, jane@example.com"></textarea>
         margin: 0 0 0.5rem 0;
         color: #6c757d;
         font-size: 0.9rem;
-    }
-
-    .instruction-content small {
-        color: #95a5a6;
     }
 
     /* File Upload */
@@ -1428,58 +1575,6 @@ Jane Smith, S12346, jane@example.com"></textarea>
         margin: 0 0 1.5rem 0;
     }
 
-    /* Responsive */
-    @media (max-width: 768px) {
-        .page-header {
-            flex-direction: column;
-            align-items: flex-start;
-        }
-
-        .header-actions {
-            width: 100%;
-            justify-content: flex-start;
-        }
-
-        .batch-header-info {
-            flex-direction: column;
-            text-align: center;
-            gap: 1rem;
-        }
-
-        .batch-meta {
-            justify-content: center;
-        }
-
-        .tabs {
-            overflow-x: auto;
-        }
-
-        .tab-btn {
-            white-space: nowrap;
-            padding: 1rem;
-        }
-
-        .students-management .section-header {
-            flex-direction: column;
-            align-items: flex-start;
-        }
-
-        .student-actions {
-            width: 100%;
-            flex-direction: column;
-            align-items: stretch;
-        }
-
-        .search-box {
-            width: 100%;
-        }
-
-        .modal {
-            width: 95%;
-            margin: 1rem;
-        }
-    }
-
     /* Animations */
     @keyframes modalSlideIn {
         from {
@@ -1572,57 +1667,107 @@ Jane Smith, S12346, jane@example.com"></textarea>
         font-size: 0.875rem;
     }
 
-    /* Form Elements */
-    .form-group {
-        margin-bottom: 1.5rem;
-    }
+    /* Responsive */
+    @media (max-width: 768px) {
+        .page-header {
+            flex-direction: column;
+            align-items: flex-start;
+        }
 
-    .form-group label {
-        display: block;
-        margin-bottom: 0.5rem;
-        font-weight: 500;
-        color: #2c3e50;
-    }
+        .header-actions {
+            width: 100%;
+            justify-content: flex-start;
+        }
 
-    .form-group input,
-    .form-group select,
-    .form-group textarea {
-        width: 100%;
-        padding: 0.75rem;
-        border: 1px solid #ddd;
-        border-radius: 8px;
-        font-size: 0.95rem;
-        transition: border-color 0.3s ease;
-    }
+        .batch-header-info {
+            flex-direction: column;
+            text-align: center;
+            gap: 1rem;
+        }
 
-    .form-group input:focus,
-    .form-group select:focus,
-    .form-group textarea:focus {
-        outline: none;
-        border-color: #4361ee;
-        box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.1);
-    }
+        .batch-meta {
+            justify-content: center;
+        }
 
-    .help-text {
-        display: block;
-        margin-top: 0.25rem;
-        font-size: 0.85rem;
-        color: #6c757d;
-    }
+        .tabs {
+            overflow-x: auto;
+        }
 
-    .form-actions {
-        display: flex;
-        justify-content: flex-end;
-        gap: 1rem;
-        margin-top: 2rem;
-        padding-top: 1.5rem;
-        border-top: 1px solid #eee;
+        .tab-btn {
+            white-space: nowrap;
+            padding: 1rem;
+        }
+        
+        .student-select-item {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 0.75rem;
+        }
+        
+        .student-status {
+            align-self: flex-start;
+            align-items: flex-start;
+            text-align: left;
+        }
+        
+        .modal-actions {
+            flex-direction: column;
+            align-items: stretch;
+        }
+        
+        .selected-summary {
+            justify-content: space-between;
+        }
+
+        .students-management .section-header {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .student-actions {
+            width: 100%;
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .search-box {
+            width: 100%;
+        }
+
+        .modal {
+            width: 95%;
+            margin: 1rem;
+        }
     }
 </style>
 {% endblock %}
 
 {% block script %}
 <script>
+    // Global variables
+    let selectedStudents = new Set();
+    
+    // Get batch ID from data attribute
+    function getBatchId() {
+        // Try to get batch ID from the page
+        const batchIdElement = document.querySelector('[data-batch-id]');
+        if (batchIdElement) {
+            return batchIdElement.getAttribute('data-batch-id');
+        }
+        
+        // Alternative: Get from URL if available
+        const urlParts = window.location.pathname.split('/');
+        for (let i = 0; i < urlParts.length; i++) {
+            if (!isNaN(urlParts[i]) && urlParts[i] !== '') {
+                return urlParts[i];
+            }
+        }
+        
+        // If we can't find it, return null
+        console.error('Could not find batch ID');
+        return null;
+    }
+
     // Tab Management
     document.querySelectorAll('.tab-btn').forEach(button => {
         button.addEventListener('click', () => {
@@ -1642,6 +1787,102 @@ Jane Smith, S12346, jane@example.com"></textarea>
         });
     });
 
+    // Selection Management
+    function toggleSelectAllModal(checkbox) {
+        const visibleCheckboxes = document.querySelectorAll('#studentsList .student-select-checkbox:not([style*="display: none"])');
+        
+        visibleCheckboxes.forEach(cb => {
+            cb.checked = checkbox.checked;
+            if (checkbox.checked) {
+                selectedStudents.add(cb.value);
+            } else {
+                selectedStudents.delete(cb.value);
+            }
+        });
+        
+        updateSelectionCount();
+        updateAddButton();
+    }
+
+    function updateSelectionCount() {
+        const checkboxes = document.querySelectorAll('#studentsList .student-select-checkbox:checked');
+        const countElement = document.getElementById('selectedStudentsCount');
+        const selectAllCheckbox = document.getElementById('selectAllStudents');
+        
+        if (countElement) {
+            countElement.textContent = checkboxes.length;
+        }
+        
+        // Update selected students set
+        const allCheckboxes = document.querySelectorAll('#studentsList .student-select-checkbox');
+        allCheckboxes.forEach(cb => {
+            if (cb.checked) {
+                selectedStudents.add(cb.value);
+            } else {
+                selectedStudents.delete(cb.value);
+            }
+        });
+        
+        // Update total count
+        updateTotalSelectionCount();
+        updateAddButton();
+        
+        // Update select all checkbox state
+        if (selectAllCheckbox) {
+            const visibleCheckboxes = document.querySelectorAll('#studentsList .student-select-checkbox:not([style*="display: none"])');
+            const allVisibleChecked = visibleCheckboxes.length > 0 && 
+                                   Array.from(visibleCheckboxes).every(cb => cb.checked);
+            
+            selectAllCheckbox.checked = allVisibleChecked;
+            selectAllCheckbox.indeterminate = checkboxes.length > 0 && !allVisibleChecked;
+        }
+    }
+
+    function updateTotalSelectionCount() {
+        const totalCount = selectedStudents.size;
+        document.getElementById('totalSelectedCount').textContent = totalCount;
+    }
+
+    function updateAddButton() {
+        const addButton = document.getElementById('addStudentsBtn');
+        addButton.disabled = selectedStudents.size === 0;
+    }
+
+    function clearAllSelection() {
+        selectedStudents.clear();
+        
+        // Uncheck all checkboxes
+        document.querySelectorAll('.student-select-checkbox').forEach(cb => {
+            cb.checked = false;
+        });
+        
+        // Reset select all checkbox
+        const selectAllCheckbox = document.getElementById('selectAllStudents');
+        if (selectAllCheckbox) {
+            selectAllCheckbox.checked = false;
+            selectAllCheckbox.indeterminate = false;
+        }
+        
+        // Update counts
+        updateSelectionCount();
+        updateAddButton();
+    }
+
+    // Search and Filter Functions
+    function filterStudents() {
+        const searchInput = document.getElementById('studentSearch');
+        const searchTerm = searchInput.value.toLowerCase();
+        const items = document.querySelectorAll('#studentsList .student-select-item');
+        
+        items.forEach(item => {
+            const text = item.textContent.toLowerCase();
+            item.style.display = text.includes(searchTerm) ? 'flex' : 'none';
+        });
+        
+        // Update selection counts
+        updateSelectionCount();
+    }
+
     // Modal Management
     function openAddStudentsModal() {
         document.getElementById('addStudentsModal').style.display = 'flex';
@@ -1652,18 +1893,10 @@ Jane Smith, S12346, jane@example.com"></textarea>
         document.getElementById('addStudentsModal').style.display = 'none';
     }
 
-    function showAddMethod(method) {
-        document.querySelectorAll('.method-content').forEach(content => {
-            content.style.display = 'none';
-        });
-        document.getElementById(method + 'Method').style.display = 'block';
-    }
-
     function resetAddStudentsModal() {
-        document.querySelectorAll('.method-content').forEach(content => {
-            content.style.display = 'none';
-        });
-        document.querySelector('.add-methods').style.display = 'grid';
+        clearAllSelection();
+        document.getElementById('studentSearch').value = '';
+        filterStudents();
     }
 
     // CSV Upload Modal
@@ -1674,6 +1907,13 @@ Jane Smith, S12346, jane@example.com"></textarea>
     function closeCSVUploadModal() {
         document.getElementById('csvUploadModal').style.display = 'none';
         resetCSVUpload();
+    }
+
+    function resetCSVUpload() {
+        document.getElementById('csvFile').value = '';
+        document.getElementById('filePreview').style.display = 'none';
+        document.getElementById('uploadPreview').style.display = 'none';
+        document.getElementById('uploadBtn').disabled = true;
     }
 
     function downloadCSVTemplate() {
@@ -1718,110 +1958,52 @@ Jane Smith, S12346, jane@example.com"></textarea>
         updateBulkActions();
     }
 
-    // API Functions
-    async function searchStudents() {
-        const searchTerm = document.getElementById('studentSearch').value;
-        if (!searchTerm.trim()) return;
-
-        showLoading();
-        try {
-            const response = await fetch(`/api/students/search/?q=${encodeURIComponent(searchTerm)}`, {
-                headers: {
-                    'X-CSRFToken': getCSRFToken(),
-                    'Accept': 'application/json'
-                }
-            });
-            const data = await response.json();
-            displaySearchResults(data);
-        } catch (error) {
-            showError('Error searching students: ' + error.message);
-        } finally {
-            hideLoading();
-        }
+    // Student Progress Management
+    function updateStudentProgress(studentId, studentName) {
+        document.getElementById('studentIds').value = studentId;
+        document.getElementById('progressModalTitle').textContent = `Update Progress for ${studentName}`;
+        document.getElementById('updateProgressModal').style.display = 'flex';
     }
 
-    function displaySearchResults(students) {
-        const resultsList = document.getElementById('resultsList');
-        resultsList.innerHTML = '';
-        
-        if (students.length === 0) {
-            resultsList.innerHTML = '<p class="text-muted">No students found</p>';
-        } else {
-            students.forEach(student => {
-                const div = document.createElement('div');
-                div.className = 'student-result-item';
-                div.innerHTML = `
-                    <div class="student-result-info">
-                        <span class="student-result-name">${student.fullname}</span>
-                        <span class="student-result-email">${student.email}</span>
-                    </div>
-                    <button class="btn btn-sm btn-primary" onclick="selectStudent(${student.id}, '${student.fullname}', '${student.email}')">
-                        <i class="fas fa-plus"></i> Select
-                    </button>
-                `;
-                resultsList.appendChild(div);
-            });
-        }
-        
-        document.getElementById('searchResults').style.display = 'block';
-    }
-
-    const selectedStudents = new Map();
-
-    function selectStudent(id, name, email) {
-        if (selectedStudents.has(id)) return;
-        
-        selectedStudents.set(id, { name, email });
-        updateSelectedList();
-    }
-
-    function removeSelectedStudent(id) {
-        selectedStudents.delete(id);
-        updateSelectedList();
-    }
-
-    function updateSelectedList() {
-        const selectedList = document.getElementById('selectedList');
-        selectedList.innerHTML = '';
-        
-        if (selectedStudents.size === 0) {
-            document.getElementById('selectedStudents').style.display = 'none';
+    function updateSelectedProgress() {
+        const selectedCheckboxes = document.querySelectorAll('.student-checkbox:checked');
+        if (selectedCheckboxes.length === 0) {
+            showError('Please select at least one student');
             return;
         }
         
-        selectedStudents.forEach((student, id) => {
-            const div = document.createElement('div');
-            div.className = 'selected-student-item';
-            div.innerHTML = `
-                <div class="student-result-info">
-                    <span class="student-result-name">${student.name}</span>
-                    <span class="student-result-email">${student.email}</span>
-                </div>
-                <button class="btn btn-sm btn-danger" onclick="removeSelectedStudent(${id})">
-                    <i class="fas fa-times"></i>
-                </button>
-            `;
-            selectedList.appendChild(div);
-        });
-        
-        document.getElementById('selectedStudents').style.display = 'block';
+        const studentIds = Array.from(selectedCheckboxes).map(cb => cb.value);
+        document.getElementById('studentIds').value = studentIds.join(',');
+        document.getElementById('progressModalTitle').textContent = `Update Progress for ${studentIds.length} Students`;
+        document.getElementById('updateProgressModal').style.display = 'flex';
     }
 
+    function closeProgressModal() {
+        document.getElementById('updateProgressModal').style.display = 'none';
+    }
+
+    // API Functions for adding students
     async function addSelectedStudents() {
         if (selectedStudents.size === 0) {
             showError('Please select at least one student');
             return;
         }
-
-        const studentIds = Array.from(selectedStudents.keys());
+        
+        const studentIds = Array.from(selectedStudents);
+        const batchId = getBatchId();
+        
+        if (!batchId) {
+            showError('Could not identify the batch. Please refresh the page.');
+            return;
+        }
         
         showLoading();
         try {
-            const response = await fetch(`/api/batches/${batchId}/add-students/`, {
+            const response = await fetch(`/api/batches/${batchId}/add_students/`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-CSRFToken': getCSRFToken()
+                    'X-CSRFToken': `{{ csrf_token }}`
                 },
                 body: JSON.stringify({
                     student_ids: studentIds
@@ -1829,7 +2011,9 @@ Jane Smith, S12346, jane@example.com"></textarea>
             });
             
             if (response.ok) {
-                showSuccess('Students added successfully!');
+                const result = await response.json();
+                showSuccess(`${result.added} student(s) added successfully!`);
+                
                 setTimeout(() => {
                     location.reload();
                 }, 1500);
@@ -1842,6 +2026,212 @@ Jane Smith, S12346, jane@example.com"></textarea>
         } finally {
             hideLoading();
         }
+    }
+
+    async function updateProgress() {
+        const studentIds = document.getElementById('studentIds').value.split(',').filter(id => id);
+        const progress = document.querySelector('input[name="progress"]:checked')?.value;
+        const notifyStudent = document.getElementById('notifyStudent').checked;
+        const batchId = getBatchId();
+        
+        if (!progress) {
+            showError('Please select a progress level');
+            return;
+        }
+        
+        if (!batchId) {
+            showError('Could not identify the batch. Please refresh the page.');
+            return;
+        }
+        
+        showLoading();
+        try {
+            const response = await fetch(`/api/batches/${batchId}/update-progress/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCSRFToken()
+                },
+                body: JSON.stringify({
+                    student_ids: studentIds,
+                    progress_year: progress,
+                    notify_student: notifyStudent
+                })
+            });
+            
+            if (response.ok) {
+                showSuccess('Progress updated successfully!');
+                setTimeout(() => {
+                    location.reload();
+                }, 1500);
+            } else {
+                const error = await response.json();
+                throw new Error(error.message || 'Failed to update progress');
+            }
+        } catch (error) {
+            showError('Error updating progress: ' + error.message);
+        } finally {
+            hideLoading();
+        }
+    }
+
+    function removeStudent(studentId, studentName) {
+        const batchId = getBatchId();
+        
+        if (!batchId) {
+            showError('Could not identify the batch. Please refresh the page.');
+            return;
+        }
+        
+        if (confirm(`Are you sure you want to remove ${studentName} from this batch?`)) {
+            showLoading();
+            fetch(`/api/batches/${batchId}/remove_student/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: JSON.stringify({ student_ids: studentId })
+            })
+            .then(response => {
+                if (response.ok) {
+                    showSuccess('Student removed successfully!');
+                    setTimeout(() => location.reload(), 1500);
+                } else {
+                    throw new Error('Failed to remove student');
+                }
+            })
+            .catch(error => {
+                showError('Error removing student: ' + error.message);
+            })
+            .finally(() => hideLoading());
+        }
+    }
+
+    function removeSelectedStudents() {
+        const selectedCheckboxes = document.querySelectorAll('.student-checkbox:checked');
+        if (selectedCheckboxes.length === 0) {
+            showError('Please select at least one student');
+            return;
+        }
+        
+        const studentIds = Array.from(selectedCheckboxes).map(cb => cb.value);
+        const studentCount = studentIds.length;
+        const batchId = getBatchId();
+        
+        if (!batchId) {
+            showError('Could not identify the batch. Please refresh the page.');
+            return;
+        }
+        
+        if (confirm(`Are you sure you want to remove ${studentCount} student(s) from this batch?`)) {
+            showLoading();
+            fetch(`/api/batches/${batchId}/remove_student/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: JSON.stringify({ student_ids: studentIds })
+            })
+            .then(response => {
+                if (response.ok) {
+                    showSuccess(`${studentCount} student(s) removed successfully!`);
+                    setTimeout(() => location.reload(), 1500);
+                } else {
+                    throw new Error('Failed to remove students');
+                }
+            })
+            .catch(error => {
+                showError('Error removing students: ' + error.message);
+            })
+            .finally(() => hideLoading());
+        }
+    }
+
+    function advanceEntireBatch() {
+        const batchId = getBatchId();
+        
+        if (!batchId) {
+            showError('Could not identify the batch. Please refresh the page.');
+            return;
+        }
+        
+        if (confirm('Are you sure you want to advance the entire batch to the next semester? This action cannot be undone.')) {
+            showLoading();
+            fetch(`/api/batches/${batchId}/advance-batch/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCSRFToken()
+                }
+            })
+            .then(response => {
+                if (response.ok) {
+                    showSuccess('Batch advanced successfully!');
+                    setTimeout(() => location.reload(), 1500);
+                } else {
+                    throw new Error('Failed to advance batch');
+                }
+            })
+            .catch(error => {
+                showError('Error advancing batch: ' + error.message);
+            })
+            .finally(() => hideLoading());
+        }
+    }
+
+    function viewStudentsInProgress(progress) {
+        const batchId = getBatchId();
+        
+        if (!batchId) {
+            showError('Could not identify the batch. Please refresh the page.');
+            return;
+        }
+        
+        // Show modal with students in this progress
+        showLoading();
+        fetch(`/api/batches/${batchId}/students-by-progress/?progress=${progress}`)
+        .then(response => response.json())
+        .then(students => {
+            hideLoading();
+            showProgressStudentsModal(progress, students);
+        })
+        .catch(error => {
+            hideLoading();
+            showError('Error loading students: ' + error.message);
+        });
+    }
+
+    function showProgressStudentsModal(progress, students) {
+        const modalContent = `
+            <div class="modal-overlay" style="display: flex;">
+                <div class="modal" style="max-width: 600px;">
+                    <div class="modal-header">
+                        <h3 class="modal-title">Students in ${progress}</h3>
+                        <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">&times;</button>
+                    </div>
+                    <div class="modal-content">
+                        <div class="students-list">
+                            ${students.length > 0 ? 
+                                students.map(student => `
+                                    <div class="student-item">
+                                        <div class="student-avatar">${student.name.charAt(0)}</div>
+                                        <div class="student-info">
+                                            <strong>${student.name}</strong>
+                                            <small>${student.email}</small>
+                                        </div>
+                                    </div>
+                                `).join('') :
+                                '<p class="text-muted">No students in this progress level</p>'
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        document.body.insertAdjacentHTML('beforeend', modalContent);
     }
 
     // CSV File Handling
@@ -1961,9 +2351,15 @@ Jane Smith, S12346, jane@example.com"></textarea>
     async function uploadCSV() {
         const fileInput = document.getElementById('csvFile');
         const progress = document.getElementById('csvProgress').value;
+        const batchId = getBatchId();
         
         if (!fileInput.files.length) {
             showError('Please select a CSV file');
+            return;
+        }
+        
+        if (!batchId) {
+            showError('Could not identify the batch. Please refresh the page.');
             return;
         }
         
@@ -1998,206 +2394,10 @@ Jane Smith, S12346, jane@example.com"></textarea>
         }
     }
 
-    // Student Progress Management
-    function updateStudentProgress(studentId, studentName) {
-        document.getElementById('studentIds').value = studentId;
-        document.getElementById('progressModalTitle').textContent = `Update Progress for ${studentName}`;
-        document.getElementById('updateProgressModal').style.display = 'flex';
-    }
-
-    function updateSelectedProgress() {
-        const selectedCheckboxes = document.querySelectorAll('.student-checkbox:checked');
-        if (selectedCheckboxes.length === 0) {
-            showError('Please select at least one student');
-            return;
-        }
-        
-        const studentIds = Array.from(selectedCheckboxes).map(cb => cb.value);
-        document.getElementById('studentIds').value = studentIds.join(',');
-        document.getElementById('progressModalTitle').textContent = `Update Progress for ${studentIds.length} Students`;
-        document.getElementById('updateProgressModal').style.display = 'flex';
-    }
-
-    function closeProgressModal() {
-        document.getElementById('updateProgressModal').style.display = 'none';
-    }
-
-    async function updateProgress() {
-        const studentIds = document.getElementById('studentIds').value.split(',').filter(id => id);
-        const progress = document.querySelector('input[name="progress"]:checked')?.value;
-        const notifyStudent = document.getElementById('notifyStudent').checked;
-        
-        if (!progress) {
-            showError('Please select a progress level');
-            return;
-        }
-        
-        showLoading();
-        try {
-            const response = await fetch(`/api/batches/${batchId}/update-progress/`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': getCSRFToken()
-                },
-                body: JSON.stringify({
-                    student_ids: studentIds,
-                    progress_year: progress,
-                    notify_student: notifyStudent
-                })
-            });
-            
-            if (response.ok) {
-                showSuccess('Progress updated successfully!');
-                setTimeout(() => {
-                    location.reload();
-                }, 1500);
-            } else {
-                const error = await response.json();
-                throw new Error(error.message || 'Failed to update progress');
-            }
-        } catch (error) {
-            showError('Error updating progress: ' + error.message);
-        } finally {
-            hideLoading();
-        }
-    }
-
-    function removeStudent(studentId, studentName) {
-        if (confirm(`Are you sure you want to remove ${studentName} from this batch?`)) {
-            showLoading();
-            fetch(`/api/batches/${batchId}/remove-student/`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': getCSRFToken()
-                },
-                body: JSON.stringify({ student_id: studentId })
-            })
-            .then(response => {
-                if (response.ok) {
-                    showSuccess('Student removed successfully!');
-                    setTimeout(() => location.reload(), 1500);
-                } else {
-                    throw new Error('Failed to remove student');
-                }
-            })
-            .catch(error => {
-                showError('Error removing student: ' + error.message);
-            })
-            .finally(() => hideLoading());
-        }
-    }
-
-    function removeSelectedStudents() {
-        const selectedCheckboxes = document.querySelectorAll('.student-checkbox:checked');
-        if (selectedCheckboxes.length === 0) {
-            showError('Please select at least one student');
-            return;
-        }
-        
-        const studentIds = Array.from(selectedCheckboxes).map(cb => cb.value);
-        const studentCount = studentIds.length;
-        
-        if (confirm(`Are you sure you want to remove ${studentCount} student(s) from this batch?`)) {
-            showLoading();
-            fetch(`/api/batches/${batchId}/remove-students/`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': getCSRFToken()
-                },
-                body: JSON.stringify({ student_ids: studentIds })
-            })
-            .then(response => {
-                if (response.ok) {
-                    showSuccess(`${studentCount} student(s) removed successfully!`);
-                    setTimeout(() => location.reload(), 1500);
-                } else {
-                    throw new Error('Failed to remove students');
-                }
-            })
-            .catch(error => {
-                showError('Error removing students: ' + error.message);
-            })
-            .finally(() => hideLoading());
-        }
-    }
-
-    function advanceEntireBatch() {
-        if (confirm('Are you sure you want to advance the entire batch to the next semester? This action cannot be undone.')) {
-            showLoading();
-            fetch(`/api/batches/${batchId}/advance-batch/`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': getCSRFToken()
-                }
-            })
-            .then(response => {
-                if (response.ok) {
-                    showSuccess('Batch advanced successfully!');
-                    setTimeout(() => location.reload(), 1500);
-                } else {
-                    throw new Error('Failed to advance batch');
-                }
-            })
-            .catch(error => {
-                showError('Error advancing batch: ' + error.message);
-            })
-            .finally(() => hideLoading());
-        }
-    }
-
-    function viewStudentsInProgress(progress) {
-        // Show modal with students in this progress
-        showLoading();
-        fetch(`/api/batches/${batchId}/students-by-progress/?progress=${progress}`)
-        .then(response => response.json())
-        .then(students => {
-            hideLoading();
-            showProgressStudentsModal(progress, students);
-        })
-        .catch(error => {
-            hideLoading();
-            showError('Error loading students: ' + error.message);
-        });
-    }
-
-    function showProgressStudentsModal(progress, students) {
-        const modalContent = `
-            <div class="modal-overlay" style="display: flex;">
-                <div class="modal" style="max-width: 600px;">
-                    <div class="modal-header">
-                        <h3 class="modal-title">Students in ${progress}</h3>
-                        <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">&times;</button>
-                    </div>
-                    <div class="modal-content">
-                        <div class="students-list">
-                            ${students.length > 0 ? 
-                                students.map(student => `
-                                    <div class="student-item">
-                                        <div class="student-avatar">${student.fullname.charAt(0)}</div>
-                                        <div class="student-info">
-                                            <strong>${student.fullname}</strong>
-                                            <small>${student.email}</small>
-                                        </div>
-                                    </div>
-                                `).join('') :
-                                '<p class="text-muted">No students in this progress level</p>'
-                            }
-                        </div>
-                    </div>
-                </div>
-            </div>
-        `;
-        
-        document.body.insertAdjacentHTML('beforeend', modalContent);
-    }
-
     // Utility Functions
     function getCSRFToken() {
-        return document.querySelector('[name=csrfmiddlewaretoken]').value;
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]');
+        return csrfToken ? csrfToken.value : '';
     }
 
     function showLoading() {
@@ -2209,11 +2409,13 @@ Jane Smith, S12346, jane@example.com"></textarea>
     }
 
     function showSuccess(message) {
-        alertify.success(message);
+        // You can replace this with a better notification system
+        alert(message);
     }
 
     function showError(message) {
-        alertify.error(message);
+        // You can replace this with a better notification system
+        alert('Error: ' + message);
     }
 
     function formatFileSize(bytes) {
@@ -2232,11 +2434,6 @@ Jane Smith, S12346, jane@example.com"></textarea>
         });
         
         // Setup forms
-        document.getElementById('newStudentsForm')?.addEventListener('submit', (e) => {
-            e.preventDefault();
-            createNewStudents();
-        });
-        
         document.getElementById('csvUploadForm')?.addEventListener('submit', (e) => {
             e.preventDefault();
             uploadCSV();
@@ -2250,7 +2447,7 @@ Jane Smith, S12346, jane@example.com"></textarea>
         // Setup CSV upload
         setupCSVUpload();
         
-        // Initialize search
+        // Initialize search in main table
         document.getElementById('searchStudent')?.addEventListener('input', (e) => {
             const searchTerm = e.target.value.toLowerCase();
             const rows = document.querySelectorAll('.students-table tbody tr');
@@ -2259,6 +2456,11 @@ Jane Smith, S12346, jane@example.com"></textarea>
                 const text = row.textContent.toLowerCase();
                 row.style.display = text.includes(searchTerm) ? '' : 'none';
             });
+        });
+        
+        // Initialize modal search
+        document.getElementById('studentSearch')?.addEventListener('input', () => {
+            filterStudents();
         });
     });
 </script>

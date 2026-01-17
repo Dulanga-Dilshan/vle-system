@@ -14,6 +14,8 @@ urlpatterns = [
     path('batches/create/',views.create_batch),
     path('batches/<int:id>/update/',views.update_batch),
     path('batches/<int:id>/delete/',views.delete_batch),
+    path('batches/<int:id>/add_students/',views.add_students_to_batch),
+    path('batches/<int:id>/remove_student/',views.remove_student_from_batch),
 
 
 ]
