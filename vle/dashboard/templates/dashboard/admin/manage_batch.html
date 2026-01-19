@@ -7,7 +7,7 @@
 {% endblock %}
 
 {% block body %}
-<div class="batch-detail-management">
+<div class="batch-detail-management" data-batch-id="{{ batch.id }}">
     <!-- Page Header -->
     <div class="page-header">
         <div class="header-left">
@@ -134,7 +134,7 @@
                                     </div>
                                 </td>
                                 <td>{{ student.username|default:"-" }}</td>
-                                <td>{{ student.username.email|default:"-" }}</td>
+                                <td>{{ student.email|default:"-" }}</td>
                                 <td>
                                     <span class="progress-badge" data-progress="{{ student.progress_year|default:'1.1' }}">
                                         {{ student.progress_year|default:"1.1" }}
@@ -142,9 +142,6 @@
                                 </td>
                                 <td>
                                     <div class="action-buttons">
-                                        <button class="btn btn-sm btn-outline" onclick="updateStudentProgress({{ student.id }}, '{{ student.name }}')" title="Update Progress">
-                                            <i class="fas fa-forward"></i>
-                                        </button>
                                         <button class="btn btn-sm btn-danger" onclick="removeStudent({{ student.id }}, '{{ student.name }}')" title="Remove from Batch">
                                             <i class="fas fa-user-minus"></i>
                                         </button>
@@ -198,7 +195,9 @@
                         <div class="year-header">
                             <h4>Year {{ year }}</h4>
                             <span class="year-stats">
-                                {{ students_by_year.year|default:0 }} students
+                                {% with year=year|add:"0" %}
+                                    {{ students_by_progress.year|default:0 }} students
+                                {% endwith %}
                             </span>
                         </div>
                         <div class="semester-grid">
@@ -208,14 +207,18 @@
                                 <div class="semester-header">
                                     <h5>{{ progress }}</h5>
                                     <span class="student-count">
-                                        1
+                                        {% with progress_key=progress %}
+                                            {{ students_by_progress.progress_key|default:0 }}
+                                        {% endwith %}
                                     </span>
                                 </div>
                                 <div class="semester-body">
                                     <div class="progress-indicator">
-                                        <div class="progress-bar" style="width: 1%"></div>
+                                        {% with progress_key=progress total=students|length %}
+                                        <div class="progress-bar" style="width: {% widthratio students_by_progress.progress_key|default:0 total 100 %}%"></div>
+                                        {% endwith %}
                                     </div>
-                                    <small>1% of batch</small>
+                                    <small>{% widthratio students_by_progress.progress_key|default:0 students|length 100 %}% of batch</small>
                                 </div>
                             </div>
                             {% endwith %}
@@ -308,7 +311,7 @@
                             </div>
                             <div class="student-details">
                                 <strong>{{ student.name }}</strong>
-                                <small>{{ student.username.email|default:"No email" }}</small>
+                                <small>{{ student.email|default:"No email" }}</small>
                                 {% if student.username %}
                                 <small class="student-id">ID: {{ student.username }}</small>
                                 {% endif %}
@@ -324,9 +327,9 @@
                                 <span class="status-badge status-other-batch" title="Current Batch: {{ student.batch.name }}">
                                     <i class="fas fa-calendar-alt"></i> {{ student.batch.name }}
                                 </span>
-                                {% if student.batch.progression_year %}
+                                {% if student.progress_year %}
                                 <small class="batch-info">
-                                    Progress: {{ student.batch.progression_year }}
+                                    Progress: {{ student.progress_year }}
                                 </small>
                                 {% endif %}
                                 {% endif %}
@@ -372,41 +375,55 @@
     </div>
 </div>
 
-<!-- CSV Upload Modal -->
+<!-- Bulk Upload Modal with Editable CSV Table -->
 <div class="modal-overlay" id="csvUploadModal" style="display: none;">
-    <div class="modal">
+    <div class="modal" style="max-width: 1200px;">
         <div class="modal-header">
             <h3 class="modal-title">Bulk Upload Students</h3>
             <button class="modal-close" onclick="closeCSVUploadModal()">&times;</button>
         </div>
+        
+        <!-- Tabs for Upload Methods -->
+        <div class="upload-methods-tabs">
+            <div class="method-tabs">
+                <button class="method-tab active" data-method="csv" onclick="switchUploadMethod('csv')">
+                    <i class="fas fa-file-csv"></i> Upload CSV
+                </button>
+                <button class="method-tab" data-method="manual" onclick="switchUploadMethod('manual')">
+                    <i class="fas fa-edit"></i> Fill Student Data
+                </button>
+            </div>
+        </div>
+        
         <div class="modal-content">
-            <div class="upload-instructions">
-                <div class="instruction-card">
-                    <div class="instruction-icon">
-                        <i class="fas fa-file-download"></i>
+            <!-- CSV Upload Section -->
+            <div class="upload-section active" id="csvSection">
+                <div class="upload-instructions">
+                    <div class="instruction-card">
+                        <div class="instruction-icon">
+                            <i class="fas fa-file-download"></i>
+                        </div>
+                        <div class="instruction-content">
+                            <h4>Step 1: Download Template</h4>
+                            <p>Use our template to ensure proper formatting</p>
+                            <button type="button" class="btn btn-outline" onclick="downloadCSVTemplate()">
+                                <i class="fas fa-download"></i> Download Template
+                            </button>
+                        </div>
                     </div>
-                    <div class="instruction-content">
-                        <h4>Download Template</h4>
-                        <p>Use our template to ensure proper formatting</p>
-                        <button class="btn btn-outline" onclick="downloadCSVTemplate()">
-                            <i class="fas fa-download"></i> Download Template
-                        </button>
+                    
+                    <div class="instruction-card">
+                        <div class="instruction-icon">
+                            <i class="fas fa-upload"></i>
+                        </div>
+                        <div class="instruction-content">
+                            <h4>Step 2: Upload & Edit</h4>
+                            <p>Upload your CSV and edit directly in the table</p>
+                            <small>You can edit all fields before saving</small>
+                        </div>
                     </div>
                 </div>
                 
-                <div class="instruction-card">
-                    <div class="instruction-icon">
-                        <i class="fas fa-edit"></i>
-                    </div>
-                    <div class="instruction-content">
-                        <h4>Fill Student Data</h4>
-                        <p>Add student information to the template</p>
-                        <small>Required columns: full_name, student_id, email</small>
-                    </div>
-                </div>
-            </div>
-            
-            <form id="csvUploadForm" enctype="multipart/form-data">
                 <div class="form-group">
                     <label for="csvFile">Upload CSV File</label>
                     <div class="file-upload-area" id="fileUploadArea">
@@ -431,34 +448,124 @@
                     </div>
                 </div>
                 
-                <div class="form-group">
-                    <label for="csvProgress">Initial Progress for Uploaded Students</label>
-                    <select id="csvProgress">
-                        <option value="1.1">Year 1 Semester 1 (1.1)</option>
-                        <option value="1.2" selected>Year 1 Semester 2 (1.2)</option>
-                        <option value="2.1">Year 2 Semester 1 (2.1)</option>
-                        <option value="2.2">Year 2 Semester 2 (2.2)</option>
-                    </select>
-                </div>
-                
-                <div class="upload-preview" id="uploadPreview" style="display: none;">
-                    <h4>Upload Preview</h4>
-                    <div class="preview-table">
-                        <table>
-                            <thead id="previewHeaders"></thead>
-                            <tbody id="previewRows"></tbody>
+                <!-- Editable CSV Data Table -->
+                <div class="editable-table-container" id="editableTableContainer" style="display: none;">
+                    <div class="table-header">
+                        <h4>Edit Student Data</h4>
+                        <div class="table-controls">
+                            <button type="button" class="btn btn-sm btn-outline" onclick="addNewRow()">
+                                <i class="fas fa-plus"></i> Add Row
+                            </button>
+                            <button type="button" class="btn btn-sm btn-danger" onclick="clearAllRows()">
+                                <i class="fas fa-trash"></i> Clear All
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="table-wrapper">
+                        <table class="editable-table" id="editableTable">
+                            <thead>
+                                <tr>
+                                    <th width="50">#</th>
+                                    <th>Full Name</th>
+                                    <th>Student ID</th>
+                                    <th>Email</th>
+                                    <th width="80">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="editableTableBody">
+                                <!-- Rows will be added here -->
+                            </tbody>
                         </table>
                     </div>
-                    <div class="preview-summary" id="previewSummary"></div>
+                    
+                    <div class="table-footer">
+                        <div class="row-count">
+                            <span id="rowCount">0</span> students in table
+                        </div>
+                        <button type="button" class="btn btn-primary" onclick="saveEditableTable()">
+                            <i class="fas fa-save"></i> Save Students
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Manual Entry Section -->
+            <div class="upload-section" id="manualSection">
+                <div class="manual-entry-instructions">
+                    <div class="instruction-card">
+                        <div class="instruction-icon">
+                            <i class="fas fa-user-plus"></i>
+                        </div>
+                        <div class="instruction-content">
+                            <h4>Add Students Manually</h4>
+                            <p>Fill in student details one by one or add multiple at once</p>
+                        </div>
+                    </div>
                 </div>
                 
-                <div class="form-actions">
-                    <button type="button" class="btn btn-outline" onclick="closeCSVUploadModal()">Cancel</button>
-                    <button type="submit" class="btn btn-primary" id="uploadBtn" disabled>
-                        <i class="fas fa-upload"></i> Upload & Process
-                    </button>
+                <div class="manual-entry-form">
+                    <div class="form-row-header">
+                        <h5>Add New Student</h5>
+                        <button type="button" class="btn btn-sm btn-primary" onclick="addManualStudent()">
+                            <i class="fas fa-plus"></i> Add to List
+                        </button>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="manualName">Full Name *</label>
+                            <input type="text" id="manualName" placeholder="John Doe" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label for="manualStudentId">Student ID *</label>
+                            <input type="text" id="manualStudentId" placeholder="S12345" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label for="manualEmail">Email *</label>
+                            <input type="email" id="manualEmail" placeholder="john@example.com" class="form-control">
+                        </div>
+                    </div>
                 </div>
-            </form>
+                
+                <!-- Manual Entry Preview Table -->
+                <div class="manual-preview-container">
+                    <div class="table-header">
+                        <h4>Students to Add</h4>
+                        <div class="table-controls">
+                            <button type="button" class="btn btn-sm btn-outline" onclick="clearManualList()">
+                                <i class="fas fa-trash"></i> Clear List
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="table-wrapper">
+                        <table class="manual-preview-table" id="manualPreviewTable">
+                            <thead>
+                                <tr>
+                                    <th width="50">#</th>
+                                    <th>Full Name</th>
+                                    <th>Student ID</th>
+                                    <th>Email</th>
+                                    <th width="80">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="manualTableBody">
+                                <!-- Manual entries will be added here -->
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="table-footer">
+                        <div class="row-count">
+                            <span id="manualRowCount">0</span> students in list
+                        </div>
+                        <button type="button" class="btn btn-primary" onclick="saveManualStudents()" id="saveManualBtn" disabled>
+                            <i class="fas fa-save"></i> Save Students
+                        </button>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>
@@ -530,6 +637,8 @@
     /* Batch Detail Management */
     .batch-detail-management {
         padding: 20px;
+        background: #f8f9fa;
+        min-height: 100vh;
     }
 
     /* Page Header */
@@ -629,6 +738,7 @@
         background: white;
         border-radius: 12px;
         border: 1px solid #e9ecef;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
     }
 
     .tabs {
@@ -672,29 +782,332 @@
         display: block;
     }
 
-    /* Modal Subheader */
-    .modal-subheader {
-        margin-bottom: 1.5rem;
-        padding-bottom: 1rem;
+    /* Upload Methods Tabs */
+    .upload-methods-tabs {
+        border-bottom: 1px solid #e9ecef;
+        padding: 0 1.5rem;
+    }
+
+    .method-tabs {
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    .method-tab {
+        flex: 1;
+        padding: 1rem;
+        background: none;
+        border: none;
+        border-bottom: 3px solid transparent;
+        font-size: 0.95rem;
+        font-weight: 500;
+        color: #6c757d;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        transition: all 0.3s ease;
+    }
+
+    .method-tab:hover {
+        background: #f8f9fa;
+        color: #4361ee;
+    }
+
+    .method-tab.active {
+        color: #4361ee;
+        border-bottom-color: #4361ee;
+        background: #f8f9ff;
+    }
+
+    .upload-section {
+        display: none;
+    }
+
+    .upload-section.active {
+        display: block;
+    }
+
+    /* Editable Table Container */
+    .editable-table-container,
+    .manual-preview-container {
+        margin-top: 2rem;
+        background: white;
+        border-radius: 8px;
+        border: 1px solid #e9ecef;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    }
+
+    .table-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem 1.5rem;
+        background: #f8f9fa;
         border-bottom: 1px solid #e9ecef;
     }
 
-    .modal-subheader h4 {
-        margin: 0 0 1rem 0;
+    .table-header h4 {
+        margin: 0;
         font-size: 1.1rem;
         color: #2c3e50;
     }
 
-    .modal-search {
-        width: 100%;
+    .table-controls {
+        display: flex;
+        gap: 0.5rem;
     }
 
-    .modal-search input {
+    .table-wrapper {
+        overflow-x: auto;
+        max-height: 400px;
+        overflow-y: auto;
+    }
+
+    .editable-table,
+    .manual-preview-table {
         width: 100%;
-        padding: 0.75rem 1rem 0.75rem 3rem;
+        border-collapse: collapse;
+        min-width: 600px;
+    }
+
+    .editable-table th,
+    .editable-table td,
+    .manual-preview-table th,
+    .manual-preview-table td {
+        padding: 0.75rem 1rem;
+        border-bottom: 1px solid #e9ecef;
+        text-align: left;
+    }
+
+    .editable-table th,
+    .manual-preview-table th {
+        background: #f8f9fa;
+        font-weight: 600;
+        color: #2c3e50;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+    }
+
+    .editable-table tr:hover,
+    .manual-preview-table tr:hover {
+        background: #f8f9fa;
+    }
+
+    .editable-table td input {
+        width: 100%;
+        padding: 0.5rem;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 0.9rem;
+        transition: border-color 0.3s ease;
+    }
+
+    .editable-table td input:focus {
+        outline: none;
+        border-color: #4361ee;
+        box-shadow: 0 0 0 2px rgba(67, 97, 238, 0.1);
+    }
+
+    .editable-table td input.error {
+        border-color: #e74c3c;
+        background: #fdf2f2;
+    }
+
+    .row-actions {
+        display: flex;
+        gap: 0.25rem;
+    }
+
+    .row-actions .btn-sm {
+        width: 32px;
+        height: 32px;
+        padding: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 4px;
+    }
+
+    .table-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem 1.5rem;
+        border-top: 1px solid #e9ecef;
+        background: #f8f9fa;
+    }
+
+    .row-count {
+        font-weight: 500;
+        color: #2c3e50;
+    }
+
+    .row-count span {
+        color: #4361ee;
+        font-weight: 600;
+    }
+
+    /* Manual Entry Form */
+    .manual-entry-form {
+        background: white;
+        border-radius: 8px;
+        border: 1px solid #e9ecef;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    }
+
+    .form-row-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+    }
+
+    .form-row-header h5 {
+        margin: 0;
+        font-size: 1rem;
+        color: #2c3e50;
+    }
+
+    .form-row {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1rem;
+    }
+
+    .form-group {
+        margin-bottom: 0;
+    }
+
+    .form-group label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 500;
+        color: #2c3e50;
+        font-size: 0.9rem;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 0.75rem;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        font-size: 0.95rem;
+        transition: border-color 0.3s ease;
+    }
+
+    .form-control:focus {
+        outline: none;
+        border-color: #4361ee;
+        box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.1);
+    }
+
+    /* Upload Instructions */
+    .upload-instructions,
+    .manual-entry-instructions {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+
+    .instruction-card {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 1.5rem;
+        border: 1px solid #e9ecef;
+        transition: transform 0.3s ease;
+    }
+
+    .instruction-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    }
+
+    .instruction-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 10px;
+        background: linear-gradient(135deg, #4361ee, #3a56d4);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
+        margin-bottom: 1rem;
+    }
+
+    .instruction-content h4 {
+        margin: 0 0 0.5rem 0;
+        color: #2c3e50;
+    }
+
+    .instruction-content p {
+        margin: 0 0 0.5rem 0;
+        color: #6c757d;
+        font-size: 0.9rem;
+    }
+
+    /* File Upload */
+    .file-upload-area {
+        border: 2px dashed #ddd;
+        border-radius: 8px;
+        padding: 2rem;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        background: #f8f9fa;
+    }
+
+    .file-upload-area:hover {
+        border-color: #4361ee;
+        background: #f8f9ff;
+    }
+
+    .file-upload-area i {
+        font-size: 2rem;
+        color: #4361ee;
+        margin-bottom: 1rem;
+    }
+
+    .file-upload-area p {
+        margin: 0 0 1rem 0;
+        color: #6c757d;
+    }
+
+    .file-preview {
+        margin-top: 1rem;
+    }
+
+    .file-info {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 1rem;
+        background: #f8f9fa;
+        border-radius: 8px;
+        border: 1px solid #e9ecef;
+    }
+
+    .file-info i {
+        font-size: 1.5rem;
+        color: #4361ee;
     }
 
     /* Students Management */
+    .students-management {
+        background: white;
+        border-radius: 12px;
+        padding: 1.5rem;
+        border: 1px solid #e9ecef;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
+
     .students-management .section-header {
         display: flex;
         justify-content: space-between;
@@ -901,6 +1314,381 @@
         font-size: 0.8rem;
     }
 
+    /* Progress Badge */
+    .progress-badge {
+        display: inline-block;
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        background: #e3f2fd;
+        color: #1976d2;
+        border: 1px solid #bbdefb;
+    }
+
+    /* Action Buttons */
+    .action-buttons {
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    .action-buttons .btn-sm {
+        width: 36px;
+        height: 36px;
+        padding: 0;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s ease;
+    }
+
+    .action-buttons .btn-danger {
+        background: #fdf2f2;
+        color: #e74c3c;
+        border: 1px solid #f8d7da;
+    }
+
+    .action-buttons .btn-danger:hover {
+        background: #e74c3c;
+        color: white;
+    }
+
+    /* Progress Management */
+    .progress-management {
+        background: white;
+        border-radius: 12px;
+        padding: 1.5rem;
+        border: 1px solid #e9ecef;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
+
+    .progress-management .section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .progress-management .section-header h2 {
+        font-size: 1.5rem;
+        color: #2c3e50;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    /* Progress Timeline */
+    .progress-timeline {
+        background: white;
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        border: 1px solid #eee;
+    }
+
+    .timeline-header {
+        margin-bottom: 1.5rem;
+    }
+
+    .timeline-header h3 {
+        font-size: 1.25rem;
+        color: #2c3e50;
+        margin: 0 0 0.5rem 0;
+    }
+
+    .timeline-year {
+        margin-bottom: 2rem;
+        padding-bottom: 1.5rem;
+        border-bottom: 1px solid #eee;
+    }
+
+    .timeline-year:last-child {
+        margin-bottom: 0;
+        padding-bottom: 0;
+        border-bottom: none;
+    }
+
+    .year-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+    }
+
+    .year-header h4 {
+        font-size: 1.1rem;
+        color: #2c3e50;
+        margin: 0;
+    }
+
+    .year-stats {
+        font-size: 0.9rem;
+        color: #6c757d;
+        background: #f8f9fa;
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+    }
+
+    .semester-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+    }
+
+    .semester-card {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 1rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        border: 1px solid #e9ecef;
+    }
+
+    .semester-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        border-color: #4361ee;
+        background: #f8f9ff;
+    }
+
+    .semester-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.75rem;
+    }
+
+    .semester-header h5 {
+        font-size: 1rem;
+        color: #2c3e50;
+        margin: 0;
+    }
+
+    .student-count {
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: #4361ee;
+        background: white;
+        padding: 0.2rem 0.6rem;
+        border-radius: 20px;
+        border: 1px solid #4361ee;
+    }
+
+    .progress-indicator {
+        height: 6px;
+        background: #e9ecef;
+        border-radius: 3px;
+        overflow: hidden;
+        margin-bottom: 0.5rem;
+    }
+
+    .progress-bar {
+        height: 100%;
+        background: linear-gradient(90deg, #4cc9f0, #4895ef);
+        border-radius: 3px;
+        transition: width 0.3s ease;
+    }
+
+    /* Progress Statistics */
+    .progress-stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1.5rem;
+        margin-top: 2rem;
+    }
+
+    .progress-stats .stat-card {
+        background: white;
+        border-radius: 12px;
+        padding: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        border: 1px solid #eee;
+        transition: transform 0.3s ease;
+    }
+
+    .progress-stats .stat-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+    }
+
+    .progress-stats .stat-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
+        color: white;
+    }
+
+    .progress-stats .stat-card:nth-child(1) .stat-icon {
+        background: linear-gradient(135deg, #4361ee, #3a56d4);
+    }
+
+    .progress-stats .stat-card:nth-child(2) .stat-icon {
+        background: linear-gradient(135deg, #7209b7, #5a0a94);
+    }
+
+    .progress-stats .stat-card:nth-child(3) .stat-icon {
+        background: linear-gradient(135deg, #4cc9f0, #4895ef);
+    }
+
+    /* Progress Selector */
+    .progress-selector {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 1rem;
+    }
+
+    .progress-year {
+        margin-bottom: 1rem;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid #eee;
+    }
+
+    .progress-year:last-child {
+        margin-bottom: 0;
+        padding-bottom: 0;
+        border-bottom: none;
+    }
+
+    .progress-year h5 {
+        margin: 0 0 0.75rem 0;
+        color: #2c3e50;
+    }
+
+    .semester-options {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+        gap: 0.5rem;
+    }
+
+    .progress-option {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        cursor: pointer;
+    }
+
+    .progress-option input[type="radio"] {
+        display: none;
+    }
+
+    .option-label {
+        display: block;
+        padding: 0.5rem;
+        text-align: center;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        font-size: 0.9rem;
+        transition: all 0.3s ease;
+        width: 100%;
+    }
+
+    .progress-option input[type="radio"]:checked + .option-label {
+        background: #4361ee;
+        color: white;
+        border-color: #4361ee;
+    }
+
+    .progress-option:hover .option-label {
+        border-color: #4361ee;
+        background: #f8f9ff;
+    }
+
+    /* Modal Styles */
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+        padding: 1rem;
+    }
+
+    .modal {
+        background: white;
+        border-radius: 12px;
+        width: 90%;
+        max-width: 800px;
+        max-height: 90vh;
+        overflow-y: auto;
+        animation: modalSlideIn 0.3s ease;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    }
+
+    .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1.5rem;
+        border-bottom: 1px solid #eee;
+    }
+
+    .modal-title {
+        margin: 0;
+        font-size: 1.5rem;
+        color: #2c3e50;
+    }
+
+    .modal-close {
+        background: none;
+        border: none;
+        font-size: 1.5rem;
+        color: #95a5a6;
+        cursor: pointer;
+        padding: 0.5rem;
+        border-radius: 4px;
+        transition: all 0.3s ease;
+    }
+
+    .modal-close:hover {
+        background: #f8f9fa;
+        color: #e74c3c;
+    }
+
+    .modal-content {
+        padding: 1.5rem;
+    }
+
+    /* Modal Subheader */
+    .modal-subheader {
+        margin-bottom: 1.5rem;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid #e9ecef;
+    }
+
+    .modal-subheader h4 {
+        margin: 0 0 1rem 0;
+        font-size: 1.1rem;
+        color: #2c3e50;
+    }
+
+    .modal-search {
+        width: 100%;
+    }
+
+    .modal-search input {
+        width: 100%;
+        padding: 0.75rem 1rem 0.75rem 3rem;
+    }
+
     /* Students List Container */
     .students-list-container {
         background: #f8f9fa;
@@ -1085,434 +1873,6 @@
         gap: 0.75rem;
     }
 
-    /* Progress Badge */
-    .progress-badge {
-        display: inline-block;
-        padding: 0.25rem 0.75rem;
-        border-radius: 20px;
-        font-size: 0.85rem;
-        font-weight: 600;
-        background: #e3f2fd;
-        color: #1976d2;
-        border: 1px solid #bbdefb;
-    }
-
-    /* Action Buttons */
-    .action-buttons .btn-sm {
-        width: 36px;
-        height: 36px;
-        padding: 0;
-        border: none;
-        border-radius: 6px;
-        cursor: pointer;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        transition: all 0.3s ease;
-    }
-
-    /* Progress Management */
-    .progress-management .section-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 2rem;
-        flex-wrap: wrap;
-        gap: 1rem;
-    }
-
-    .progress-management .section-header h2 {
-        font-size: 1.5rem;
-        color: #2c3e50;
-        margin: 0;
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-    }
-
-    /* Progress Timeline */
-    .progress-timeline {
-        background: white;
-        border-radius: 12px;
-        padding: 1.5rem;
-        margin-bottom: 2rem;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-        border: 1px solid #eee;
-    }
-
-    .timeline-header {
-        margin-bottom: 1.5rem;
-    }
-
-    .timeline-header h3 {
-        font-size: 1.25rem;
-        color: #2c3e50;
-        margin: 0 0 0.5rem 0;
-    }
-
-    .timeline-year {
-        margin-bottom: 2rem;
-        padding-bottom: 1.5rem;
-        border-bottom: 1px solid #eee;
-    }
-
-    .timeline-year:last-child {
-        margin-bottom: 0;
-        padding-bottom: 0;
-        border-bottom: none;
-    }
-
-    .year-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 1rem;
-    }
-
-    .year-header h4 {
-        font-size: 1.1rem;
-        color: #2c3e50;
-        margin: 0;
-    }
-
-    .year-stats {
-        font-size: 0.9rem;
-        color: #6c757d;
-        background: #f8f9fa;
-        padding: 0.25rem 0.75rem;
-        border-radius: 20px;
-    }
-
-    .semester-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 1rem;
-    }
-
-    .semester-card {
-        background: #f8f9fa;
-        border-radius: 8px;
-        padding: 1rem;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        border: 1px solid #e9ecef;
-    }
-
-    .semester-card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-        border-color: #4361ee;
-        background: #f8f9ff;
-    }
-
-    .semester-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 0.75rem;
-    }
-
-    .semester-header h5 {
-        font-size: 1rem;
-        color: #2c3e50;
-        margin: 0;
-    }
-
-    .student-count {
-        font-size: 0.85rem;
-        font-weight: 600;
-        color: #4361ee;
-        background: white;
-        padding: 0.2rem 0.6rem;
-        border-radius: 20px;
-        border: 1px solid #4361ee;
-    }
-
-    .progress-indicator {
-        height: 6px;
-        background: #e9ecef;
-        border-radius: 3px;
-        overflow: hidden;
-        margin-bottom: 0.5rem;
-    }
-
-    .progress-bar {
-        height: 100%;
-        background: linear-gradient(90deg, #4cc9f0, #4895ef);
-        border-radius: 3px;
-        transition: width 0.3s ease;
-    }
-
-    /* Progress Statistics */
-    .progress-stats {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 1.5rem;
-        margin-top: 2rem;
-    }
-
-    .progress-stats .stat-card {
-        background: white;
-        border-radius: 12px;
-        padding: 1.5rem;
-        display: flex;
-        align-items: center;
-        gap: 1rem;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-        border: 1px solid #eee;
-    }
-
-    .progress-stats .stat-icon {
-        width: 50px;
-        height: 50px;
-        border-radius: 10px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.25rem;
-        color: white;
-    }
-
-    .progress-stats .stat-card:nth-child(1) .stat-icon {
-        background: linear-gradient(135deg, #4361ee, #3a56d4);
-    }
-
-    .progress-stats .stat-card:nth-child(2) .stat-icon {
-        background: linear-gradient(135deg, #7209b7, #5a0a94);
-    }
-
-    .progress-stats .stat-card:nth-child(3) .stat-icon {
-        background: linear-gradient(135deg, #4cc9f0, #4895ef);
-    }
-
-    /* Modal Styles */
-    .modal-overlay {
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: rgba(0, 0, 0, 0.5);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        z-index: 1000;
-        padding: 1rem;
-    }
-
-    .modal {
-        background: white;
-        border-radius: 12px;
-        width: 90%;
-        max-width: 800px;
-        max-height: 90vh;
-        overflow-y: auto;
-        animation: modalSlideIn 0.3s ease;
-    }
-
-    .modal-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 1.5rem;
-        border-bottom: 1px solid #eee;
-    }
-
-    .modal-title {
-        margin: 0;
-        font-size: 1.5rem;
-        color: #2c3e50;
-    }
-
-    .modal-close {
-        background: none;
-        border: none;
-        font-size: 1.5rem;
-        color: #95a5a6;
-        cursor: pointer;
-        padding: 0.5rem;
-        border-radius: 4px;
-        transition: all 0.3s ease;
-    }
-
-    .modal-close:hover {
-        background: #f8f9fa;
-        color: #e74c3c;
-    }
-
-    .modal-content {
-        padding: 1.5rem;
-    }
-
-    /* Upload Instructions */
-    .upload-instructions {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 1rem;
-        margin-bottom: 2rem;
-    }
-
-    .instruction-card {
-        background: #f8f9fa;
-        border-radius: 8px;
-        padding: 1.5rem;
-        border: 1px solid #e9ecef;
-    }
-
-    .instruction-icon {
-        width: 50px;
-        height: 50px;
-        border-radius: 10px;
-        background: linear-gradient(135deg, #4361ee, #3a56d4);
-        color: white;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.25rem;
-        margin-bottom: 1rem;
-    }
-
-    .instruction-content h4 {
-        margin: 0 0 0.5rem 0;
-        color: #2c3e50;
-    }
-
-    .instruction-content p {
-        margin: 0 0 0.5rem 0;
-        color: #6c757d;
-        font-size: 0.9rem;
-    }
-
-    /* File Upload */
-    .file-upload-area {
-        border: 2px dashed #ddd;
-        border-radius: 8px;
-        padding: 2rem;
-        text-align: center;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        background: #f8f9fa;
-    }
-
-    .file-upload-area:hover {
-        border-color: #4361ee;
-        background: #f8f9ff;
-    }
-
-    .file-upload-area i {
-        font-size: 2rem;
-        color: #4361ee;
-        margin-bottom: 1rem;
-    }
-
-    .file-upload-area p {
-        margin: 0 0 1rem 0;
-        color: #6c757d;
-    }
-
-    .file-preview {
-        margin-top: 1rem;
-    }
-
-    .file-info {
-        display: flex;
-        align-items: center;
-        gap: 1rem;
-        padding: 1rem;
-        background: #f8f9fa;
-        border-radius: 8px;
-        border: 1px solid #e9ecef;
-    }
-
-    .file-info i {
-        font-size: 1.5rem;
-        color: #4361ee;
-    }
-
-    .preview-table {
-        overflow-x: auto;
-        margin-bottom: 1rem;
-    }
-
-    .preview-table table {
-        width: 100%;
-        border-collapse: collapse;
-        min-width: 600px;
-    }
-
-    .preview-table th, .preview-table td {
-        padding: 0.75rem;
-        border: 1px solid #eee;
-        text-align: left;
-    }
-
-    .preview-table th {
-        background: #f8f9fa;
-        font-weight: 600;
-    }
-
-    /* Progress Selector */
-    .progress-selector {
-        background: #f8f9fa;
-        border-radius: 8px;
-        padding: 1rem;
-    }
-
-    .progress-year {
-        margin-bottom: 1rem;
-        padding-bottom: 1rem;
-        border-bottom: 1px solid #eee;
-    }
-
-    .progress-year:last-child {
-        margin-bottom: 0;
-        padding-bottom: 0;
-        border-bottom: none;
-    }
-
-    .progress-year h5 {
-        margin: 0 0 0.75rem 0;
-        color: #2c3e50;
-    }
-
-    .semester-options {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
-        gap: 0.5rem;
-    }
-
-    .progress-option {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        cursor: pointer;
-    }
-
-    .progress-option input[type="radio"] {
-        display: none;
-    }
-
-    .option-label {
-        display: block;
-        padding: 0.5rem;
-        text-align: center;
-        border: 1px solid #ddd;
-        border-radius: 6px;
-        font-size: 0.9rem;
-        transition: all 0.3s ease;
-    }
-
-    .progress-option input[type="radio"]:checked + .option-label {
-        background: #4361ee;
-        color: white;
-        border-color: #4361ee;
-    }
-
-    .progress-option:hover .option-label {
-        border-color: #4361ee;
-        background: #f8f9ff;
-    }
-
     /* Loading Overlay */
     #loadingOverlay {
         position: fixed;
@@ -1535,6 +1895,7 @@
         font-size: 3rem;
         color: #4361ee;
         margin-bottom: 1rem;
+        animation: spin 1s linear infinite;
     }
 
     .loading-spinner p {
@@ -1549,6 +1910,7 @@
         background: white;
         border-radius: 12px;
         border: 1px solid #eee;
+        margin: 2rem 0;
     }
 
     .empty-state-icon {
@@ -1573,18 +1935,6 @@
     .empty-state p {
         color: #6c757d;
         margin: 0 0 1.5rem 0;
-    }
-
-    /* Animations */
-    @keyframes modalSlideIn {
-        from {
-            opacity: 0;
-            transform: translateY(-20px);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
     }
 
     /* Checkbox Styling */
@@ -1630,6 +1980,7 @@
         display: inline-flex;
         align-items: center;
         gap: 0.5rem;
+        font-size: 0.95rem;
     }
 
     .btn-primary {
@@ -1640,6 +1991,13 @@
     .btn-primary:hover {
         transform: translateY(-2px);
         box-shadow: 0 4px 12px rgba(67, 97, 238, 0.3);
+    }
+
+    .btn-primary:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: none;
     }
 
     .btn-outline {
@@ -1665,6 +2023,23 @@
     .btn-sm {
         padding: 0.5rem 1rem;
         font-size: 0.875rem;
+    }
+
+    /* Animations */
+    @keyframes modalSlideIn {
+        from {
+            opacity: 0;
+            transform: translateY(-20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
     }
 
     /* Responsive */
@@ -1698,25 +2073,27 @@
             padding: 1rem;
         }
         
-        .student-select-item {
+        .method-tabs {
+            overflow-x: auto;
+        }
+        
+        .method-tab {
+            white-space: nowrap;
+            padding: 0.75rem;
+        }
+        
+        .form-row {
+            grid-template-columns: 1fr;
+        }
+        
+        .table-header {
             flex-direction: column;
             align-items: flex-start;
-            gap: 0.75rem;
+            gap: 1rem;
         }
         
-        .student-status {
-            align-self: flex-start;
-            align-items: flex-start;
-            text-align: left;
-        }
-        
-        .modal-actions {
-            flex-direction: column;
-            align-items: stretch;
-        }
-        
-        .selected-summary {
-            justify-content: space-between;
+        .table-controls {
+            align-self: flex-end;
         }
 
         .students-management .section-header {
@@ -1738,6 +2115,27 @@
             width: 95%;
             margin: 1rem;
         }
+        
+        .student-select-item {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 0.75rem;
+        }
+        
+        .student-status {
+            align-self: flex-start;
+            align-items: flex-start;
+            text-align: left;
+        }
+        
+        .modal-actions {
+            flex-direction: column;
+            align-items: stretch;
+        }
+        
+        .selected-summary {
+            justify-content: space-between;
+        }
     }
 </style>
 {% endblock %}
@@ -1746,26 +2144,13 @@
 <script>
     // Global variables
     let selectedStudents = new Set();
+    let csvData = [];
+    let manualStudents = [];
     
     // Get batch ID from data attribute
     function getBatchId() {
-        // Try to get batch ID from the page
-        const batchIdElement = document.querySelector('[data-batch-id]');
-        if (batchIdElement) {
-            return batchIdElement.getAttribute('data-batch-id');
-        }
-        
-        // Alternative: Get from URL if available
-        const urlParts = window.location.pathname.split('/');
-        for (let i = 0; i < urlParts.length; i++) {
-            if (!isNaN(urlParts[i]) && urlParts[i] !== '') {
-                return urlParts[i];
-            }
-        }
-        
-        // If we can't find it, return null
-        console.error('Could not find batch ID');
-        return null;
+        const batchElement = document.querySelector('.batch-detail-management');
+        return batchElement ? batchElement.getAttribute('data-batch-id') : null;
     }
 
     // Tab Management
@@ -1787,7 +2172,670 @@
         });
     });
 
-    // Selection Management
+    // Upload Method Switching
+    function switchUploadMethod(method) {
+        // Update tab buttons
+        document.querySelectorAll('.method-tab').forEach(tab => {
+            tab.classList.remove('active');
+            if (tab.getAttribute('data-method') === method) {
+                tab.classList.add('active');
+            }
+        });
+        
+        // Update sections
+        document.querySelectorAll('.upload-section').forEach(section => {
+            section.classList.remove('active');
+        });
+        document.getElementById(method + 'Section').classList.add('active');
+    }
+
+    // CSV File Handling
+    function setupCSVUpload() {
+        const fileInput = document.getElementById('csvFile');
+        const uploadArea = document.getElementById('fileUploadArea');
+        
+        fileInput.addEventListener('change', handleFileSelect);
+        
+        uploadArea.addEventListener('click', () => fileInput.click());
+        
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.style.borderColor = '#4361ee';
+            uploadArea.style.background = '#f8f9ff';
+        });
+        
+        uploadArea.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            uploadArea.style.borderColor = '#ddd';
+            uploadArea.style.background = '#f8f9fa';
+        });
+        
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.style.borderColor = '#ddd';
+            uploadArea.style.background = '#f8f9fa';
+            
+            if (e.dataTransfer.files.length) {
+                fileInput.files = e.dataTransfer.files;
+                handleFileSelect();
+            }
+        });
+    }
+
+    function handleFileSelect() {
+        const file = document.getElementById('csvFile').files[0];
+        if (!file) return;
+        
+        // Validate file type
+        if (!file.name.endsWith('.csv')) {
+            showError('Please select a CSV file');
+            return;
+        }
+        
+        // Update file info
+        document.getElementById('fileName').textContent = file.name;
+        document.getElementById('fileSize').textContent = formatFileSize(file.size);
+        document.getElementById('filePreview').style.display = 'block';
+        
+        // Load and display CSV in editable table
+        loadCSVToEditableTable(file);
+    }
+
+    function loadCSVToEditableTable(file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const csvData = e.target.result;
+            const rows = csvData.split('\n').filter(row => row.trim());
+            
+            if (rows.length === 0) {
+                showError('CSV file is empty');
+                return;
+            }
+            
+            // Parse CSV
+            const students = parseCSV(rows);
+            displayEditableTable(students);
+        };
+        reader.readAsText(file);
+    }
+
+    function parseCSV(rows) {
+        const students = [];
+        const headers = rows[0].split(',').map(h => h.trim().toLowerCase());
+        
+        // Find column indices
+        const nameIndex = headers.indexOf('full_name') !== -1 ? headers.indexOf('full_name') : 
+                         headers.indexOf('name') !== -1 ? headers.indexOf('name') : 0;
+        const idIndex = headers.indexOf('student_id') !== -1 ? headers.indexOf('student_id') : 
+                       headers.indexOf('studentid') !== -1 ? headers.indexOf('studentid') : 
+                       headers.indexOf('id') !== -1 ? headers.indexOf('id') : 1;
+        const emailIndex = headers.indexOf('email') !== -1 ? headers.indexOf('email') : 2;
+        
+        // Parse data rows
+        for (let i = 1; i < rows.length; i++) {
+            if (!rows[i].trim()) continue;
+            
+            const cells = rows[i].split(',');
+            if (cells.length >= 3) {
+                students.push({
+                    full_name: (cells[nameIndex] || '').trim(),
+                    student_id: (cells[idIndex] || '').trim(),
+                    email: (cells[emailIndex] || '').trim()
+                });
+            }
+        }
+        
+        return students;
+    }
+
+    function displayEditableTable(students) {
+        const tableBody = document.getElementById('editableTableBody');
+        tableBody.innerHTML = '';
+        csvData = students;
+        
+        students.forEach((student, index) => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${index + 1}</td>
+                <td>
+                    <input type="text" 
+                           value="${student.full_name}" 
+                           class="editable-input name-input"
+                           data-field="full_name"
+                           data-index="${index}"
+                           placeholder="Full Name">
+                </td>
+                <td>
+                    <input type="text" 
+                           value="${student.student_id}" 
+                           class="editable-input id-input"
+                           data-field="student_id"
+                           data-index="${index}"
+                           placeholder="Student ID">
+                </td>
+                <td>
+                    <input type="email" 
+                           value="${student.email}" 
+                           class="editable-input email-input"
+                           data-field="email"
+                           data-index="${index}"
+                           placeholder="Email">
+                </td>
+                <td>
+                    <div class="row-actions">
+                        <button type="button" class="btn btn-sm btn-danger" onclick="removeRow(${index})">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </td>
+            `;
+            tableBody.appendChild(row);
+        });
+        
+        // Show the editable table
+        document.getElementById('editableTableContainer').style.display = 'block';
+        updateRowCount();
+        
+        // Add event listeners for editing
+        document.querySelectorAll('.editable-input').forEach(input => {
+            input.addEventListener('input', updateCSVData);
+            input.addEventListener('blur', validateInput);
+        });
+    }
+
+    function updateCSVData(e) {
+        const input = e.target;
+        const index = parseInt(input.getAttribute('data-index'));
+        const field = input.getAttribute('data-field');
+        
+        if (csvData[index]) {
+            csvData[index][field] = input.value;
+        }
+    }
+
+    function validateInput(e) {
+        const input = e.target;
+        const value = input.value.trim();
+        
+        if (input.classList.contains('email-input') && value) {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(value)) {
+                input.classList.add('error');
+            } else {
+                input.classList.remove('error');
+            }
+        }
+    }
+
+    function addNewRow() {
+        const newStudent = {
+            full_name: '',
+            student_id: '',
+            email: ''
+        };
+        
+        csvData.push(newStudent);
+        displayEditableTable(csvData);
+    }
+
+    function removeRow(index) {
+        if (confirm('Are you sure you want to remove this student?')) {
+            csvData.splice(index, 1);
+            displayEditableTable(csvData);
+        }
+    }
+
+    function clearAllRows() {
+        if (csvData.length > 0 && confirm('Are you sure you want to clear all students?')) {
+            csvData = [];
+            document.getElementById('editableTableBody').innerHTML = '';
+            updateRowCount();
+        }
+    }
+
+    function updateRowCount() {
+        const count = csvData.length;
+        document.getElementById('rowCount').textContent = count;
+    }
+
+    // Manual Student Entry
+    function addManualStudent() {
+        const name = document.getElementById('manualName').value.trim();
+        const studentId = document.getElementById('manualStudentId').value.trim();
+        const email = document.getElementById('manualEmail').value.trim();
+        
+        // Validate inputs
+        if (!name || !studentId || !email) {
+            showError('Please fill in all fields');
+            return;
+        }
+        
+        // Validate email format
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            showError('Please enter a valid email address');
+            return;
+        }
+        
+        // Check for duplicates
+        const isDuplicate = manualStudents.some(student => 
+            student.student_id === studentId || student.email === email
+        );
+        
+        if (isDuplicate) {
+            showError('Student ID or email already exists in the list');
+            return;
+        }
+        
+        // Add to manual students list
+        manualStudents.push({
+            full_name: name,
+            student_id: studentId,
+            email: email
+        });
+        
+        // Clear form
+        document.getElementById('manualName').value = '';
+        document.getElementById('manualStudentId').value = '';
+        document.getElementById('manualEmail').value = '';
+        
+        // Update display
+        displayManualStudents();
+    }
+
+    function displayManualStudents() {
+        const tableBody = document.getElementById('manualTableBody');
+        tableBody.innerHTML = '';
+        
+        manualStudents.forEach((student, index) => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${index + 1}</td>
+                <td>${student.full_name}</td>
+                <td>${student.student_id}</td>
+                <td>${student.email}</td>
+                <td>
+                    <div class="row-actions">
+                        <button type="button" class="btn btn-sm btn-danger" onclick="removeManualStudent(${index})">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </td>
+            `;
+            tableBody.appendChild(row);
+        });
+        
+        // Update counts
+        document.getElementById('manualRowCount').textContent = manualStudents.length;
+        document.getElementById('saveManualBtn').disabled = manualStudents.length === 0;
+    }
+
+    function removeManualStudent(index) {
+        if (confirm('Are you sure you want to remove this student?')) {
+            manualStudents.splice(index, 1);
+            displayManualStudents();
+        }
+    }
+
+    function clearManualList() {
+        if (manualStudents.length > 0 && confirm('Are you sure you want to clear all students?')) {
+            manualStudents = [];
+            displayManualStudents();
+        }
+    }
+
+    // Save Functions
+    async function saveEditableTable() {
+        if (csvData.length === 0) {
+            showError('No student data to save');
+            return;
+        }
+        
+        // Validate all data
+        const errors = [];
+        csvData.forEach((student, index) => {
+            if (!student.full_name.trim()) {
+                errors.push(`Row ${index + 1}: Full name is required`);
+            }
+            if (!student.student_id.trim()) {
+                errors.push(`Row ${index + 1}: Student ID is required`);
+            }
+            if (!student.email.trim()) {
+                errors.push(`Row ${index + 1}: Email is required`);
+            } else {
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                if (!emailRegex.test(student.email)) {
+                    errors.push(`Row ${index + 1}: Invalid email format`);
+                }
+            }
+        });
+        
+        if (errors.length > 0) {
+            showError('Please fix the following errors:\n' + errors.join('\n'));
+            return;
+        }
+        
+        await saveStudents(csvData, 'csv');
+    }
+
+    async function saveManualStudents() {
+        if (manualStudents.length === 0) {
+            showError('No student data to save');
+            return;
+        }
+        
+        await saveStudents(manualStudents, 'manual');
+    }
+
+    async function saveStudents(students, method) {
+        const batchId = getBatchId();
+        
+        if (!batchId) {
+            showError('Could not identify the batch. Please refresh the page.');
+            return;
+        }
+        
+        showLoading();
+        try {
+            const response = await fetch(`/api/batches/${batchId}/add_students/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCSRFToken()
+                },
+                body: JSON.stringify({
+                    students: students,
+                    bulk_method: method
+                })
+            });
+            
+            if (response.ok) {
+                const result = await response.json();
+                showSuccess(`${result.added || result.message || 'Student(s) added successfully!'}`);
+                setTimeout(() => {
+                    closeCSVUploadModal();
+                    location.reload();
+                }, 1500);
+            } else {
+                const error = await response.json();
+                throw new Error(error.message || 'Failed to add students');
+            }
+        } catch (error) {
+            showError('Error adding students: ' + error.message);
+        } finally {
+            hideLoading();
+        }
+    }
+
+    // Utility Functions
+    function downloadCSVTemplate() {
+        const csvContent = 'full_name,student_id,email\nJohn Doe,S12345,john@example.com\nJane Smith,S12346,jane@example.com';
+        const blob = new Blob([csvContent], { type: 'text/csv' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'student_template.csv';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+    }
+
+    function clearFile() {
+        document.getElementById('csvFile').value = '';
+        document.getElementById('filePreview').style.display = 'none';
+        document.getElementById('editableTableContainer').style.display = 'none';
+        csvData = [];
+        updateRowCount();
+    }
+
+    function closeCSVUploadModal() {
+        document.getElementById('csvUploadModal').style.display = 'none';
+        resetCSVUpload();
+    }
+
+    function resetCSVUpload() {
+        clearFile();
+        manualStudents = [];
+        document.getElementById('manualTableBody').innerHTML = '';
+        document.getElementById('manualRowCount').textContent = '0';
+        document.getElementById('saveManualBtn').disabled = true;
+        document.getElementById('manualName').value = '';
+        document.getElementById('manualStudentId').value = '';
+        document.getElementById('manualEmail').value = '';
+        
+        // Reset to CSV tab
+        switchUploadMethod('csv');
+    }
+
+    function formatFileSize(bytes) {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+
+    // Student Selection Management
+    function toggleSelectAll(checkbox) {
+        const studentCheckboxes = document.querySelectorAll('.student-checkbox');
+        studentCheckboxes.forEach(cb => {
+            cb.checked = checkbox.checked;
+        });
+        updateBulkActions();
+    }
+
+    function updateBulkActions() {
+        const selectedCount = document.querySelectorAll('.student-checkbox:checked').length;
+        const bulkActions = document.getElementById('bulkActions');
+        
+        if (selectedCount > 0) {
+            bulkActions.style.display = 'block';
+            document.getElementById('selectedCount').textContent = selectedCount;
+        } else {
+            bulkActions.style.display = 'none';
+        }
+    }
+
+    function clearSelection() {
+        document.querySelectorAll('.student-checkbox').forEach(cb => {
+            cb.checked = false;
+        });
+        document.getElementById('selectAll').checked = false;
+        updateBulkActions();
+    }
+
+    // Modal Management Functions
+    function openAddStudentsModal() {
+        document.getElementById('addStudentsModal').style.display = 'flex';
+    }
+
+    function closeAddStudentsModal() {
+        document.getElementById('addStudentsModal').style.display = 'none';
+    }
+
+    function openCSVUploadModal() {
+        document.getElementById('csvUploadModal').style.display = 'flex';
+        resetCSVUpload();
+    }
+
+    // Student Management Functions
+    function removeStudent(studentId, studentName) {
+        const batchId = getBatchId();
+        
+        if (!batchId) {
+            showError('Could not identify the batch. Please refresh the page.');
+            return;
+        }
+        
+        if (confirm(`Are you sure you want to remove ${studentName} from this batch?`)) {
+            showLoading();
+            fetch(`/api/batches/${batchId}/remove_student/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCSRFToken()
+                },
+                body: JSON.stringify({ student_ids: [studentId] })
+            })
+            .then(response => {
+                if (response.ok) {
+                    showSuccess('Student removed successfully!');
+                    setTimeout(() => location.reload(), 1500);
+                } else {
+                    throw new Error('Failed to remove student');
+                }
+            })
+            .catch(error => {
+                showError('Error removing student: ' + error.message);
+            })
+            .finally(() => hideLoading());
+        }
+    }
+
+    function removeSelectedStudents() {
+        const selectedCheckboxes = document.querySelectorAll('.student-checkbox:checked');
+        if (selectedCheckboxes.length === 0) {
+            showError('Please select at least one student');
+            return;
+        }
+        
+        const studentIds = Array.from(selectedCheckboxes).map(cb => cb.value);
+        const studentCount = studentIds.length;
+        const batchId = getBatchId();
+        
+        if (!batchId) {
+            showError('Could not identify the batch. Please refresh the page.');
+            return;
+        }
+        
+        if (confirm(`Are you sure you want to remove ${studentCount} student(s) from this batch?`)) {
+            showLoading();
+            fetch(`/api/batches/${batchId}/remove_student/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCSRFToken()
+                },
+                body: JSON.stringify({ student_ids: studentIds })
+            })
+            .then(response => {
+                if (response.ok) {
+                    showSuccess(`${studentCount} student(s) removed successfully!`);
+                    setTimeout(() => location.reload(), 1500);
+                } else {
+                    throw new Error('Failed to remove students');
+                }
+            })
+            .catch(error => {
+                showError('Error removing students: ' + error.message);
+            })
+            .finally(() => hideLoading());
+        }
+    }
+
+    // Progress Management
+    function updateSelectedProgress() {
+        const selectedCheckboxes = document.querySelectorAll('.student-checkbox:checked');
+        if (selectedCheckboxes.length === 0) {
+            showError('Please select at least one student');
+            return;
+        }
+        
+        const studentIds = Array.from(selectedCheckboxes).map(cb => cb.value);
+        document.getElementById('studentIds').value = studentIds.join(',');
+        document.getElementById('progressModalTitle').textContent = `Update Progress for ${studentIds.length} Students`;
+        document.getElementById('updateProgressModal').style.display = 'flex';
+    }
+
+    function closeProgressModal() {
+        document.getElementById('updateProgressModal').style.display = 'none';
+    }
+
+    async function updateProgress() {
+        const studentIds = document.getElementById('studentIds').value.split(',').filter(id => id);
+        const progress = document.querySelector('input[name="progress"]:checked')?.value;
+        const notifyStudent = document.getElementById('notifyStudent').checked;
+        const batchId = getBatchId();
+        
+        if (!progress) {
+            showError('Please select a progress level');
+            return;
+        }
+        
+        if (!batchId) {
+            showError('Could not identify the batch. Please refresh the page.');
+            return;
+        }
+        
+        showLoading();
+        try {
+            const response = await fetch(`/api/batches/${batchId}/update-progress/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCSRFToken()
+                },
+                body: JSON.stringify({
+                    student_ids: studentIds,
+                    progress_year: progress,
+                    notify_student: notifyStudent
+                })
+            });
+            
+            if (response.ok) {
+                showSuccess('Progress updated successfully!');
+                setTimeout(() => {
+                    location.reload();
+                }, 1500);
+            } else {
+                const error = await response.json();
+                throw new Error(error.message || 'Failed to update progress');
+            }
+        } catch (error) {
+            showError('Error updating progress: ' + error.message);
+        } finally {
+            hideLoading();
+        }
+    }
+
+    function advanceEntireBatch() {
+        const batchId = getBatchId();
+        
+        if (!batchId) {
+            showError('Could not identify the batch. Please refresh the page.');
+            return;
+        }
+        
+        if (confirm('Are you sure you want to advance the entire batch to the next semester? This action cannot be undone.')) {
+            showLoading();
+            fetch(`/api/batches/${batchId}/advance-batch/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCSRFToken()
+                }
+            })
+            .then(response => {
+                if (response.ok) {
+                    showSuccess('Batch advanced successfully!');
+                    setTimeout(() => location.reload(), 1500);
+                } else {
+                    throw new Error('Failed to advance batch');
+                }
+            })
+            .catch(error => {
+                showError('Error advancing batch: ' + error.message);
+            })
+            .finally(() => hideLoading());
+        }
+    }
+
+    function viewStudentsInProgress(progress) {
+        alert(`View students in progress ${progress} - This feature would show students at this academic level`);
+    }
+
+    // Add Students Modal Functions
     function toggleSelectAllModal(checkbox) {
         const visibleCheckboxes = document.querySelectorAll('#studentsList .student-select-checkbox:not([style*="display: none"])');
         
@@ -1868,7 +2916,6 @@
         updateAddButton();
     }
 
-    // Search and Filter Functions
     function filterStudents() {
         const searchInput = document.getElementById('studentSearch');
         const searchTerm = searchInput.value.toLowerCase();
@@ -1883,106 +2930,6 @@
         updateSelectionCount();
     }
 
-    // Modal Management
-    function openAddStudentsModal() {
-        document.getElementById('addStudentsModal').style.display = 'flex';
-        resetAddStudentsModal();
-    }
-
-    function closeAddStudentsModal() {
-        document.getElementById('addStudentsModal').style.display = 'none';
-    }
-
-    function resetAddStudentsModal() {
-        clearAllSelection();
-        document.getElementById('studentSearch').value = '';
-        filterStudents();
-    }
-
-    // CSV Upload Modal
-    function openCSVUploadModal() {
-        document.getElementById('csvUploadModal').style.display = 'flex';
-    }
-
-    function closeCSVUploadModal() {
-        document.getElementById('csvUploadModal').style.display = 'none';
-        resetCSVUpload();
-    }
-
-    function resetCSVUpload() {
-        document.getElementById('csvFile').value = '';
-        document.getElementById('filePreview').style.display = 'none';
-        document.getElementById('uploadPreview').style.display = 'none';
-        document.getElementById('uploadBtn').disabled = true;
-    }
-
-    function downloadCSVTemplate() {
-        const csvContent = 'full_name,student_id,email\nJohn Doe,S12345,john@example.com\nJane Smith,S12346,jane@example.com';
-        const blob = new Blob([csvContent], { type: 'text/csv' });
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'student_template.csv';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        window.URL.revokeObjectURL(url);
-    }
-
-    // Student Management Functions
-    function toggleSelectAll(checkbox) {
-        const studentCheckboxes = document.querySelectorAll('.student-checkbox');
-        studentCheckboxes.forEach(cb => {
-            cb.checked = checkbox.checked;
-        });
-        updateBulkActions();
-    }
-
-    function updateBulkActions() {
-        const selectedCount = document.querySelectorAll('.student-checkbox:checked').length;
-        const bulkActions = document.getElementById('bulkActions');
-        
-        if (selectedCount > 0) {
-            bulkActions.style.display = 'block';
-            document.getElementById('selectedCount').textContent = selectedCount;
-        } else {
-            bulkActions.style.display = 'none';
-        }
-    }
-
-    function clearSelection() {
-        document.querySelectorAll('.student-checkbox').forEach(cb => {
-            cb.checked = false;
-        });
-        document.getElementById('selectAll').checked = false;
-        updateBulkActions();
-    }
-
-    // Student Progress Management
-    function updateStudentProgress(studentId, studentName) {
-        document.getElementById('studentIds').value = studentId;
-        document.getElementById('progressModalTitle').textContent = `Update Progress for ${studentName}`;
-        document.getElementById('updateProgressModal').style.display = 'flex';
-    }
-
-    function updateSelectedProgress() {
-        const selectedCheckboxes = document.querySelectorAll('.student-checkbox:checked');
-        if (selectedCheckboxes.length === 0) {
-            showError('Please select at least one student');
-            return;
-        }
-        
-        const studentIds = Array.from(selectedCheckboxes).map(cb => cb.value);
-        document.getElementById('studentIds').value = studentIds.join(',');
-        document.getElementById('progressModalTitle').textContent = `Update Progress for ${studentIds.length} Students`;
-        document.getElementById('updateProgressModal').style.display = 'flex';
-    }
-
-    function closeProgressModal() {
-        document.getElementById('updateProgressModal').style.display = 'none';
-    }
-
-    // API Functions for adding students
     async function addSelectedStudents() {
         if (selectedStudents.size === 0) {
             showError('Please select at least one student');
@@ -2003,7 +2950,7 @@
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-CSRFToken': `{{ csrf_token }}`
+                    'X-CSRFToken': getCSRFToken()
                 },
                 body: JSON.stringify({
                     student_ids: studentIds
@@ -2012,9 +2959,10 @@
             
             if (response.ok) {
                 const result = await response.json();
-                showSuccess(`${result.added} student(s) added successfully!`);
+                showSuccess(`${result.added || result.message || 'Student(s) added successfully!'}`);
                 
                 setTimeout(() => {
+                    closeAddStudentsModal();
                     location.reload();
                 }, 1500);
             } else {
@@ -2023,372 +2971,6 @@
             }
         } catch (error) {
             showError('Error adding students: ' + error.message);
-        } finally {
-            hideLoading();
-        }
-    }
-
-    async function updateProgress() {
-        const studentIds = document.getElementById('studentIds').value.split(',').filter(id => id);
-        const progress = document.querySelector('input[name="progress"]:checked')?.value;
-        const notifyStudent = document.getElementById('notifyStudent').checked;
-        const batchId = getBatchId();
-        
-        if (!progress) {
-            showError('Please select a progress level');
-            return;
-        }
-        
-        if (!batchId) {
-            showError('Could not identify the batch. Please refresh the page.');
-            return;
-        }
-        
-        showLoading();
-        try {
-            const response = await fetch(`/api/batches/${batchId}/update-progress/`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': getCSRFToken()
-                },
-                body: JSON.stringify({
-                    student_ids: studentIds,
-                    progress_year: progress,
-                    notify_student: notifyStudent
-                })
-            });
-            
-            if (response.ok) {
-                showSuccess('Progress updated successfully!');
-                setTimeout(() => {
-                    location.reload();
-                }, 1500);
-            } else {
-                const error = await response.json();
-                throw new Error(error.message || 'Failed to update progress');
-            }
-        } catch (error) {
-            showError('Error updating progress: ' + error.message);
-        } finally {
-            hideLoading();
-        }
-    }
-
-    function removeStudent(studentId, studentName) {
-        const batchId = getBatchId();
-        
-        if (!batchId) {
-            showError('Could not identify the batch. Please refresh the page.');
-            return;
-        }
-        
-        if (confirm(`Are you sure you want to remove ${studentName} from this batch?`)) {
-            showLoading();
-            fetch(`/api/batches/${batchId}/remove_student/`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': '{{ csrf_token }}'
-                },
-                body: JSON.stringify({ student_ids: studentId })
-            })
-            .then(response => {
-                if (response.ok) {
-                    showSuccess('Student removed successfully!');
-                    setTimeout(() => location.reload(), 1500);
-                } else {
-                    throw new Error('Failed to remove student');
-                }
-            })
-            .catch(error => {
-                showError('Error removing student: ' + error.message);
-            })
-            .finally(() => hideLoading());
-        }
-    }
-
-    function removeSelectedStudents() {
-        const selectedCheckboxes = document.querySelectorAll('.student-checkbox:checked');
-        if (selectedCheckboxes.length === 0) {
-            showError('Please select at least one student');
-            return;
-        }
-        
-        const studentIds = Array.from(selectedCheckboxes).map(cb => cb.value);
-        const studentCount = studentIds.length;
-        const batchId = getBatchId();
-        
-        if (!batchId) {
-            showError('Could not identify the batch. Please refresh the page.');
-            return;
-        }
-        
-        if (confirm(`Are you sure you want to remove ${studentCount} student(s) from this batch?`)) {
-            showLoading();
-            fetch(`/api/batches/${batchId}/remove_student/`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': '{{ csrf_token }}'
-                },
-                body: JSON.stringify({ student_ids: studentIds })
-            })
-            .then(response => {
-                if (response.ok) {
-                    showSuccess(`${studentCount} student(s) removed successfully!`);
-                    setTimeout(() => location.reload(), 1500);
-                } else {
-                    throw new Error('Failed to remove students');
-                }
-            })
-            .catch(error => {
-                showError('Error removing students: ' + error.message);
-            })
-            .finally(() => hideLoading());
-        }
-    }
-
-    function advanceEntireBatch() {
-        const batchId = getBatchId();
-        
-        if (!batchId) {
-            showError('Could not identify the batch. Please refresh the page.');
-            return;
-        }
-        
-        if (confirm('Are you sure you want to advance the entire batch to the next semester? This action cannot be undone.')) {
-            showLoading();
-            fetch(`/api/batches/${batchId}/advance-batch/`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': getCSRFToken()
-                }
-            })
-            .then(response => {
-                if (response.ok) {
-                    showSuccess('Batch advanced successfully!');
-                    setTimeout(() => location.reload(), 1500);
-                } else {
-                    throw new Error('Failed to advance batch');
-                }
-            })
-            .catch(error => {
-                showError('Error advancing batch: ' + error.message);
-            })
-            .finally(() => hideLoading());
-        }
-    }
-
-    function viewStudentsInProgress(progress) {
-        const batchId = getBatchId();
-        
-        if (!batchId) {
-            showError('Could not identify the batch. Please refresh the page.');
-            return;
-        }
-        
-        // Show modal with students in this progress
-        showLoading();
-        fetch(`/api/batches/${batchId}/students-by-progress/?progress=${progress}`)
-        .then(response => response.json())
-        .then(students => {
-            hideLoading();
-            showProgressStudentsModal(progress, students);
-        })
-        .catch(error => {
-            hideLoading();
-            showError('Error loading students: ' + error.message);
-        });
-    }
-
-    function showProgressStudentsModal(progress, students) {
-        const modalContent = `
-            <div class="modal-overlay" style="display: flex;">
-                <div class="modal" style="max-width: 600px;">
-                    <div class="modal-header">
-                        <h3 class="modal-title">Students in ${progress}</h3>
-                        <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">&times;</button>
-                    </div>
-                    <div class="modal-content">
-                        <div class="students-list">
-                            ${students.length > 0 ? 
-                                students.map(student => `
-                                    <div class="student-item">
-                                        <div class="student-avatar">${student.name.charAt(0)}</div>
-                                        <div class="student-info">
-                                            <strong>${student.name}</strong>
-                                            <small>${student.email}</small>
-                                        </div>
-                                    </div>
-                                `).join('') :
-                                '<p class="text-muted">No students in this progress level</p>'
-                            }
-                        </div>
-                    </div>
-                </div>
-            </div>
-        `;
-        
-        document.body.insertAdjacentHTML('beforeend', modalContent);
-    }
-
-    // CSV File Handling
-    function setupCSVUpload() {
-        const fileInput = document.getElementById('csvFile');
-        const uploadArea = document.getElementById('fileUploadArea');
-        
-        fileInput.addEventListener('change', handleFileSelect);
-        
-        uploadArea.addEventListener('click', () => fileInput.click());
-        
-        uploadArea.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            uploadArea.style.borderColor = '#4361ee';
-            uploadArea.style.background = '#f8f9ff';
-        });
-        
-        uploadArea.addEventListener('dragleave', (e) => {
-            e.preventDefault();
-            uploadArea.style.borderColor = '#ddd';
-            uploadArea.style.background = '#f8f9fa';
-        });
-        
-        uploadArea.addEventListener('drop', (e) => {
-            e.preventDefault();
-            uploadArea.style.borderColor = '#ddd';
-            uploadArea.style.background = '#f8f9fa';
-            
-            if (e.dataTransfer.files.length) {
-                fileInput.files = e.dataTransfer.files;
-                handleFileSelect();
-            }
-        });
-    }
-
-    function handleFileSelect() {
-        const file = document.getElementById('csvFile').files[0];
-        if (!file) return;
-        
-        // Validate file type
-        if (!file.name.endsWith('.csv')) {
-            showError('Please select a CSV file');
-            return;
-        }
-        
-        // Update file info
-        document.getElementById('fileName').textContent = file.name;
-        document.getElementById('fileSize').textContent = formatFileSize(file.size);
-        document.getElementById('filePreview').style.display = 'block';
-        
-        // Preview CSV
-        previewCSV(file);
-    }
-
-    function previewCSV(file) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            const csvData = e.target.result;
-            const rows = csvData.split('\n');
-            
-            if (rows.length === 0) {
-                showError('CSV file is empty');
-                return;
-            }
-            
-            // Parse headers
-            const headers = rows[0].split(',').map(h => h.trim());
-            
-            // Display preview
-            displayCSVPreview(headers, rows.slice(1));
-        };
-        reader.readAsText(file);
-    }
-
-    function displayCSVPreview(headers, rows) {
-        const previewHeaders = document.getElementById('previewHeaders');
-        const previewRows = document.getElementById('previewRows');
-        const previewSummary = document.getElementById('previewSummary');
-        
-        // Clear previous preview
-        previewHeaders.innerHTML = '';
-        previewRows.innerHTML = '';
-        
-        // Add headers
-        const headerRow = document.createElement('tr');
-        headers.forEach(header => {
-            const th = document.createElement('th');
-            th.textContent = header;
-            headerRow.appendChild(th);
-        });
-        previewHeaders.appendChild(headerRow);
-        
-        // Add first 5 rows for preview
-        const displayRows = rows.slice(0, 5).filter(row => row.trim());
-        displayRows.forEach(row => {
-            const cells = row.split(',');
-            const tr = document.createElement('tr');
-            cells.forEach(cell => {
-                const td = document.createElement('td');
-                td.textContent = cell.trim();
-                tr.appendChild(td);
-            });
-            previewRows.appendChild(tr);
-        });
-        
-        // Update summary
-        const totalRows = rows.filter(row => row.trim()).length;
-        previewSummary.innerHTML = `
-            Previewing ${Math.min(5, totalRows)} of ${totalRows} rows
-            ${totalRows > 5 ? '<br><small>Only first 5 rows shown</small>' : ''}
-        `;
-        
-        document.getElementById('uploadPreview').style.display = 'block';
-        document.getElementById('uploadBtn').disabled = false;
-    }
-
-    async function uploadCSV() {
-        const fileInput = document.getElementById('csvFile');
-        const progress = document.getElementById('csvProgress').value;
-        const batchId = getBatchId();
-        
-        if (!fileInput.files.length) {
-            showError('Please select a CSV file');
-            return;
-        }
-        
-        if (!batchId) {
-            showError('Could not identify the batch. Please refresh the page.');
-            return;
-        }
-        
-        const formData = new FormData();
-        formData.append('csv_file', fileInput.files[0]);
-        formData.append('initial_progress', progress);
-        
-        showLoading();
-        try {
-            const response = await fetch(`/api/batches/${batchId}/upload-students/`, {
-                method: 'POST',
-                headers: {
-                    'X-CSRFToken': getCSRFToken()
-                },
-                body: formData
-            });
-            
-            if (response.ok) {
-                const result = await response.json();
-                showSuccess(`Successfully uploaded ${result.added} students`);
-                setTimeout(() => {
-                    location.reload();
-                }, 1500);
-            } else {
-                const error = await response.json();
-                throw new Error(error.message || 'Failed to upload students');
-            }
-        } catch (error) {
-            showError('Error uploading students: ' + error.message);
         } finally {
             hideLoading();
         }
@@ -2410,7 +2992,7 @@
 
     function showSuccess(message) {
         // You can replace this with a better notification system
-        alert(message);
+        alert('Success: ' + message);
     }
 
     function showError(message) {
@@ -2418,34 +3000,21 @@
         alert('Error: ' + message);
     }
 
-    function formatFileSize(bytes) {
-        if (bytes === 0) return '0 Bytes';
-        const k = 1024;
-        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-        const i = Math.floor(Math.log(bytes) / Math.log(k));
-        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-    }
-
     // Initialize
     document.addEventListener('DOMContentLoaded', () => {
+        // Setup CSV upload
+        setupCSVUpload();
+        
         // Setup event listeners
         document.querySelectorAll('.student-checkbox').forEach(cb => {
             cb.addEventListener('change', updateBulkActions);
         });
         
-        // Setup forms
-        document.getElementById('csvUploadForm')?.addEventListener('submit', (e) => {
-            e.preventDefault();
-            uploadCSV();
-        });
-        
+        // Setup form submissions
         document.getElementById('updateProgressForm')?.addEventListener('submit', (e) => {
             e.preventDefault();
             updateProgress();
         });
-        
-        // Setup CSV upload
-        setupCSVUpload();
         
         // Initialize search in main table
         document.getElementById('searchStudent')?.addEventListener('input', (e) => {
