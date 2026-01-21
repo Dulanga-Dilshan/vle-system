@@ -131,3 +131,15 @@ def remove_student_from_batch(request,id):
     batch = get_object_or_404(university_models.Batch,id=id)
 
     return response.Response({'success': True,'added': 1,'message': f'removed {len(student_ids)} students from batch {batch.name}'},status=status.HTTP_201_CREATED)
+
+
+
+@api_view(['POST'])
+@permission_classes([permissions.IsFacultyAdminstrator])
+def register_new_students(request,id):
+    print(type(request.data['students']))
+    
+
+
+
+    return response.Response({'success': True,'added': 1,'message': f'removed {1} students from batch {1}'},status=status.HTTP_201_CREATED)

@@ -2537,11 +2537,11 @@
         
         showLoading();
         try {
-            const response = await fetch(`/api/batches/${batchId}/add_students/`, {
+            const response = await fetch(`/api/batches/${batchId}/register-new-students/`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-CSRFToken': getCSRFToken()
+                    'X-CSRFToken': '{{ csrf_token }}'
                 },
                 body: JSON.stringify({
                     students: students,
@@ -2950,7 +2950,7 @@
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-CSRFToken': getCSRFToken()
+                    'X-CSRFToken': '{{ csrf_token }}'
                 },
                 body: JSON.stringify({
                     student_ids: studentIds
