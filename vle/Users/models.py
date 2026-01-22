@@ -11,7 +11,7 @@ class User(AbstractUser):
         ADMIN = "admin"
 
     role = models.CharField(max_length=20, choices=Roles.choices, default='student')
-    last_activity = models.DateField(blank=True, null=True)
+    last_activity = models.DateTimeField(blank=True, null=True)
 
     def __str__(self):
         return super().__str__() 

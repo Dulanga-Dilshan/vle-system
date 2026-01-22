@@ -6,6 +6,7 @@ from django.http import HttpResponse
 from Users import models as user_models
 from . import permissions
 from django.shortcuts import get_object_or_404
+from Users import services as user_services
 
 
 @api_view(['GET'])
@@ -137,9 +138,28 @@ def remove_student_from_batch(request,id):
 @api_view(['POST'])
 @permission_classes([permissions.IsFacultyAdminstrator])
 def register_new_students(request,id):
-    print(type(request.data['students']))
+    if not request.data['students']:
+        return response.Response({'success': False,'added': 0,'message': 'no student data'},status=status.HTTP_400_BAD_REQUEST)
+
+    students = request.data['students']
+    batch = get_object_or_404(university_models.Batch,id=id)
+    
+    for student in students:
+        user_data ={
+            'username':student['student_id'],
+            'email':student['email'],
+            'full_name':student['full_name']
+        }
+        student_data={
+            'name':student['full_name'],
+            'username':student['student_id'],
+            'faculty_id':batch.course.department.faculty.id,
+            'department_id':batch.course.department.id,
+            'batch_id':batch.id
+        }
+        
+        if user_services.create_user_student(user_data,student_data) != True:
+            return  response.Response({'message': 'incorrect data'},status=status.HTTP_400_BAD_REQUEST)
     
 
-
-
-    return response.Response({'success': True,'added': 1,'message': f'removed {1} students from batch {1}'},status=status.HTTP_201_CREATED)
+    return response.Response({'success': True,'added': len(students),'message': f'removed {len(students)} students from batch {batch.name}'},status=status.HTTP_201_CREATED)

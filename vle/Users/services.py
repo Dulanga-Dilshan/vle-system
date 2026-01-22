@@ -1,4 +1,5 @@
 from .models import User, Student, Staff,StudentRegistretionRequest, StaffRegistretionRequest
+from university import models as univercity_models
 from django.shortcuts import get_object_or_404
 from django.conf import settings
 from django.core.handlers.wsgi import WSGIRequest
@@ -154,6 +155,45 @@ def user_count(faculty_id:int=None,department_id:int=None,admins:bool=True)->int
         return User.objects.exclude(role='admin').count()
 
     return User.objects.count()
+
+
+def create_user_student(user_data:dict,student_data:dict)->bool:
+    if len(user_data['full_name'].split(' ')) > 1:
+        first_name = user_data['full_name'].split(' ')[0]
+        last_name = user_data['full_name'].split(' ')[1]
+    else:
+        first_name = user_data['full_name']
+        last_name = ''
+
+    userAcc = User(
+        username = user_data['username'],
+        email = user_data['email'],
+        first_name = first_name,
+        last_name = last_name,
+        role = 'student'
+    )
+
+    try:
+        userAcc.save()
+    except Exception as e:
+        print(e)
+        return e
+    
+    studentAcc = Student(
+        name = student_data['name'],
+        faculty_name = univercity_models.Faculty.objects.get(id=student_data['faculty_id']),
+        department_name = univercity_models.Department.objects.get(id=student_data['department_id']),
+        batch = univercity_models.Batch.objects.get(id=student_data['batch_id']),
+        username = userAcc
+    )
+
+    try:
+        studentAcc.save()
+    except Exception as e:
+        print(e)
+        return e
+    
+    return True
 
 
 
