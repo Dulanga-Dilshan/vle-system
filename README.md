@@ -31,7 +31,7 @@ The admin panel currently supports the following functionalities:
 1. Clone the repository:
 
 ```bash
-git clone https://github.com/<Dulanga-Dilshan>/vle-system.git
+git clone https://github.com/Dulanga-Dilshan/vle-system.git
 cd vle-system
 
 2. Create a virtual environment and activate it:
