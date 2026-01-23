@@ -73,7 +73,7 @@ def delete_department(request,id):
 
 
 @api_view(['POST'])
-@permission_classes([permissions.IsFacultyAdminstrator])
+@permission_classes([permissions.IsBatchAdminstrator])
 def create_batch(request):
     new_batch = serializer.BatchSerializer(data=request.data)
     new_batch.is_valid(raise_exception=True)
@@ -82,7 +82,7 @@ def create_batch(request):
 
 
 @api_view(['PUT','PATCH'])
-@permission_classes([permissions.IsFacultyAdminstrator])
+@permission_classes([permissions.IsBatchAdminstrator])
 def update_batch(request,id:int):
     batch = get_object_or_404(university_models.Batch,id=id)
     update = serializer.BatchSerializer(batch,data=request.data,partial=True)
@@ -92,15 +92,15 @@ def update_batch(request,id:int):
 
 
 @api_view(['DELETE'])
-@permission_classes([permissions.IsFacultyAdminstrator])
+@permission_classes([permissions.IsBatchAdminstrator])
 def delete_batch(request,id:int):
     batch = get_object_or_404(university_models.Batch,id=id)
     batch.delete()
     return response.Response(status=status.HTTP_204_NO_CONTENT)
 
 
-@api_view(['POST'])
-@permission_classes([permissions.IsFacultyAdminstrator])
+@api_view(['PUT','PATCH'])
+@permission_classes([permissions.IsBatchAdminstrator])
 def add_students_to_batch(request,id):
     student_ids = request.data['student_ids']
     batch = get_object_or_404(university_models.Batch,id=id)
@@ -115,8 +115,8 @@ def add_students_to_batch(request,id):
     return response.Response({'success': True,'added': len(student_ids),'message': f'Added {len(student_ids)} students to batch {batch.name}'},status=status.HTTP_201_CREATED)
 
 
-@api_view(['POST'])
-@permission_classes([permissions.IsFacultyAdminstrator])
+@api_view(['DELETE'])
+@permission_classes([permissions.IsBatchAdminstrator])
 def remove_student_from_batch(request,id):
     student_ids = []
     if type(request.data['student_ids']) == list:
@@ -135,8 +135,8 @@ def remove_student_from_batch(request,id):
 
 
 
-@api_view(['POST'])
-@permission_classes([permissions.IsFacultyAdminstrator])
+@api_view(['PUT','PATCH'])
+@permission_classes([permissions.IsBatchAdminstrator])
 def register_new_students(request,id):
     if not request.data['students']:
         return response.Response({'success': False,'added': 0,'message': 'no student data'},status=status.HTTP_400_BAD_REQUEST)
@@ -163,3 +163,54 @@ def register_new_students(request,id):
     
 
     return response.Response({'success': True,'added': len(students),'message': f'removed {len(students)} students from batch {batch.name}'},status=status.HTTP_201_CREATED)
+
+@api_view(['POST'])
+@permission_classes([permissions.IsFacultyAdminstrator])
+def create_user_student(request):
+    count = 0
+    for user in request.data['users']:
+        user_data ={
+            'username':user['username'],
+            'email':user['email'],
+            'full_name':user['name']
+        }
+
+        student_data={
+            'name':user['name'],
+            'username':user['username'],
+            'faculty_id':user['faculty_id'],
+            'department_id':user['department_id'],
+            'batch_id': None
+        }
+
+        if user_services.create_user_student(user_data,student_data) != True:
+            return  response.Response({'message': f"added {count}. unable to add {len(request.data['users'])-count}."},status=status.HTTP_400_BAD_REQUEST)
+        
+        count += 1
+
+    return response.Response({},status=status.HTTP_201_CREATED)
+
+
+@api_view(['POST'])
+@permission_classes([permissions.IsFacultyAdminstrator])
+def create_user_staff(request):
+    count = 0
+    for user in request.data['users']:
+        user_data = {
+            'username':user['username'],
+            'email':user['email'],
+            'full_name':user['name']
+        }
+
+        staff_data = {
+            'name':user['name'],
+            'username':user['username'],
+            'staff_type':user['staff_type'],
+            'faculty_id':user['faculty_id'],
+            'department_id':user['department_id'],
+        }
+
+        if user_services.create_user_staff(user_data,staff_data) != True:
+            return  response.Response({'message': f"added {count}. unable to add {len(request.data['users'])-count}."},status=status.HTTP_400_BAD_REQUEST)
+
+    return response.Response({},status=status.HTTP_201_CREATED)

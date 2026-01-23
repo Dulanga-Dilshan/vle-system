@@ -2538,7 +2538,7 @@
         showLoading();
         try {
             const response = await fetch(`/api/batches/${batchId}/register-new-students/`, {
-                method: 'POST',
+                method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
                     'X-CSRFToken': '{{ csrf_token }}'
@@ -2671,7 +2671,7 @@
         if (confirm(`Are you sure you want to remove ${studentName} from this batch?`)) {
             showLoading();
             fetch(`/api/batches/${batchId}/remove_student/`, {
-                method: 'POST',
+                method: 'DELETE',
                 headers: {
                     'Content-Type': 'application/json',
                     'X-CSRFToken': getCSRFToken()
@@ -2712,7 +2712,7 @@
         if (confirm(`Are you sure you want to remove ${studentCount} student(s) from this batch?`)) {
             showLoading();
             fetch(`/api/batches/${batchId}/remove_student/`, {
-                method: 'POST',
+                method: 'DELETE',
                 headers: {
                     'Content-Type': 'application/json',
                     'X-CSRFToken': getCSRFToken()
@@ -2947,7 +2947,7 @@
         showLoading();
         try {
             const response = await fetch(`/api/batches/${batchId}/add_students/`, {
-                method: 'POST',
+                method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
                     'X-CSRFToken': '{{ csrf_token }}'
@@ -2978,8 +2978,7 @@
 
     // Utility Functions
     function getCSRFToken() {
-        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]');
-        return csrfToken ? csrfToken.value : '';
+        return "{{ csrf_token }}";
     }
 
     function showLoading() {

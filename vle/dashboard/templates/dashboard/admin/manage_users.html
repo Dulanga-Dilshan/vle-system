@@ -10,9 +10,29 @@
 <div class="user-management">
     <!-- Page Header --> 
     <div class="page-header">
-        <h1 class="page-title">
-            <i class="fas fa-users-cog"></i> User Management
-        </h1>
+        <div class="header-actions">
+            <h1 class="page-title">
+                <i class="fas fa-users-cog"></i> User Management
+            </h1>
+            <div class="action-buttons-group">
+                <button class="btn btn-primary" onclick="showAddUserModal()">
+                    <i class="fas fa-user-plus"></i> Add New Users
+                </button>
+                <div class="dropdown">
+                    <button class="btn btn-outline dropdown-toggle" type="button" id="downloadCsvDropdown">
+                        <i class="fas fa-download"></i> CSV Templates
+                    </button>
+                    <div class="dropdown-menu" aria-labelledby="downloadCsvDropdown">
+                        <a class="dropdown-item" href="#" onclick="downloadCSVTemplate('student')">
+                            <i class="fas fa-user-graduate"></i> Student Template
+                        </a>
+                        <a class="dropdown-item" href="#" onclick="downloadCSVTemplate('staff')">
+                            <i class="fas fa-chalkboard-teacher"></i> Staff Template
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
         <p class="page-subtitle">
             Manage all user accounts, permissions, and access controls across the platform
         </p>
@@ -29,7 +49,7 @@
                 <select id="facultyFilter" class="filter-select">
                     <option value="">All Faculties</option>
                     {% for faculty in faculties %}
-                    <option value="{{ faculty }}">{{ faculty }}</option>
+                    <option value="{{ faculty.id }}">{{ faculty.name }}</option>
                     {% endfor %}
                 </select>
                 <select id="statusFilter" class="filter-select">
@@ -50,14 +70,14 @@
             </label>
         </div>
         <div class="bulk-buttons">
-            <button class="btn btn-sm btn-outline" onclick="submitBulkAction('activate')">
-                <i class="fas fa-check-circle"></i> Activate
+            <button class="btn btn-sm btn-success" onclick="submitBulkAction('activate')">
+                <i class="fas fa-toggle-on"></i> Activate
             </button>
-            <button class="btn btn-sm btn-outline" onclick="submitBulkAction('suspend')">
-                <i class="fas fa-ban"></i> Suspend
+            <button class="btn btn-sm btn-warning" onclick="submitBulkAction('suspend')">
+                <i class="fas fa-toggle-off"></i> Suspend
             </button>
             <button class="btn btn-sm btn-danger" onclick="submitBulkAction('delete')">
-                <i class="fas fa-trash"></i> Delete
+                <i class="fas fa-trash-alt"></i> Delete
             </button>
         </div>
     </div>
@@ -91,13 +111,13 @@
                         <th>Academic Details</th>
                         <th>Contact</th>
                         <th>Status</th>
-                        <th style="width: 220px;">Actions</th>
+                        <th style="width: 250px;">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% if students %}
                         {% for student in students %}
-                        <tr class="user-row" data-user-id="{{ student.username.id }}" data-faculty="{{ student.faculty_name.name }}" data-status="{% if student.username.is_active %}active{% else %}suspended{% endif %}">
+                        <tr class="user-row" data-user-id="{{ student.username.id }}" data-faculty="{{ student.faculty_name.id }}" data-status="{% if student.username.is_active %}active{% else %}suspended{% endif %}">
                             <td>
                                 <input type="checkbox" class="user-checkbox" value="{{ student.username.id }}">
                             </td>
@@ -107,20 +127,35 @@
                                         {{ student.name|first|upper }}
                                     </div>
                                     <div class="user-details">
-                                        <div class="user-name" id="name-{{ student.username.id }}">{{ student.name }}</div>
-                                        <div class="user-username">{{ student.username }}</div>
+                                        <div class="user-name" id="name-student-{{ student.id }}">{{ student.name }}</div>
+                                        <div class="user-username">{{ student.username.username }}</div>
                                     </div>
                                 </div>
                             </td>
                             <td>
                                 <div class="academic-info">
-                                    <strong>{{ student.faculty_name }}</strong>
-                                    <p>{{ student.department_name.name }}</p>
+                                    <div class="editable-field" data-field="faculty" data-id="{{ student.id }}" data-type="student">
+                                        <strong id="faculty-student-{{ student.id }}">{{ student.faculty_name.name }}</strong>
+                                        <button class="edit-icon" onclick="editField('faculty', {{ student.id }}, 'student')" title="Edit Faculty">
+                                            <i class="fas fa-pencil-alt"></i>
+                                        </button>
+                                    </div>
+                                    <div class="editable-field" data-field="department" data-id="{{ student.id }}" data-type="student">
+                                        <p id="department-student-{{ student.id }}">{{ student.department_name.name }}</p>
+                                        <button class="edit-icon" onclick="editField('department', {{ student.id }}, 'student')" title="Edit Department">
+                                            <i class="fas fa-pencil-alt"></i>
+                                        </button>
+                                    </div>
                                 </div>
                             </td>
                             <td>
                                 <div class="contact-info">
-                                    <div class="user-email" id="email-{{ student.username.id }}">{{ student.username.email }}</div>
+                                    <div class="editable-field" data-field="email" data-id="{{ student.id }}" data-type="student">
+                                        <div class="user-email" id="email-student-{{ student.id }}">{{ student.username.email }}</div>
+                                        <button class="edit-icon" onclick="editField('email', {{ student.id }}, 'student')" title="Edit Email">
+                                            <i class="fas fa-pencil-alt"></i>
+                                        </button>
+                                    </div>
                                     <div class="user-id">ID: {{ student.id }}</div>
                                 </div>
                             </td>
@@ -137,52 +172,27 @@
                             </td>
                             <td>
                                 <div class="action-buttons">
-                                    <!-- Edit Button -->
-                                    <button class="btn btn-sm btn-outline edit-btn" data-user-id="{{ student.username.id }}" onclick="openEditModal('{{ student.username.id }}', 'student', '{{ student.name }}', '{{ student.username.email }}', '{{ student.id }}')" title="Edit User">
-                                        <i class="fas fa-edit"></i> Edit
+                                    <button class="btn-action btn-edit" onclick="openEditModal('student', {{ student.id }}, '{{ student.name|escapejs }}', '{{ student.username.email|escapejs }}', {{ student.username.id }}, {{ student.faculty_name.id }}, {{ student.department_name.id }})" title="Edit User">
+                                        <i class="fas fa-user-edit"></i>
                                     </button>
                                     
-                                    <!-- Delete Form -->
-                                    <form method='post' action="{% url 'dashboard:manage_users' %}" style="display: inline;" onsubmit="return confirmDelete()">
-                                        {% csrf_token %}
-                                        <input type='hidden' name='user_id' value='{{ student.username.id }}'>
-                                        <input type="hidden" name="action" value="delete">
-                                        <button type='submit' class='btn btn-sm btn-danger' title="Delete User">
-                                            <i class='fas fa-trash'></i>
-                                        </button>
-                                    </form>
+                                    <button class="btn-action btn-password" onclick="resetUserPassword({{ student.username.id }})" title="Reset Password">
+                                        <i class="fas fa-key"></i>
+                                    </button>
                                     
-                                    <!-- Reset Password Form -->
-                                    <form method='post' action="{% url 'dashboard:manage_users' %}" style="display: inline;" onsubmit="return confirmReset()">
-                                        {% csrf_token %}
-                                        <input type='hidden' name='user_id' value='{{ student.username.id }}'>
-                                        <input type="hidden" name="action" value="restpasswd">
-                                        <button type='submit' class='btn btn-sm btn-warning' title="Reset Password">
-                                            <i class='fas fa-key'></i>
-                                        </button>
-                                    </form>
-                                    
-                                    <!-- Suspend/Activate Form -->
                                     {% if student.username.is_active %}
-                                    <form method='post' action="{% url 'dashboard:manage_users' %}" style="display: inline;" onsubmit="return confirmSuspend()">
-                                        {% csrf_token %}
-                                        <input type='hidden' name='user_id' value='{{ student.username.id }}'>
-                                        <input type="hidden" name="action" value="suspend">
-                                        <button type='submit' class='btn btn-sm btn-outline suspend-btn' title="Suspend User">
-                                            <i class='fas fa-ban'></i>
-                                        </button>
-                                    </form>
+                                    <button class="btn-action btn-suspend" onclick="toggleUserStatus({{ student.username.id }}, 'suspend')" title="Suspend User">
+                                        <i class="fas fa-user-slash"></i>
+                                    </button>
                                     {% else %}
-                                    <form method='post' action="{% url 'dashboard:manage_users' %}" style="display: inline;" onsubmit="return confirmActivate()">
-                                        {% csrf_token %}
-                                        <input type='hidden' name='user_id' value='{{ student.username.id }}'>
-                                        <input type="hidden" name="action" value="activate">
-                                        <button type='submit' class='btn btn-sm btn-outline activate-btn' title="Activate User">
-                                            <i class='fas fa-check'></i>
-                                        </button>
-                                    </form>
+                                    <button class="btn-action btn-activate" onclick="toggleUserStatus({{ student.username.id }}, 'activate')" title="Activate User">
+                                        <i class="fas fa-user-check"></i>
+                                    </button>
                                     {% endif %}
                                     
+                                    <button class="btn-action btn-delete" onclick="deleteUser({{ student.username.id }})" title="Delete User">
+                                        <i class="fas fa-user-times"></i>
+                                    </button>
                                 </div>
                             </td>
                         </tr>
@@ -214,13 +224,13 @@
                         <th>Role & Department</th>
                         <th>Contact</th>
                         <th>Status</th>
-                        <th style="width: 220px;">Actions</th>
+                        <th style="width: 250px;">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% if staff %}
                         {% for stf in staff %}
-                        <tr class="user-row" data-user-id="{{ stf.username.id }}" data-faculty="{{ stf.faculty_name.name }}" data-status="{% if stf.username.is_active %}active{% else %}suspended{% endif %}">
+                        <tr class="user-row" data-user-id="{{ stf.username.id }}" data-faculty="{{ stf.faculty_name.id }}" data-status="{% if stf.username.is_active %}active{% else %}suspended{% endif %}">
                             <td>
                                 <input type="checkbox" class="user-checkbox" value="{{ stf.username.id }}">
                             </td>
@@ -230,20 +240,35 @@
                                         {{ stf.name|first|upper }}
                                     </div>
                                     <div class="user-details">
-                                        <div class="user-name" id="name-staff-{{ stf.username.id }}">{{ stf.name }}</div>
-                                        <div class="user-username">{{ stf.username }}</div>
+                                        <div class="user-name" id="name-staff-{{ stf.id }}">{{ stf.name }}</div>
+                                        <div class="user-username">{{ stf.username.username }}</div>
                                     </div>
                                 </div>
                             </td>
                             <td>
                                 <div class="role-info">
-                                    <strong>{{ stf.staff_type|title }}</strong>
-                                    <p>{{ stf.department_name }}</p>
+                                    <div class="editable-field" data-field="staff_type" data-id="{{ stf.id }}" data-type="staff">
+                                        <strong id="staff_type-staff-{{ stf.id }}">{{ stf.staff_type|title }}</strong>
+                                        <button class="edit-icon" onclick="editField('staff_type', {{ stf.id }}, 'staff')" title="Edit Staff Type">
+                                            <i class="fas fa-pencil-alt"></i>
+                                        </button>
+                                    </div>
+                                    <div class="editable-field" data-field="department" data-id="{{ stf.id }}" data-type="staff">
+                                        <p id="department-staff-{{ stf.id }}">{{ stf.department_name.name }}</p>
+                                        <button class="edit-icon" onclick="editField('department', {{ stf.id }}, 'staff')" title="Edit Department">
+                                            <i class="fas fa-pencil-alt"></i>
+                                        </button>
+                                    </div>
                                 </div>
                             </td>
                             <td>
                                 <div class="contact-info">
-                                    <div class="user-email" id="email-staff-{{ stf.username.id }}">{{ stf.username.email }}</div>
+                                    <div class="editable-field" data-field="email" data-id="{{ stf.id }}" data-type="staff">
+                                        <div class="user-email" id="email-staff-{{ stf.id }}">{{ stf.username.email }}</div>
+                                        <button class="edit-icon" onclick="editField('email', {{ stf.id }}, 'staff')" title="Edit Email">
+                                            <i class="fas fa-pencil-alt"></i>
+                                        </button>
+                                    </div>
                                     <div class="user-id">ID: {{ stf.id }}</div>
                                 </div>
                             </td>
@@ -260,47 +285,27 @@
                             </td>
                             <td>
                                 <div class="action-buttons">
-                                    <!-- Delete Form -->
-                                    <form method='post' action="{% url 'dashboard:manage_users' %}" style="display: inline;" onsubmit="return confirmDelete()">
-                                        {% csrf_token %}
-                                        <input type='hidden' name='user_id' value='{{ stf.username.id }}'>
-                                        <input type="hidden" name="action" value="delete">
-                                        <button type='submit' class='btn btn-sm btn-danger' title="Delete User">
-                                            <i class='fas fa-trash'></i>
-                                        </button>
-                                    </form>
+                                    <button class="btn-action btn-edit" onclick="openEditModal('staff', {{ stf.id }}, '{{ stf.name|escapejs }}', '{{ stf.username.email|escapejs }}', {{ stf.username.id }}, {{ stf.faculty_name.id }}, {{ stf.department_name.id }}, '{{ stf.staff_type }}')" title="Edit User">
+                                        <i class="fas fa-user-edit"></i>
+                                    </button>
                                     
-                                    <!-- Reset Password Form -->
-                                    <form method='post' action="{% url 'dashboard:manage_users' %}" style="display: inline;" onsubmit="return confirmReset()">
-                                        {% csrf_token %}
-                                        <input type='hidden' name='user_id' value='{{ stf.username.id }}'>
-                                        <input type="hidden" name="action" value="restpasswd">
-                                        <button type='submit' class='btn btn-sm btn-warning' title="Reset Password">
-                                            <i class='fas fa-key'></i>
-                                        </button>
-                                    </form>
+                                    <button class="btn-action btn-password" onclick="resetUserPassword({{ stf.username.id }})" title="Reset Password">
+                                        <i class="fas fa-key"></i>
+                                    </button>
                                     
-                                    <!-- Suspend/Activate Form -->
                                     {% if stf.username.is_active %}
-                                    <form method='post' action="{% url 'dashboard:manage_users' %}" style="display: inline;" onsubmit="return confirmSuspend()">
-                                        {% csrf_token %}
-                                        <input type='hidden' name='user_id' value='{{ stf.username.id }}'>
-                                        <input type="hidden" name="action" value="suspend">
-                                        <button type='submit' class='btn btn-sm btn-outline suspend-btn' title="Suspend User">
-                                            <i class='fas fa-ban'></i>
-                                        </button>
-                                    </form>
+                                    <button class="btn-action btn-suspend" onclick="toggleUserStatus({{ stf.username.id }}, 'suspend')" title="Suspend User">
+                                        <i class="fas fa-user-slash"></i>
+                                    </button>
                                     {% else %}
-                                    <form method='post' action="{% url 'dashboard:manage_users' %}" style="display: inline;" onsubmit="return confirmActivate()">
-                                        {% csrf_token %}
-                                        <input type='hidden' name='user_id' value='{{ stf.username.id }}'>
-                                        <input type="hidden" name="action" value="activate">
-                                        <button type='submit' class='btn btn-sm btn-outline activate-btn' title="Activate User">
-                                            <i class='fas fa-check'></i>
-                                        </button>
-                                    </form>
+                                    <button class="btn-action btn-activate" onclick="toggleUserStatus({{ stf.username.id }}, 'activate')" title="Activate User">
+                                        <i class="fas fa-user-check"></i>
+                                    </button>
                                     {% endif %}
                                     
+                                    <button class="btn-action btn-delete" onclick="deleteUser({{ stf.username.id }})" title="Delete User">
+                                        <i class="fas fa-user-times"></i>
+                                    </button>
                                 </div>
                             </td>
                         </tr>
@@ -319,49 +324,191 @@
         </div>
     </div>
     
-    <!-- Hidden Bulk Action Form -->
-    <form method="post" action="{% url 'dashboard:manage_users' %}" id="bulkActionForm" style="display: none;">
-        {% csrf_token %}
-        <input type="hidden" name="action" id="bulkActionType" value="">
-        <input type="hidden" name="user_ids" id="bulkUserIds" value="">
-    </form>
-    
-    <!-- Edit User Modal -->
-    <div class="modal-overlay" id="editModalOverlay" style="display: none;">
-        <div class="modal" id="editModal">
+    <!-- Add User Modal -->
+    <div class="modal-overlay" id="addUserModalOverlay" style="display: none;">
+        <div class="modal" id="addUserModal" style="max-width: 800px;">
             <div class="modal-header">
-                <h3><i class="fas fa-user-edit"></i> Edit User</h3>
-                <button class="modal-close" onclick="closeEditModal()">&times;</button>
+                <h3><i class="fas fa-user-plus"></i> Add New Users</h3>
+                <button class="modal-close" onclick="closeAddUserModal()">&times;</button>
             </div>
             <div class="modal-body">
-                <form id="editUserForm" method="post" action="{% url 'dashboard:manage_users' %}">
-                    {% csrf_token %}
-                    <input type="hidden" name="action" id="editAction" value="update">
-                    <input type="hidden" name="student_id" id="editStudentId" value="">
-                    <input type="hidden" name="staff_id" id="editStaffId" value="">
-                    <input type="hidden" name="old_name" id="oldName" value="">
-                    <input type="hidden" name="old_email" id="oldEmail" value="">
-                    
-                    <div class="form-group">
-                        <label class="form-label">Full Name</label>
-                        <input type="text" id="editName" class="form-control" placeholder="Enter full name" required>
+                <!-- Tabs for add method -->
+                <div class="tabs-container" style="margin-bottom: 1.5rem;">
+                    <div class="tabs">
+                        <button class="tab active" onclick="switchAddMethod('manual')" id="manualTab">
+                            <i class="fas fa-keyboard"></i>
+                            <span>Manual Entry</span>
+                        </button>
+                        <button class="tab" onclick="switchAddMethod('csv')" id="csvTab">
+                            <i class="fas fa-file-csv"></i>
+                            <span>CSV Import</span>
+                        </button>
                     </div>
-                    
-                    <div class="form-group">
-                        <label class="form-label">Email Address</label>
-                        <input type="email" id="editEmail" class="form-control" placeholder="Enter email address" required>
-                    </div>
-                    
+                </div>
+                
+                <!-- Manual Entry Form -->
+                <div id="manualEntryTab" class="add-method-tab active">
+                    <form id="manualUserForm">
+                        <div class="form-group">
+                            <label class="form-label">User Type</label>
+                            <select id="userType" class="form-control" onchange="onUserTypeChange()" required>
+                                <option value="">Select User Type</option>
+                                <option value="student">Student</option>
+                                <option value="staff">Staff</option>
+                            </select>
+                        </div>
+                        
+                        <!-- Student Fields -->
+                        <div id="studentFields" style="display: none;">
+                            <div class="form-group">
+                                <label class="form-label">Registration Number</label>
+                                <input type="text" id="regNumber" class="form-control" placeholder="e.g., REG001">
+                            </div>
+                        </div>
+                        
+                        <!-- Staff Fields -->
+                        <div id="staffFields" style="display: none;">
+                            <div class="form-group">
+                                <label class="form-label">Staff Type</label>
+                                <select id="staffType" class="form-control">
+                                    <option value="">Select Staff Type</option>
+                                    <option value="lecture">Lecture</option>
+                                    <option value="profesor">Profesor</option>
+                                    <option value="administrative">Administrative</option>
+                                    <option value="support">Support Staff</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Full Name</label>
+                            <input type="text" id="name" class="form-control" placeholder="Enter full name" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Email Address</label>
+                            <input type="email" id="email" class="form-control" placeholder="Enter email address" required>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group" style="flex: 1;">
+                                <label class="form-label">Faculty</label>
+                                <select id="facultySelect" class="form-control" onchange="loadDepartments()" required>
+                                    <option value="">Select Faculty</option>
+                                    {% for faculty in faculties %}
+                                    <option value="{{ faculty.id }}">{{ faculty.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="form-group" style="flex: 1;">
+                                <label class="form-label">Department</label>
+                                <select id="departmentSelect" class="form-control" required disabled>
+                                    <option value="">Select Faculty First</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="modal-actions">
+                            <button type="button" class="btn btn-primary" onclick="addToQueue()">
+                                <i class="fas fa-plus"></i> Add to Queue
+                            </button>
+                            <button type="button" class="btn btn-outline" onclick="closeAddUserModal()">
+                                <i class="fas fa-times"></i> Cancel
+                            </button>
+                        </div>
+                    </form>
+                </div>
+                
+                <!-- CSV Import Form -->
+                <div id="csvImportTab" class="add-method-tab">
                     <div class="form-group">
                         <label class="form-label">User Type</label>
-                        <div class="user-type-display" id="userTypeDisplay"></div>
+                        <select id="csvUserType" class="form-control" required>
+                            <option value="">Select User Type</option>
+                            <option value="student">Student</option>
+                            <option value="staff">Staff</option>
+                        </select>
                     </div>
                     
+                    <div class="form-group">
+                        <label class="form-label">Upload CSV File</label>
+                        <div class="file-upload-area" id="csvUploadArea">
+                            <i class="fas fa-cloud-upload-alt" style="font-size: 3rem; color: #3b2fd4; margin-bottom: 1rem;"></i>
+                            <p>Drag and drop your CSV file here or click to browse</p>
+                            <input type="file" id="csvFile" accept=".csv" style="display: none;" onchange="handleCSVUpload()">
+                            <button class="btn btn-outline" onclick="document.getElementById('csvFile').click()">
+                                <i class="fas fa-folder-open"></i> Browse Files
+                            </button>
+                            <p class="file-hint" style="margin-top: 0.5rem; font-size: 0.85rem; color: #666;">
+                                CSV format: username,name,email,faculty_id,department_id,staff_type (for staff)
+                            </p>
+                            <div style="margin-top: 1rem; display: flex; gap: 0.5rem; justify-content: center;">
+                                <button type="button" class="btn btn-sm btn-outline" onclick="downloadCSVTemplate('student')">
+                                    <i class="fas fa-download"></i> Student Template
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline" onclick="downloadCSVTemplate('staff')">
+                                    <i class="fas fa-download"></i> Staff Template
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Queue Table -->
+                <div id="queueSection" style="display: none; margin-top: 2rem;">
+                    <h4 style="margin-bottom: 1rem;">Users to be Added (<span id="queueCount">0</span>)</h4>
+                    <div class="table-container" style="max-height: 300px; overflow-y: auto;">
+                        <table class="table" id="queueTable">
+                            <thead>
+                                <tr>
+                                    <th>Type</th>
+                                    <th>Username</th>
+                                    <th>Name</th>
+                                    <th>Email</th>
+                                    <th>Faculty</th>
+                                    <th>Department</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="queueTableBody">
+                                <!-- Queue items will be added here -->
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="modal-actions" style="margin-top: 1.5rem;">
+                        <button type="button" class="btn btn-success" onclick="submitUsers()" id="submitUsersBtn">
+                            <i class="fas fa-paper-plane"></i> Submit Users
+                        </button>
+                        <button type="button" class="btn btn-outline" onclick="clearQueue()">
+                            <i class="fas fa-trash"></i> Clear Queue
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Edit Modal for Individual Fields -->
+    <div class="modal-overlay" id="editFieldModalOverlay" style="display: none;">
+        <div class="modal" id="editFieldModal" style="max-width: 500px;">
+            <div class="modal-header">
+                <h3><i class="fas fa-edit"></i> Edit <span id="editFieldTitle"></span></h3>
+                <button class="modal-close" onclick="closeEditFieldModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="editFieldForm">
+                    <div class="form-group">
+                        <label class="form-label" id="editFieldLabel"></label>
+                        <div id="editFieldContainer">
+                            <!-- Dynamic content will be loaded here -->
+                        </div>
+                    </div>
                     <div class="modal-actions">
-                        <button type="submit" class="btn btn-primary">
+                        <button type="button" class="btn btn-primary" onclick="saveField()">
                             <i class="fas fa-save"></i> Save Changes
                         </button>
-                        <button type="button" class="btn btn-outline" onclick="closeEditModal()">
+                        <button type="button" class="btn btn-outline" onclick="closeEditFieldModal()">
                             <i class="fas fa-times"></i> Cancel
                         </button>
                     </div>
@@ -369,38 +516,373 @@
             </div>
         </div>
     </div>
+    
+    <!-- Edit User Modal (Full User Edit) -->
+    <div class="modal-overlay" id="editUserModalOverlay" style="display: none;">
+        <div class="modal" id="editUserModal" style="max-width: 600px;">
+            <div class="modal-header">
+                <h3><i class="fas fa-user-edit"></i> Edit User</h3>
+                <button class="modal-close" onclick="closeEditUserModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="editUserForm">
+                    <input type="hidden" id="editUserId" value="">
+                    <input type="hidden" id="editUserType" value="">
+                    <input type="hidden" id="editRecordId" value="">
+                    
+                    <div class="form-group">
+                        <label class="form-label">Full Name</label>
+                        <input type="text" id="editUserName" class="form-control" placeholder="Enter full name" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Email Address</label>
+                        <input type="email" id="editUserEmail" class="form-control" placeholder="Enter email address" required>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group" style="flex: 1;">
+                            <label class="form-label">Faculty</label>
+                            <select id="editUserFaculty" class="form-control" onchange="loadEditDepartments()" required>
+                                <option value="">Select Faculty</option>
+                                {% for faculty in faculties %}
+                                <option value="{{ faculty.id }}">{{ faculty.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="form-group" style="flex: 1;">
+                            <label class="form-label">Department</label>
+                            <select id="editUserDepartment" class="form-control" required disabled>
+                                <option value="">Select Faculty First</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div id="editStaffTypeField" style="display: none;">
+                        <div class="form-group">
+                            <label class="form-label">Staff Type</label>
+                            <select id="editStaffType" class="form-control">
+                                <option value="">Select Staff Type</option>
+                                <option value="lecture">Lecture</option>
+                                <option value="profesor">Profesor</option>
+                                <option value="administrative">Administrative</option>
+                                <option value="support">Support Staff</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="modal-actions">
+                        <button type="button" class="btn btn-primary" onclick="saveUser()">
+                            <i class="fas fa-save"></i> Save Changes
+                        </button>
+                        <button type="button" class="btn btn-outline" onclick="closeEditUserModal()">
+                            <i class="fas fa-times"></i> Cancel
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Notification Container -->
+    <div id="notificationContainer" class="notification-container"></div>
 </div>
 {% endblock %}
 
 {% block style %}
 <style>
+    /* Reset and Base Styles */
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+
+    :root {
+        --primary: #3b2fd4;
+        --primary-dark: #2a1bb7;
+        --secondary: #6c757d;
+        --success: #4caf50;
+        --danger: #f44336;
+        --warning: #ff9800;
+        --info: #2196f3;
+        --light: #f8f9fa;
+        --dark: #343a40;
+        --gray: #6c757d;
+        --gray-light: #e9ecef;
+        --border-radius: 10px;
+        --box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    body {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        line-height: 1.6;
+        color: var(--dark);
+        background-color: #f5f7fb;
+    }
+
     .user-management {
         display: flex;
         flex-direction: column;
         gap: 1.5rem;
+        padding: 2rem;
+        min-height: calc(100vh - 80px);
     }
 
+    /* Page Header */
     .page-header {
-        margin-bottom: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .header-actions {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.5rem;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .action-buttons-group {
+        display: flex;
+        gap: 0.75rem;
+        align-items: center;
+        flex-wrap: wrap;
     }
 
     .page-title {
         font-size: 2rem;
         color: var(--dark);
-        margin-bottom: 0.5rem;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
     }
 
     .page-subtitle {
         color: var(--gray);
         font-size: 1rem;
+        max-width: 800px;
+        line-height: 1.5;
+    }
+
+    /* Dropdown Styles */
+    .dropdown {
+        position: relative;
+        display: inline-block;
+    }
+
+    .dropdown-toggle {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.75rem 1.5rem;
+        background: white;
+        color: var(--primary);
+        border: 2px solid var(--primary);
+        border-radius: var(--border-radius);
+        font-size: 0.95rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: var(--transition);
+    }
+
+    .dropdown-toggle:hover {
+        background: #f8f9ff;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(59, 47, 212, 0.1);
+    }
+
+    .dropdown-toggle::after {
+        content: '';
+        display: inline-block;
+        width: 0;
+        height: 0;
+        margin-left: 0.5rem;
+        vertical-align: middle;
+        border-top: 0.3em solid;
+        border-right: 0.3em solid transparent;
+        border-left: 0.3em solid transparent;
+    }
+
+    .dropdown-menu {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        z-index: 1000;
+        display: none;
+        min-width: 200px;
+        padding: 0.5rem 0;
+        margin: 0.5rem 0 0;
+        background-color: white;
+        border: 1px solid var(--gray-light);
+        border-radius: var(--border-radius);
+        box-shadow: var(--box-shadow);
+        animation: slideDown 0.2s ease;
+    }
+
+    @keyframes slideDown {
+        from {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .dropdown-menu.show {
+        display: block;
+    }
+
+    .dropdown-item {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        width: 100%;
+        padding: 0.75rem 1rem;
+        color: var(--dark);
+        text-decoration: none;
+        background: none;
+        border: none;
+        cursor: pointer;
+        transition: var(--transition);
+        font-size: 0.9rem;
+    }
+
+    .dropdown-item:hover {
+        background-color: #f8f9fa;
+        color: var(--primary);
+    }
+
+    .dropdown-item i {
+        width: 16px;
+        text-align: center;
+    }
+
+    /* Cards */
+    .card {
+        background: white;
+        border-radius: var(--border-radius);
+        box-shadow: var(--box-shadow);
+        padding: 1.5rem;
+        transition: var(--transition);
+    }
+
+    .card:hover {
+        box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+    }
+
+    /* Buttons */
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        padding: 0.75rem 1.5rem;
+        border: none;
+        border-radius: var(--border-radius);
+        font-size: 0.95rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: var(--transition);
+        text-decoration: none;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .btn::after {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 5px;
+        height: 5px;
+        background: rgba(255, 255, 255, 0.5);
+        opacity: 0;
+        border-radius: 100%;
+        transform: scale(1, 1) translate(-50%);
+        transform-origin: 50% 50%;
+    }
+
+    .btn:focus:not(:active)::after {
+        animation: ripple 1s ease-out;
+    }
+
+    @keyframes ripple {
+        0% {
+            transform: scale(0, 0);
+            opacity: 0.5;
+        }
+        20% {
+            transform: scale(25, 25);
+            opacity: 0.3;
+        }
+        100% {
+            opacity: 0;
+            transform: scale(40, 40);
+        }
+    }
+
+    .btn-sm {
+        padding: 0.5rem 1rem;
+        font-size: 0.875rem;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+        color: white;
+    }
+
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(59, 47, 212, 0.3);
+    }
+
+    .btn-outline {
+        background: white;
+        color: var(--primary);
+        border: 2px solid var(--primary);
+    }
+
+    .btn-outline:hover {
+        background: #f8f9ff;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(59, 47, 212, 0.1);
+    }
+
+    .btn-success {
+        background: linear-gradient(135deg, #4CAF50, #2E7D32);
+        color: white;
+        border: none;
+    }
+
+    .btn-warning {
+        background: linear-gradient(135deg, #ff9800, #ef6c00);
+        color: white;
+        border: none;
+    }
+
+    .btn-danger {
+        background: linear-gradient(135deg, #f44336, #c62828);
+        color: white;
+        border: none;
+    }
+
+    .btn-success:hover, .btn-warning:hover, .btn-danger:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
     }
 
     /* Action Bar */
     .action-bar {
-        padding: 1.5rem;
-        background: white;
-        border-radius: 12px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        margin-bottom: 1rem;
     }
 
     .search-section {
@@ -423,20 +905,22 @@
         top: 50%;
         transform: translateY(-50%);
         color: var(--gray);
+        z-index: 1;
     }
 
     .search-box input {
         width: 100%;
         padding: 0.75rem 1rem 0.75rem 3rem;
         border: 2px solid var(--gray-light);
-        border-radius: 8px;
+        border-radius: var(--border-radius);
         font-size: 1rem;
-        transition: all 0.3s ease;
+        transition: var(--transition);
+        background: white;
     }
 
     .search-box input:focus {
         outline: none;
-        border-color: #3b2fd4;
+        border-color: var(--primary);
         box-shadow: 0 0 0 3px rgba(59, 47, 212, 0.1);
     }
 
@@ -450,37 +934,23 @@
     .filter-select {
         padding: 0.75rem 1rem;
         border: 2px solid var(--gray-light);
-        border-radius: 8px;
+        border-radius: var(--border-radius);
         background: white;
         font-size: 0.95rem;
         min-width: 150px;
         cursor: pointer;
-        transition: all 0.3s ease;
+        transition: var(--transition);
+        appearance: none;
+        background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+        background-repeat: no-repeat;
+        background-position: right 1rem center;
+        background-size: 1em;
     }
 
     .filter-select:focus {
-        border-color: #3b2fd4;
+        border-color: var(--primary);
         outline: none;
         box-shadow: 0 0 0 3px rgba(59, 47, 212, 0.1);
-    }
-
-    .btn-primary {
-        background: linear-gradient(135deg, #3b2fd4 0%, #2a1bb7 100%);
-        color: white;
-        padding: 0.75rem 1.5rem;
-        border: none;
-        border-radius: 8px;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        display: inline-flex;
-        align-items: center;
-        gap: 0.5rem;
-    }
-
-    .btn-primary:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 16px rgba(59, 47, 212, 0.3);
     }
 
     /* Bulk Actions */
@@ -489,9 +959,21 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
-        background: #f8f9ff;
-        border-left: 4px solid #3b2fd4;
-        border-radius: 8px;
+        background: linear-gradient(135deg, #f8f9ff 0%, #e8f0fe 100%);
+        border-left: 4px solid var(--primary);
+        margin-bottom: 1rem;
+        animation: slideIn 0.3s ease;
+    }
+
+    @keyframes slideIn {
+        from {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
     }
 
     .bulk-info {
@@ -501,9 +983,16 @@
     }
 
     .bulk-info input[type="checkbox"] {
-        width: 18px;
-        height: 18px;
-        accent-color: #3b2fd4;
+        width: 20px;
+        height: 20px;
+        accent-color: var(--primary);
+        cursor: pointer;
+    }
+
+    .bulk-info label {
+        font-weight: 600;
+        color: var(--dark);
+        cursor: pointer;
     }
 
     .bulk-buttons {
@@ -513,40 +1002,39 @@
 
     /* Tabs */
     .tabs-container {
-        padding: 0;
+        margin-bottom: 1.5rem;
+        border-radius: var(--border-radius);
         overflow: hidden;
-        background: white;
-        border-radius: 12px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
     }
 
     .tabs {
         display: flex;
+        background: white;
         border-bottom: 2px solid var(--gray-light);
     }
 
     .tab {
-        padding: 1rem 2rem;
+        padding: 1.25rem 2rem;
         background: none;
         border: none;
         font-size: 1rem;
-        font-weight: 500;
+        font-weight: 600;
         color: var(--gray);
         cursor: pointer;
         display: flex;
         align-items: center;
         gap: 0.75rem;
-        transition: all 0.3s ease;
+        transition: var(--transition);
         position: relative;
     }
 
     .tab:hover {
-        color: #3b2fd4;
+        color: var(--primary);
         background: #f8f9ff;
     }
 
     .tab.active {
-        color: #3b2fd4;
+        color: var(--primary);
     }
 
     .tab.active::after {
@@ -555,32 +1043,31 @@
         bottom: -2px;
         left: 0;
         right: 0;
-        height: 2px;
-        background: #3b2fd4;
+        height: 3px;
+        background: var(--primary);
+        border-radius: 3px 3px 0 0;
     }
 
     .tab-badge {
         background: #e0e0e0;
         color: #666;
-        padding: 2px 8px;
-        border-radius: 10px;
+        padding: 3px 10px;
+        border-radius: 12px;
         font-size: 0.85rem;
-        font-weight: 600;
+        font-weight: 700;
     }
 
     .tab.active .tab-badge {
-        background: #3b2fd4;
+        background: var(--primary);
         color: white;
     }
 
     /* Tab Content */
     .tab-content {
         display: none;
+        background: white;
+        border-radius: 0 0 var(--border-radius) var(--border-radius);
         padding: 1.5rem;
-    }
-
-    .tab-content.active {
-        display: block;
         animation: fadeIn 0.3s ease;
     }
 
@@ -589,38 +1076,65 @@
         to { opacity: 1; transform: translateY(0); }
     }
 
-    /* Table Styling */
+    .tab-content.active {
+        display: block;
+    }
+
+    /* Tables */
     .table-container {
         overflow-x: auto;
-        border-radius: 8px;
+        border-radius: var(--border-radius);
         background: white;
+        position: relative;
     }
 
     .table {
         width: 100%;
-        border-collapse: collapse;
-        min-width: 1000px;
+        border-collapse: separate;
+        border-spacing: 0;
+        min-width: 1100px;
     }
 
     .table thead {
-        background: linear-gradient(135deg, #3b2fd4 0%, #2a1bb7 100%);
+        background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+        position: sticky;
+        top: 0;
+        z-index: 10;
     }
 
     .table th {
-        padding: 1rem;
+        padding: 1.25rem 1rem;
         text-align: left;
         color: white;
         font-weight: 600;
         font-size: 0.9rem;
         text-transform: uppercase;
         letter-spacing: 0.5px;
+        border-bottom: none;
+    }
+
+    .table th:first-child {
+        border-radius: var(--border-radius) 0 0 0;
+    }
+
+    .table th:last-child {
+        border-radius: 0 var(--border-radius) 0 0;
     }
 
     .table td {
-        padding: 1rem;
-        border-bottom: 1px solid #f0f0f0;
+        padding: 1.25rem 1rem;
+        border-bottom: 1px solid var(--gray-light);
         background: white;
-        transition: background 0.2s;
+        transition: var(--transition);
+    }
+
+    .table tbody tr {
+        transition: var(--transition);
+    }
+
+    .table tbody tr:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
     }
 
     .table tbody tr:hover td {
@@ -639,16 +1153,22 @@
     }
 
     .user-avatar {
-        width: 45px;
-        height: 45px;
+        width: 48px;
+        height: 48px;
         border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-weight: 600;
+        font-weight: 700;
         color: white;
-        font-size: 1.1rem;
+        font-size: 1.2rem;
         flex-shrink: 0;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        transition: var(--transition);
+    }
+
+    .table tbody tr:hover .user-avatar {
+        transform: scale(1.05);
     }
 
     .user-avatar.student {
@@ -668,18 +1188,69 @@
 
     .user-details .user-username {
         font-size: 0.85rem;
-        color: #666;
+        color: var(--gray);
+        font-family: 'Monaco', 'Menlo', monospace;
+        background: #f5f5f5;
+        padding: 2px 6px;
+        border-radius: 4px;
+        display: inline-block;
     }
 
     .contact-info .user-email {
         font-size: 0.95rem;
         color: var(--dark);
         margin-bottom: 0.25rem;
+        word-break: break-all;
     }
 
     .contact-info .user-id {
         font-size: 0.85rem;
-        color: #666;
+        color: var(--gray);
+        font-family: 'Monaco', 'Menlo', monospace;
+    }
+
+    /* Editable Fields */
+    .editable-field {
+        position: relative;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding-right: 2rem;
+    }
+
+    .editable-field strong, .editable-field p {
+        margin: 0;
+        flex: 1;
+    }
+
+    .edit-icon {
+        position: absolute;
+        right: 0;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 24px;
+        height: 24px;
+        border: none;
+        background: #f0f2ff;
+        color: var(--primary);
+        border-radius: 4px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        opacity: 0;
+        transition: var(--transition);
+        font-size: 0.8rem;
+    }
+
+    .editable-field:hover .edit-icon {
+        opacity: 1;
+    }
+
+    .edit-icon:hover {
+        background: var(--primary);
+        color: white;
+        transform: translateY(-50%) scale(1.1);
     }
 
     /* Academic/Role Info */
@@ -695,7 +1266,7 @@
     .role-info p {
         font-size: 0.85rem;
         color: var(--gray);
-        margin-bottom: 0.25rem;
+        margin-bottom: 0;
     }
 
     /* Badges */
@@ -703,20 +1274,35 @@
         display: inline-flex;
         align-items: center;
         gap: 4px;
-        padding: 4px 12px;
+        padding: 6px 12px;
         border-radius: 20px;
         font-size: 0.8rem;
         font-weight: 600;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
 
     .badge-success {
-        background: #e8f5e9;
+        background: linear-gradient(135deg, #e8f5e9, #c8e6c9);
         color: #2e7d32;
+        border: 1px solid #a5d6a7;
     }
 
     .badge-danger {
-        background: #ffebee;
+        background: linear-gradient(135deg, #ffebee, #ffcdd2);
         color: #c62828;
+        border: 1px solid #ef9a9a;
+    }
+
+    .badge-primary {
+        background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+        color: #1565c0;
+        border: 1px solid #90caf9;
+    }
+
+    .badge-warning {
+        background: linear-gradient(135deg, #fff3e0, #ffe0b2);
+        color: #ef6c00;
+        border: 1px solid #ffcc80;
     }
 
     /* Action Buttons */
@@ -726,85 +1312,91 @@
         flex-wrap: wrap;
     }
 
-    .action-buttons form {
-        display: inline;
-    }
-
-    .action-buttons .btn-sm {
-        padding: 6px 12px;
-        min-width: 36px;
-        display: inline-flex;
+    .btn-action {
+        width: 36px;
+        height: 36px;
+        border: none;
+        border-radius: 8px;
+        display: flex;
         align-items: center;
         justify-content: center;
-        border: none;
-        border-radius: 6px;
         cursor: pointer;
-        font-weight: 600;
-        font-size: 0.85rem;
-        transition: all 0.2s ease;
-        gap: 4px;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        font-size: 0.9rem;
+        position: relative;
+        overflow: hidden;
     }
 
-    .action-buttons .btn-sm:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    .btn-action::before {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 5px;
+        height: 5px;
+        background: rgba(255, 255, 255, 0.5);
+        opacity: 0;
+        border-radius: 100%;
+        transform: scale(1, 1) translate(-50%);
+        transform-origin: 50% 50%;
     }
 
-    .btn-outline {
-        background: white;
-        color: #3b2fd4;
-        border: 1px solid #3b2fd4;
+    .btn-action:focus:not(:active)::before {
+        animation: ripple 1s ease-out;
     }
 
-    .btn-outline:hover {
-        background: #f8f9ff;
+    .btn-action:hover {
+        transform: translateY(-2px) scale(1.05);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
     }
 
-    .btn-success {
-        background: #4caf50;
+    .btn-action:active {
+        transform: translateY(0) scale(0.98);
+    }
+
+    .btn-edit {
+        background: linear-gradient(135deg, #2196F3, #1976D2);
         color: white;
     }
 
-    .btn-success:hover {
-        background: #388e3c;
+    .btn-edit:hover {
+        background: linear-gradient(135deg, #1976D2, #1565C0);
     }
 
-    .btn-warning {
-        background: #ff9800;
+    .btn-password {
+        background: linear-gradient(135deg, #FF9800, #F57C00);
         color: white;
     }
 
-    .btn-warning:hover {
-        background: #f57c00;
+    .btn-password:hover {
+        background: linear-gradient(135deg, #F57C00, #E65100);
     }
 
-    .btn-danger {
-        background: #f44336;
+    .btn-suspend {
+        background: linear-gradient(135deg, #FF5722, #E64A19);
         color: white;
     }
 
-    .btn-danger:hover {
-        background: #d32f2f;
+    .btn-suspend:hover {
+        background: linear-gradient(135deg, #E64A19, #D84315);
     }
 
-    .suspend-btn {
-        background: #ff5722;
+    .btn-activate {
+        background: linear-gradient(135deg, #4CAF50, #388E3C);
         color: white;
-        border: none;
     }
 
-    .suspend-btn:hover {
-        background: #d84315;
+    .btn-activate:hover {
+        background: linear-gradient(135deg, #388E3C, #2E7D32);
     }
 
-    .activate-btn {
-        background: #2196f3;
+    .btn-delete {
+        background: linear-gradient(135deg, #F44336, #D32F2F);
         color: white;
-        border: none;
     }
 
-    .activate-btn:hover {
-        background: #1976d2;
+    .btn-delete:hover {
+        background: linear-gradient(135deg, #D32F2F, #C62828);
     }
 
     /* Modal Styling */
@@ -820,30 +1412,39 @@
         align-items: center;
         z-index: 1000;
         animation: fadeIn 0.3s ease;
+        backdrop-filter: blur(4px);
     }
 
     .modal {
         background: white;
-        border-radius: 12px;
+        border-radius: var(--border-radius);
         width: 90%;
         max-width: 500px;
         max-height: 90vh;
         overflow-y: auto;
-        box-shadow: 0 10px 40px rgba(0,0,0,0.2);
-        animation: slideIn 0.3s ease;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        animation: modalSlideIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
-    @keyframes slideIn {
-        from { transform: translateY(-20px); opacity: 0; }
-        to { transform: translateY(0); opacity: 1; }
+    @keyframes modalSlideIn {
+        from {
+            opacity: 0;
+            transform: translateY(-30px) scale(0.95);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
     }
 
     .modal-header {
         padding: 1.5rem;
-        border-bottom: 1px solid #f0f0f0;
+        border-bottom: 1px solid var(--gray-light);
         display: flex;
         justify-content: space-between;
         align-items: center;
+        background: linear-gradient(135deg, #f8f9ff 0%, #e8f0fe 100%);
+        border-radius: var(--border-radius) var(--border-radius) 0 0;
     }
 
     .modal-header h3 {
@@ -853,6 +1454,7 @@
         display: flex;
         align-items: center;
         gap: 0.75rem;
+        font-weight: 600;
     }
 
     .modal-close {
@@ -862,18 +1464,19 @@
         color: #999;
         cursor: pointer;
         padding: 0;
-        width: 30px;
-        height: 30px;
+        width: 36px;
+        height: 36px;
         display: flex;
         align-items: center;
         justify-content: center;
-        border-radius: 4px;
-        transition: all 0.2s;
+        border-radius: 8px;
+        transition: var(--transition);
     }
 
     .modal-close:hover {
-        background: #f5f5f5;
+        background: var(--gray-light);
         color: #666;
+        transform: rotate(90deg);
     }
 
     .modal-body {
@@ -889,30 +1492,31 @@
         margin-bottom: 0.5rem;
         font-weight: 600;
         color: var(--dark);
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
     }
 
     .form-control {
         width: 100%;
         padding: 0.75rem 1rem;
-        border: 2px solid #e0e0e0;
+        border: 2px solid var(--gray-light);
         border-radius: 8px;
         font-size: 1rem;
-        transition: all 0.3s ease;
+        transition: var(--transition);
+        font-family: inherit;
     }
 
     .form-control:focus {
         outline: none;
-        border-color: #3b2fd4;
+        border-color: var(--primary);
         box-shadow: 0 0 0 3px rgba(59, 47, 212, 0.1);
     }
 
-    .user-type-display {
-        padding: 0.75rem 1rem;
-        background: #f8f9ff;
-        border: 2px solid #e8f0fe;
-        border-radius: 8px;
-        font-weight: 600;
-        color: #3b2fd4;
+    .form-row {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
     }
 
     .modal-actions {
@@ -921,32 +1525,214 @@
         justify-content: flex-end;
         margin-top: 2rem;
         padding-top: 1.5rem;
-        border-top: 1px solid #f0f0f0;
+        border-top: 1px solid var(--gray-light);
+    }
+
+    /* File Upload Area */
+    .file-upload-area {
+        border: 2px dashed #ccc;
+        border-radius: var(--border-radius);
+        padding: 2.5rem;
+        text-align: center;
+        cursor: pointer;
+        transition: var(--transition);
+        background: #f8f9ff;
+    }
+
+    .file-upload-area:hover {
+        border-color: var(--primary);
+        background: #f0f2ff;
+        transform: translateY(-2px);
+    }
+
+    .file-hint {
+        margin-top: 0.5rem;
+        font-size: 0.85rem;
+        color: var(--gray);
+        line-height: 1.4;
+    }
+
+    /* Add Method Tabs */
+    .add-method-tab {
+        display: none;
+    }
+
+    .add-method-tab.active {
+        display: block;
+        animation: fadeIn 0.3s ease;
+    }
+
+    /* Queue Section */
+    #queueSection .table-container {
+        max-height: 300px;
+        overflow-y: auto;
+        border: 1px solid var(--gray-light);
+    }
+
+    .queue-item {
+        transition: var(--transition);
+    }
+
+    .queue-item.editing {
+        background: #fff8e1;
     }
 
     /* Empty State */
     .empty-state {
         text-align: center;
-        padding: 3rem !important;
+        padding: 4rem !important;
     }
 
     .empty-state i {
-        font-size: 3rem;
-        color: #ddd;
-        margin-bottom: 1rem;
+        font-size: 4rem;
+        color: #e0e0e0;
+        margin-bottom: 1.5rem;
+        opacity: 0.5;
     }
 
     .empty-state h4 {
-        font-size: 1.25rem;
-        color: #666;
-        margin-bottom: 0.5rem;
+        font-size: 1.5rem;
+        color: #999;
+        margin-bottom: 0.75rem;
+        font-weight: 600;
     }
 
     .empty-state p {
-        color: #999;
+        color: #aaa;
+        font-size: 1rem;
     }
 
-    /* Responsive */
+    /* Notification Container */
+    .notification-container {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 10000;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        max-width: 400px;
+    }
+
+    .notification {
+        padding: 1.25rem 1.5rem;
+        border-radius: 12px;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        animation: slideInRight 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        transform: translateX(120%);
+        opacity: 0;
+        animation-fill-mode: forwards;
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255,255,255,0.1);
+    }
+
+    @keyframes slideInRight {
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+
+    .notification.success {
+        background: linear-gradient(135deg, rgba(76, 175, 80, 0.95), rgba(46, 125, 50, 0.95));
+        color: white;
+        border-left: 4px solid #2E7D32;
+    }
+
+    .notification.error {
+        background: linear-gradient(135deg, rgba(244, 67, 54, 0.95), rgba(198, 40, 40, 0.95));
+        color: white;
+        border-left: 4px solid #c62828;
+    }
+
+    .notification.warning {
+        background: linear-gradient(135deg, rgba(255, 152, 0, 0.95), rgba(239, 108, 0, 0.95));
+        color: white;
+        border-left: 4px solid #ef6c00;
+    }
+
+    .notification.info {
+        background: linear-gradient(135deg, rgba(33, 150, 243, 0.95), rgba(21, 101, 192, 0.95));
+        color: white;
+        border-left: 4px solid #1565c0;
+    }
+
+    .notification-icon {
+        font-size: 1.5rem;
+        flex-shrink: 0;
+    }
+
+    .notification-content {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .notification-title {
+        font-weight: 700;
+        margin-bottom: 4px;
+        font-size: 1rem;
+    }
+
+    .notification-message {
+        font-size: 0.9rem;
+        opacity: 0.95;
+        line-height: 1.4;
+    }
+
+    .notification-close {
+        background: none;
+        border: none;
+        color: white;
+        font-size: 1.2rem;
+        cursor: pointer;
+        opacity: 0.7;
+        transition: opacity 0.2s;
+        flex-shrink: 0;
+        padding: 4px;
+        border-radius: 4px;
+    }
+
+    .notification-close:hover {
+        opacity: 1;
+        background: rgba(255,255,255,0.1);
+    }
+
+    /* Loading States */
+    .loading {
+        position: relative;
+        pointer-events: none;
+        opacity: 0.7;
+    }
+
+    .loading::after {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 20px;
+        height: 20px;
+        margin: -10px 0 0 -10px;
+        border: 2px solid #f3f3f3;
+        border-top: 2px solid var(--primary);
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    /* Responsive Design */
+    @media (max-width: 1200px) {
+        .user-management {
+            padding: 1.5rem;
+        }
+    }
+
     @media (max-width: 1024px) {
         .search-section {
             flex-direction: column;
@@ -959,35 +1745,88 @@
         
         .filter-group {
             width: 100%;
-            justify-content: flex-end;
+            justify-content: space-between;
         }
         
         .tabs {
             overflow-x: auto;
             white-space: nowrap;
+            padding-bottom: 2px;
         }
         
         .tab {
-            padding: 1rem;
+            padding: 1rem 1.5rem;
             flex-shrink: 0;
         }
-    }
-
-    @media (max-width: 768px) {
-        .action-buttons {
+        
+        .header-actions {
             flex-direction: column;
             align-items: flex-start;
         }
         
-        .action-buttons .btn-sm {
+        .action-buttons-group {
+            width: 100%;
+            justify-content: flex-start;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .user-management {
+            padding: 1rem;
+            gap: 1rem;
+        }
+        
+        .page-title {
+            font-size: 1.75rem;
+        }
+        
+        .action-buttons-group {
+            flex-direction: column;
+            align-items: stretch;
+            width: 100%;
+        }
+        
+        .action-buttons-group .btn,
+        .action-buttons-group .dropdown {
             width: 100%;
             justify-content: center;
+        }
+        
+        .dropdown-menu {
+            position: static;
+            width: 100%;
+            margin-top: 0.5rem;
+            box-shadow: none;
+            border: 1px solid var(--gray-light);
+        }
+        
+        .action-buttons {
+            justify-content: center;
+        }
+        
+        .btn-action {
+            width: 32px;
+            height: 32px;
+            font-size: 0.8rem;
         }
         
         .user-info {
             flex-direction: column;
             text-align: center;
             align-items: center;
+            gap: 0.75rem;
+        }
+        
+        .editable-field {
+            justify-content: center;
+            padding-right: 0;
+        }
+        
+        .edit-icon {
+            position: static;
+            transform: none;
+            opacity: 1;
+            margin-left: 0.5rem;
         }
         
         .filter-group {
@@ -1003,6 +1842,7 @@
             flex-direction: column;
             gap: 1rem;
             align-items: flex-start;
+            padding: 1rem;
         }
         
         .bulk-buttons {
@@ -1012,7 +1852,8 @@
         
         .modal {
             width: 95%;
-            margin: 1rem;
+            margin: 0.5rem;
+            max-height: 85vh;
         }
         
         .modal-actions {
@@ -1021,6 +1862,17 @@
         
         .modal-actions .btn {
             width: 100%;
+        }
+        
+        .form-row {
+            flex-direction: column;
+            gap: 1rem;
+        }
+        
+        .notification-container {
+            left: 10px;
+            right: 10px;
+            max-width: none;
         }
     }
 
@@ -1034,11 +1886,12 @@
         }
         
         .table td, .table th {
-            padding: 0.75rem;
+            padding: 0.75rem 0.5rem;
         }
         
         .tab {
             padding: 0.75rem 1rem;
+            font-size: 0.9rem;
         }
         
         .modal-header {
@@ -1048,46 +1901,171 @@
         .modal-body {
             padding: 1rem;
         }
+        
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            font-size: 1rem;
+        }
+        
+        .action-buttons {
+            gap: 0.25rem;
+        }
+        
+        .btn-action {
+            width: 28px;
+            height: 28px;
+            font-size: 0.7rem;
+        }
     }
 </style>
 {% endblock %}
 
 {% block script %}
 <script>
+    // Global variables
+    let userQueue = [];
+    let selectedUsers = new Set();
+    let currentEditField = null;
+    let currentEditRecordId = null;
+    let currentEditType = null;
+    
+    // Department data from template
+    const departments = {
+        {% for faculty in faculties %}
+            '{{ faculty.id }}': [
+                {% for department in departments %}
+                    {% if department.faculty.id == faculty.id %}
+                        {
+                            id: {{ department.id }},
+                            name: '{{ department.name|escapejs }}'
+                        },
+                    {% endif %}
+                {% endfor %}
+            ],
+        {% endfor %}
+    };
+    
+    // Faculty mapping for quick lookup
+    const facultyMap = {
+        {% for faculty in faculties %}
+            '{{ faculty.id }}': '{{ faculty.name|escapejs }}',
+        {% endfor %}
+    };
+    
+    // Initialize dropdown
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize dropdown
+        const dropdownToggle = document.getElementById('downloadCsvDropdown');
+        const dropdownMenu = dropdownToggle?.nextElementSibling;
+        
+        if (dropdownToggle && dropdownMenu) {
+            dropdownToggle.addEventListener('click', function(e) {
+                e.stopPropagation();
+                dropdownMenu.classList.toggle('show');
+            });
+            
+            // Close dropdown when clicking outside
+            document.addEventListener('click', function() {
+                dropdownMenu.classList.remove('show');
+            });
+        }
+        
+        // Setup checkbox event listeners
+        document.querySelectorAll('.user-checkbox').forEach(cb => {
+            cb.addEventListener('change', function() {
+                updateUserSelection(this);
+            });
+        });
+        
+        // Setup CSV upload area click
+        const csvUploadArea = document.getElementById('csvUploadArea');
+        if (csvUploadArea) {
+            csvUploadArea.addEventListener('click', function() {
+                const csvFileInput = document.getElementById('csvFile');
+                if (csvFileInput) csvFileInput.click();
+            });
+            
+            // Setup drag and drop for CSV
+            csvUploadArea.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                this.style.borderColor = 'var(--primary)';
+                this.style.background = '#f0f2ff';
+            });
+            
+            csvUploadArea.addEventListener('dragleave', function(e) {
+                e.preventDefault();
+                this.style.borderColor = '#ccc';
+                this.style.background = '#f8f9ff';
+            });
+            
+            csvUploadArea.addEventListener('drop', function(e) {
+                e.preventDefault();
+                this.style.borderColor = '#ccc';
+                this.style.background = '#f8f9ff';
+                
+                if (e.dataTransfer.files.length > 0) {
+                    const csvFileInput = document.getElementById('csvFile');
+                    if (csvFileInput) {
+                        csvFileInput.files = e.dataTransfer.files;
+                        handleCSVUpload();
+                    }
+                }
+            });
+        }
+        
+        // Setup modal close on overlay click
+        document.querySelectorAll('.modal-overlay').forEach(overlay => {
+            overlay.addEventListener('click', function(e) {
+                if (e.target === this) {
+                    if (this.id === 'editFieldModalOverlay') closeEditFieldModal();
+                    if (this.id === 'editUserModalOverlay') closeEditUserModal();
+                    if (this.id === 'addUserModalOverlay') closeAddUserModal();
+                }
+            });
+        });
+    });
+    
+    // Close dropdowns and modals with Escape key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            // Close dropdowns
+            document.querySelectorAll('.dropdown-menu.show').forEach(menu => {
+                menu.classList.remove('show');
+            });
+            
+            // Close modals
+            if (document.getElementById('editFieldModalOverlay')?.style.display === 'flex') {
+                closeEditFieldModal();
+            }
+            if (document.getElementById('editUserModalOverlay')?.style.display === 'flex') {
+                closeEditUserModal();
+            }
+            if (document.getElementById('addUserModalOverlay')?.style.display === 'flex') {
+                closeAddUserModal();
+            }
+        }
+    });
+    
     // Tab switching
     function switchTab(tabName) {
-        // Hide all tabs
-        document.querySelectorAll('.tab-content').forEach(tab => {
-            tab.classList.remove('active');
-        });
+        document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+        document.querySelectorAll('.tab').forEach(btn => btn.classList.remove('active'));
         
-        // Remove active class from all tab buttons
-        document.querySelectorAll('.tab').forEach(btn => {
-            btn.classList.remove('active');
-        });
-        
-        // Show selected tab
         document.getElementById(tabName + 'Tab').classList.add('active');
+        const tabButton = document.querySelector(`.tab[onclick*="${tabName}"]`);
+        if (tabButton) tabButton.classList.add('active');
         
-        // Activate selected tab button
-        document.querySelector(`.tab[onclick*="${tabName}"]`).classList.add('active');
-        
-        // Update bulk actions
         updateBulkActions();
     }
     
     // User selection for bulk actions
-    let selectedUsers = new Set();
-    
     function toggleSelectAll() {
         const selectAll = document.getElementById('selectAll').checked;
         document.querySelectorAll('.user-checkbox').forEach(cb => {
             cb.checked = selectAll;
-            if (selectAll) {
-                selectedUsers.add(cb.value);
-            } else {
-                selectedUsers.delete(cb.value);
-            }
+            if (selectAll) selectedUsers.add(cb.value);
+            else selectedUsers.delete(cb.value);
         });
         updateBulkActions();
     }
@@ -1099,31 +2077,28 @@
         
         checkboxes.forEach(cb => {
             cb.checked = !allChecked;
-            if (!allChecked) {
-                selectedUsers.add(cb.value);
-            } else {
-                selectedUsers.delete(cb.value);
-            }
+            if (!allChecked) selectedUsers.add(cb.value);
+            else selectedUsers.delete(cb.value);
         });
         
-        selectAllCheckbox.checked = !allChecked;
+        if (selectAllCheckbox) selectAllCheckbox.checked = !allChecked;
         updateBulkActions();
     }
     
     function updateUserSelection(checkbox) {
-        if (checkbox.checked) {
-            selectedUsers.add(checkbox.value);
-        } else {
-            selectedUsers.delete(checkbox.value);
+        if (checkbox.checked) selectedUsers.add(checkbox.value);
+        else selectedUsers.delete(checkbox.value);
+        
+        const activeTab = document.querySelector('.tab-content.active');
+        if (activeTab) {
+            const tabId = activeTab.id.replace('Tab', '');
+            const selectAllCheckbox = document.getElementById(`selectAll${tabId.charAt(0).toUpperCase() + tabId.slice(1)}`);
+            const checkboxes = document.querySelectorAll(`#${tabId}Tab .user-checkbox`);
+            
+            if (selectAllCheckbox) {
+                selectAllCheckbox.checked = Array.from(checkboxes).every(cb => cb.checked);
+            }
         }
-        
-        // Update select all checkboxes
-        const activeTab = document.querySelector('.tab-content.active').id.replace('Tab', '');
-        const selectAllCheckbox = document.getElementById(`selectAll${activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}`);
-        const checkboxes = document.querySelectorAll(`#${activeTab}Tab .user-checkbox`);
-        
-        selectAllCheckbox.checked = Array.from(checkboxes).every(cb => cb.checked);
-        
         updateBulkActions();
     }
     
@@ -1132,157 +2107,529 @@
         const selectedCount = document.getElementById('selectedCount');
         const count = selectedUsers.size;
         
-        if (count > 0) {
-            bulkActions.style.display = 'flex';
-            selectedCount.textContent = count;
-        } else {
-            bulkActions.style.display = 'none';
+        if (bulkActions && selectedCount) {
+            if (count > 0) {
+                bulkActions.style.display = 'flex';
+                selectedCount.textContent = count;
+            } else {
+                bulkActions.style.display = 'none';
+            }
+            
+            const selectAllCheckbox = document.getElementById('selectAll');
+            if (selectAllCheckbox) {
+                selectAllCheckbox.checked = count === document.querySelectorAll('.user-checkbox').length;
+            }
         }
-        
-        // Update global select all checkbox
-        document.getElementById('selectAll').checked = count === document.querySelectorAll('.user-checkbox').length;
     }
     
     // Search functionality
-    document.getElementById('userSearch').addEventListener('input', function(e) {
-        const searchTerm = e.target.value.toLowerCase();
-        const activeTab = document.querySelector('.tab-content.active');
-        const rows = activeTab.querySelectorAll('.user-row');
-        
-        rows.forEach(row => {
-            const text = row.textContent.toLowerCase();
-            row.style.display = text.includes(searchTerm) ? '' : 'none';
+    const userSearch = document.getElementById('userSearch');
+    if (userSearch) {
+        userSearch.addEventListener('input', function(e) {
+            const searchTerm = e.target.value.toLowerCase();
+            const activeTab = document.querySelector('.tab-content.active');
+            if (activeTab) {
+                const rows = activeTab.querySelectorAll('.user-row');
+                
+                rows.forEach(row => {
+                    const text = row.textContent.toLowerCase();
+                    row.style.display = text.includes(searchTerm) ? '' : 'none';
+                });
+            }
         });
-    });
+    }
     
     // Filter functionality
-    document.getElementById('facultyFilter').addEventListener('change', filterUsers);
-    document.getElementById('statusFilter').addEventListener('change', filterUsers);
+    const facultyFilter = document.getElementById('facultyFilter');
+    const statusFilter = document.getElementById('statusFilter');
+    
+    if (facultyFilter) facultyFilter.addEventListener('change', filterUsers);
+    if (statusFilter) statusFilter.addEventListener('change', filterUsers);
     
     function filterUsers() {
-        const facultyFilter = document.getElementById('facultyFilter').value;
-        const statusFilter = document.getElementById('statusFilter').value;
+        const facultyFilterValue = facultyFilter ? facultyFilter.value : '';
+        const statusFilterValue = statusFilter ? statusFilter.value : '';
         const activeTab = document.querySelector('.tab-content.active');
-        const rows = activeTab.querySelectorAll('.user-row');
         
-        rows.forEach(row => {
-            const faculty = row.getAttribute('data-faculty') || '';
-            const status = row.getAttribute('data-status') || '';
-            const facultyMatch = !facultyFilter || faculty === facultyFilter;
-            const statusMatch = !statusFilter || status === statusFilter;
+        if (activeTab) {
+            const rows = activeTab.querySelectorAll('.user-row');
             
-            row.style.display = (facultyMatch && statusMatch) ? '' : 'none';
-        });
+            rows.forEach(row => {
+                const faculty = row.getAttribute('data-faculty') || '';
+                const status = row.getAttribute('data-status') || '';
+                const facultyMatch = !facultyFilterValue || faculty === facultyFilterValue;
+                const statusMatch = !statusFilterValue || status === statusFilterValue;
+                
+                row.style.display = (facultyMatch && statusMatch) ? '' : 'none';
+            });
+        }
     }
     
-    // Edit Modal Functions
-    let currentEditUserId = null;
-    let currentEditUserType = null;
-    
-    function openEditModal(userId, userType, currentName, currentEmail, recordId) {
-        currentEditUserId = userId;
-        currentEditUserType = userType;
+    // Load departments based on selected faculty
+    function loadDepartments() {
+        const facultySelect = document.getElementById('facultySelect');
+        const departmentSelect = document.getElementById('departmentSelect');
         
-        // Populate form fields
-        document.getElementById('editName').value = currentName;
-        document.getElementById('editEmail').value = currentEmail;
-        document.getElementById('oldName').value = currentName;
-        document.getElementById('oldEmail').value = currentEmail;
+        if (!facultySelect || !departmentSelect) return;
         
-        // Set user type display
-        const userTypeDisplay = document.getElementById('userTypeDisplay');
-        if (userType === 'student') {
-            userTypeDisplay.innerHTML = '<i class="fas fa-user-graduate"></i> Student';
-            document.getElementById('editAction').value = 'update';
-            document.getElementById('editStudentId').value = recordId;
-            document.getElementById('editStaffId').value = '';
+        const facultyId = facultySelect.value;
+        
+        departmentSelect.innerHTML = '<option value="">Select Department</option>';
+        
+        if (facultyId && departments[facultyId]) {
+            const deptList = departments[facultyId];
+            
+            deptList.forEach(dept => {
+                const option = document.createElement('option');
+                option.value = dept.id;
+                option.textContent = dept.name;
+                departmentSelect.appendChild(option);
+            });
+            
+            departmentSelect.disabled = false;
         } else {
-            userTypeDisplay.innerHTML = '<i class="fas fa-chalkboard-teacher"></i> Staff';
-            document.getElementById('editAction').value = 'update_staff';
-            document.getElementById('editStaffId').value = recordId;
-            document.getElementById('editStudentId').value = '';
+            departmentSelect.disabled = true;
         }
-        
-        // Show modal
-        document.getElementById('editModalOverlay').style.display = 'flex';
-        document.getElementById('editName').focus();
     }
     
-    function closeEditModal() {
-        document.getElementById('editModalOverlay').style.display = 'none';
-        currentEditUserId = null;
-        currentEditUserType = null;
+    // Load departments for edit modal
+    function loadEditDepartments() {
+        const facultySelect = document.getElementById('editUserFaculty');
+        const departmentSelect = document.getElementById('editUserDepartment');
         
-        // Reset form
-        document.getElementById('editUserForm').reset();
-        document.getElementById('editStudentId').value = '';
-        document.getElementById('editStaffId').value = '';
-    }
-    
-    // Update table with new data before form submission
-    document.getElementById('editUserForm').addEventListener('submit', function(e) {
-        e.preventDefault();
+        if (!facultySelect || !departmentSelect) return;
         
-        const newName = document.getElementById('editName').value.trim();
-        const newEmail = document.getElementById('editEmail').value.trim();
+        const facultyId = facultySelect.value;
         
-        // Basic validation
-        if (!newName || !newEmail) {
-            alert('Name and email are required!');
-            return;
-        }
+        departmentSelect.innerHTML = '<option value="">Select Department</option>';
         
-        if (!isValidEmail(newEmail)) {
-            alert('Please enter a valid email address!');
-            return;
-        }
-        
-        // Update the table display immediately
-        if (currentEditUserId) {
-            const nameElement = document.getElementById(
-                currentEditUserType === 'staff' ? `name-staff-${currentEditUserId}` : `name-${currentEditUserId}`
-            );
-            const emailElement = document.getElementById(
-                currentEditUserType === 'staff' ? `email-staff-${currentEditUserId}` : `email-${currentEditUserId}`
-            );
+        if (facultyId && departments[facultyId]) {
+            const deptList = departments[facultyId];
             
-            if (nameElement) nameElement.textContent = newName;
-            if (emailElement) emailElement.textContent = newEmail;
+            deptList.forEach(dept => {
+                const option = document.createElement('option');
+                option.value = dept.id;
+                option.textContent = dept.name;
+                departmentSelect.appendChild(option);
+            });
+            
+            departmentSelect.disabled = false;
+        } else {
+            departmentSelect.disabled = true;
+        }
+    }
+    
+    // Edit individual fields inline
+    function editField(field, recordId, type) {
+        currentEditField = field;
+        currentEditRecordId = recordId;
+        currentEditType = type;
+        
+        const modal = document.getElementById('editFieldModalOverlay');
+        const title = document.getElementById('editFieldTitle');
+        const label = document.getElementById('editFieldLabel');
+        const container = document.getElementById('editFieldContainer');
+        
+        if (!modal || !title || !label || !container) return;
+        
+        // Get current value
+        const fieldElement = document.getElementById(`${field}-${type}-${recordId}`);
+        const currentValue = fieldElement ? fieldElement.textContent.trim() : '';
+        
+        // Set modal title and label
+        const fieldLabels = {
+            'email': 'Email Address',
+            'faculty': 'Faculty',
+            'department': 'Department',
+            'staff_type': 'Staff Type'
+        };
+        
+        title.textContent = fieldLabels[field] || field;
+        label.textContent = fieldLabels[field] || field;
+        
+        // Create appropriate input based on field type
+        container.innerHTML = '';
+        
+        if (field === 'email') {
+            const input = document.createElement('input');
+            input.type = 'email';
+            input.id = 'fieldEditInput';
+            input.className = 'form-control';
+            input.value = currentValue;
+            input.required = true;
+            container.appendChild(input);
+        } else if (field === 'faculty') {
+            const select = document.createElement('select');
+            select.id = 'fieldEditInput';
+            select.className = 'form-control';
+            select.innerHTML = '<option value="">Select Faculty</option>';
+            
+            Object.entries(facultyMap).forEach(([id, name]) => {
+                const option = document.createElement('option');
+                option.value = id;
+                option.textContent = name;
+                if (currentValue === name) option.selected = true;
+                select.appendChild(option);
+            });
+            
+            container.appendChild(select);
+        } else if (field === 'department') {
+            // First get the current faculty to show relevant departments
+            const facultyElement = document.getElementById(`faculty-${type}-${recordId}`);
+            const currentFacultyName = facultyElement ? facultyElement.textContent.trim() : '';
+            let currentFacultyId = '';
+            
+            // Find faculty ID by name
+            Object.entries(facultyMap).forEach(([id, name]) => {
+                if (name === currentFacultyName) {
+                    currentFacultyId = id;
+                }
+            });
+            
+            const select = document.createElement('select');
+            select.id = 'fieldEditInput';
+            select.className = 'form-control';
+            select.innerHTML = '<option value="">Select Department</option>';
+            
+            if (currentFacultyId && departments[currentFacultyId]) {
+                departments[currentFacultyId].forEach(dept => {
+                    const option = document.createElement('option');
+                    option.value = dept.id;
+                    option.textContent = dept.name;
+                    if (currentValue === dept.name) option.selected = true;
+                    select.appendChild(option);
+                });
+            }
+            
+            container.appendChild(select);
+        } else if (field === 'staff_type') {
+            const select = document.createElement('select');
+            select.id = 'fieldEditInput';
+            select.className = 'form-control';
+            select.innerHTML = `
+                <option value="">Select Staff Type</option> 
+                <option value="lecture" ${currentValue === 'lecture' ? 'selected' : ''}>Lecture</option>
+                <option value="profesor" ${currentValue === 'profesor' ? 'selected' : ''}>Profesor</option>
+                <option value="administrative" ${currentValue === 'admin' ? 'selected' : ''}>Administrative</option>
+                <option value="support" ${currentValue === 'admin' ? 'selected' : ''}>Support Staff</option>
+            `;
+            container.appendChild(select);
         }
         
-        // Add the new values as hidden inputs
-        const nameInput = document.createElement('input');
-        nameInput.type = 'hidden';
-        nameInput.name = 'name';
-        nameInput.value = newName;
-        this.appendChild(nameInput);
-        
-        const emailInput = document.createElement('input');
-        emailInput.type = 'hidden';
-        emailInput.name = 'email';
-        emailInput.value = newEmail;
-        this.appendChild(emailInput);
-        
-        // Disable submit button to prevent double submission
-        const submitBtn = this.querySelector('button[type="submit"]');
-        submitBtn.disabled = true;
-        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
-        
-        // Submit the form
-        setTimeout(() => {
-            this.submit();
-        }, 100);
-    });
+        modal.style.display = 'flex';
+        const input = document.getElementById('fieldEditInput');
+        if (input) input.focus();
+    }
     
-    function isValidEmail(email) {
-        const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        return re.test(email);
+    function closeEditFieldModal() {
+        const modal = document.getElementById('editFieldModalOverlay');
+        if (modal) modal.style.display = 'none';
+        
+        currentEditField = null;
+        currentEditRecordId = null;
+        currentEditType = null;
+    }
+    
+    async function saveField() {
+        if (!currentEditField || !currentEditRecordId || !currentEditType) return;
+        
+        const input = document.getElementById('fieldEditInput');
+        if (!input) return;
+        
+        const newValue = input.value.trim();
+        if (!newValue) {
+            showNotification('error', 'Validation Error', 'Please enter a value');
+            return;
+        }
+        
+        // Get the actual display value
+        let displayValue = newValue;
+        if (currentEditField === 'faculty') {
+            displayValue = facultyMap[newValue] || newValue;
+        } else if (currentEditField === 'department') {
+            // Find department name by ID
+            let deptName = newValue;
+            Object.values(departments).forEach(deptList => {
+                deptList.forEach(dept => {
+                    if (dept.id == newValue) {
+                        deptName = dept.name;
+                    }
+                });
+            });
+            displayValue = deptName;
+        } else if (currentEditField === 'staff_type') {
+            const typeMap = {
+                'teaching': 'Teaching Staff',
+                'non_teaching': 'Non-Teaching Staff',
+                'administrative': 'Administrative'
+            };
+            displayValue = typeMap[newValue] || newValue;
+        }
+        
+        // Prepare API data
+        const apiData = {
+            user_type: currentEditType,
+            record_id: currentEditRecordId,
+            field: currentEditField,
+            value: newValue
+        };
+        
+        try {
+            const response = await fetch('/api/update_user_field/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify(apiData)
+            });
+            
+            if (response.ok) {
+                // Update the UI immediately
+                const fieldElement = document.getElementById(`${currentEditField}-${currentEditType}-${currentEditRecordId}`);
+                if (fieldElement) {
+                    fieldElement.textContent = displayValue;
+                }
+                
+                showNotification('success', 'Success', 'Field updated successfully');
+                closeEditFieldModal();
+            } else {
+                const error = await response.json();
+                showNotification('error', 'Update Failed', error.error || 'Failed to update field');
+            }
+        } catch (error) {
+            showNotification('error', 'Network Error', 'Failed to connect to server');
+        }
+    }
+    
+    // Full user edit modal
+    function openEditModal(type, recordId, name, email, userId, facultyId, departmentId, staffType = null) {
+        const modal = document.getElementById('editUserModalOverlay');
+        if (!modal) return;
+        
+        // Set values
+        document.getElementById('editUserId').value = userId;
+        document.getElementById('editUserType').value = type;
+        document.getElementById('editRecordId').value = recordId;
+        document.getElementById('editUserName').value = name;
+        document.getElementById('editUserEmail').value = email;
+        document.getElementById('editUserFaculty').value = facultyId;
+        
+        // Load departments for selected faculty
+        loadEditDepartments();
+        
+        // Set department after departments are loaded
+        setTimeout(() => {
+            const deptSelect = document.getElementById('editUserDepartment');
+            if (deptSelect) {
+                deptSelect.value = departmentId;
+            }
+        }, 100);
+        
+        // Show/hide staff type field
+        const staffTypeField = document.getElementById('editStaffTypeField');
+        const staffTypeSelect = document.getElementById('editStaffType');
+        if (type === 'staff' && staffType && staffTypeField && staffTypeSelect) {
+            staffTypeField.style.display = 'block';
+            staffTypeSelect.value = staffType;
+        } else if (staffTypeField) {
+            staffTypeField.style.display = 'none';
+        }
+        
+        modal.style.display = 'flex';
+        document.getElementById('editUserName').focus();
+    }
+    
+    function closeEditUserModal() {
+        const modal = document.getElementById('editUserModalOverlay');
+        if (modal) modal.style.display = 'none';
+    }
+    
+    async function saveUser() {
+        const userId = document.getElementById('editUserId').value;
+        const userType = document.getElementById('editUserType').value;
+        const recordId = document.getElementById('editRecordId').value;
+        const name = document.getElementById('editUserName').value.trim();
+        const email = document.getElementById('editUserEmail').value.trim();
+        const facultyId = document.getElementById('editUserFaculty').value;
+        const departmentId = document.getElementById('editUserDepartment').value;
+        const staffType = userType === 'staff' ? document.getElementById('editStaffType').value : null;
+        
+        // Validation
+        if (!name || !email || !facultyId || !departmentId) {
+            showNotification('error', 'Validation Error', 'Please fill in all required fields');
+            return;
+        }
+        
+        if (!isValidEmail(email)) {
+            showNotification('error', 'Validation Error', 'Please enter a valid email address');
+            return;
+        }
+        
+        if (userType === 'staff' && !staffType) {
+            showNotification('error', 'Validation Error', 'Please select staff type');
+            return;
+        }
+        
+        // Prepare API data
+        const apiData = {
+            user_id: userId,
+            user_type: userType,
+            record_id: recordId,
+            name: name,
+            email: email,
+            faculty_id: facultyId,
+            department_id: departmentId,
+            staff_type: staffType
+        };
+        
+        try {
+            const response = await fetch('/api/update_user/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify(apiData)
+            });
+            
+            if (response.ok) {
+                // Update UI immediately
+                const nameElement = document.getElementById(`name-${userType}-${recordId}`);
+                const emailElement = document.getElementById(`email-${userType}-${recordId}`);
+                const facultyElement = document.getElementById(`faculty-${userType}-${recordId}`);
+                const departmentElement = document.getElementById(`department-${userType}-${recordId}`);
+                
+                if (nameElement) nameElement.textContent = name;
+                if (emailElement) emailElement.textContent = email;
+                if (facultyElement) facultyElement.textContent = facultyMap[facultyId] || '';
+                if (departmentElement) {
+                    let deptName = '';
+                    Object.values(departments).forEach(deptList => {
+                        deptList.forEach(dept => {
+                            if (dept.id == departmentId) {
+                                deptName = dept.name;
+                            }
+                        });
+                    });
+                    departmentElement.textContent = deptName;
+                }
+                
+                if (userType === 'staff') {
+                    const staffTypeElement = document.getElementById(`staff_type-staff-${recordId}`);
+                    if (staffTypeElement) {
+                        const typeMap = {
+                            'teaching': 'Teaching Staff',
+                            'non_teaching': 'Non-Teaching Staff',
+                            'administrative': 'Administrative'
+                        };
+                        staffTypeElement.textContent = typeMap[staffType] || staffType;
+                    }
+                }
+                
+                showNotification('success', 'Success', 'User updated successfully');
+                closeEditUserModal();
+            } else {
+                const error = await response.json();
+                showNotification('error', 'Update Failed', error.error || 'Failed to update user');
+            }
+        } catch (error) {
+            showNotification('error', 'Network Error', 'Failed to connect to server');
+        }
+    }
+    
+    // Individual user actions
+    async function resetUserPassword(userId) {
+        if (!confirm('Are you sure you want to reset this user\'s password?')) return;
+        
+        try {
+            const response = await fetch('/api/reset_password/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify({ user_id: userId })
+            });
+            
+            if (response.ok) {
+                showNotification('success', 'Success', 'Password reset successfully');
+            } else {
+                const error = await response.json();
+                showNotification('error', 'Reset Failed', error.error || 'Failed to reset password');
+            }
+        } catch (error) {
+            showNotification('error', 'Network Error', 'Failed to connect to server');
+        }
+    }
+    
+    async function toggleUserStatus(userId, action) {
+        const message = action === 'suspend' 
+            ? 'Are you sure you want to suspend this user?'
+            : 'Are you sure you want to activate this user?';
+        
+        if (!confirm(message)) return;
+        
+        try {
+            const response = await fetch('/api/toggle_user_status/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify({ 
+                    user_id: userId,
+                    action: action 
+                })
+            });
+            
+            if (response.ok) {
+                // Reload the page to reflect changes
+                location.reload();
+            } else {
+                const error = await response.json();
+                showNotification('error', 'Action Failed', error.error || `Failed to ${action} user`);
+            }
+        } catch (error) {
+            showNotification('error', 'Network Error', 'Failed to connect to server');
+        }
+    }
+    
+    async function deleteUser(userId) {
+        if (!confirm('Are you sure you want to delete this user? This action cannot be undone.')) return;
+        
+        try {
+            const response = await fetch('/api/delete_user/', {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify({ user_id: userId })
+            });
+            
+            if (response.ok) {
+                // Remove the row from the table
+                const row = document.querySelector(`tr[data-user-id="${userId}"]`);
+                if (row) row.remove();
+                
+                showNotification('success', 'Success', 'User deleted successfully');
+                
+                // Update counts
+                updateTabCounts();
+            } else {
+                const error = await response.json();
+                showNotification('error', 'Delete Failed', error.error || 'Failed to delete user');
+            }
+        } catch (error) {
+            showNotification('error', 'Network Error', 'Failed to connect to server');
+        }
     }
     
     // Bulk actions
-    function submitBulkAction(action) {
+    async function submitBulkAction(action) {
         if (selectedUsers.size === 0) {
-            alert('Please select at least one user.');
+            showNotification('warning', 'No Selection', 'Please select at least one user.');
             return;
         }
         
@@ -1290,74 +2637,630 @@
         switch(action) {
             case 'activate':
                 message = `Activate ${selectedUsers.size} selected user(s)?`;
-                if (!confirm(message)) return;
                 break;
             case 'suspend':
                 message = `Suspend ${selectedUsers.size} selected user(s)?`;
-                if (!confirm(message)) return;
                 break;
             case 'delete':
-                message = `Delete ${selectedUsers.size} selected user(s)? This action cannot be undone.`;
-                if (!confirm(message)) return;
+                message = `Delete ${selectedUsers.size} selected user(s)? This cannot be undone.`;
                 break;
         }
         
-        // Set the form values and submit
-        document.getElementById('bulkActionType').value = action;
-        document.getElementById('bulkUserIds').value = Array.from(selectedUsers).join(',');
-        document.getElementById('bulkActionForm').submit();
-    }
-    
-    // Confirmation functions
-    function confirmDelete() {
-        return confirm('Are you sure you want to delete this user? This action cannot be undone.');
-    }
-    
-    function confirmReset() {
-        return confirm('Are you sure you want to reset this user\'s password? A new password will be emailed to them.');
-    }
-    
-    function confirmSuspend() {
-        return confirm('Are you sure you want to suspend this user? They will not be able to login.');
-    }
-    
-    function confirmActivate() {
-        return confirm('Are you sure you want to activate this user?');
-    }
-    
-    // Modal functions
-    function showAddUserModal() {
-        alert('Add User functionality would go here. You can implement a modal or redirect to an add user page.');
-        // Example: window.location.href = '/users/add/';
-    }
-    
-    function viewUserDetails(userId, type) {
-        alert(`View details for ${type} ID: ${userId}. Implement this with a modal or detail page.`);
-        // Example: window.location.href = `/users/${userId}/details/`;
-    }
-    
-    // Close modal when clicking outside
-    document.getElementById('editModalOverlay').addEventListener('click', function(e) {
-        if (e.target === this) {
-            closeEditModal();
-        }
-    });
-    
-    // Close modal with Escape key
-    document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape' && document.getElementById('editModalOverlay').style.display === 'flex') {
-            closeEditModal();
-        }
-    });
-    
-    // Initialize checkboxes and event listeners
-    document.addEventListener('DOMContentLoaded', function() {
-        // Initialize checkbox event listeners
-        document.querySelectorAll('.user-checkbox').forEach(cb => {
-            cb.addEventListener('change', function() {
-                updateUserSelection(this);
+        if (!confirm(message)) return;
+        
+        const userIds = Array.from(selectedUsers);
+        
+        try {
+            let endpoint = '';
+            switch(action) {
+                case 'activate':
+                case 'suspend':
+                    endpoint = '/api/bulk_user_status/';
+                    break;
+                case 'delete':
+                    endpoint = '/api/bulk_delete_users/';
+                    break;
+            }
+            
+            const response = await fetch(endpoint, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify({ 
+                    user_ids: userIds,
+                    action: action 
+                })
             });
+            
+            if (response.ok) {
+                showNotification('success', 'Success', `${action} action completed successfully.`);
+                
+                // Refresh the page
+                setTimeout(() => {
+                    location.reload();
+                }, 1500);
+            } else {
+                const error = await response.json();
+                showNotification('error', 'Action Failed', error.error || `Failed to ${action} users.`);
+            }
+        } catch (error) {
+            showNotification('error', 'Network Error', 'Failed to connect to server.');
+        }
+    }
+    
+    // Add User Modal Functions
+    function showAddUserModal() {
+        const modal = document.getElementById('addUserModalOverlay');
+        if (modal) {
+            modal.style.display = 'flex';
+            switchAddMethod('manual');
+            resetManualForm();
+        }
+    }
+    
+    function closeAddUserModal() {
+        const modal = document.getElementById('addUserModalOverlay');
+        if (modal) modal.style.display = 'none';
+        userQueue = [];
+        updateQueueDisplay();
+    }
+    
+    function switchAddMethod(method) {
+        document.querySelectorAll('.add-method-tab').forEach(tab => tab.classList.remove('active'));
+        document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+        
+        if (method === 'manual') {
+            const manualTab = document.getElementById('manualEntryTab');
+            const manualTabBtn = document.getElementById('manualTab');
+            if (manualTab) manualTab.classList.add('active');
+            if (manualTabBtn) manualTabBtn.classList.add('active');
+        } else {
+            const csvTab = document.getElementById('csvImportTab');
+            const csvTabBtn = document.getElementById('csvTab');
+            if (csvTab) csvTab.classList.add('active');
+            if (csvTabBtn) csvTabBtn.classList.add('active');
+        }
+    }
+    
+    function onUserTypeChange() {
+        const userTypeSelect = document.getElementById('userType');
+        const studentFields = document.getElementById('studentFields');
+        const staffFields = document.getElementById('staffFields');
+        
+        if (!userTypeSelect || !studentFields || !staffFields) return;
+        
+        const userType = userTypeSelect.value;
+        studentFields.style.display = userType === 'student' ? 'block' : 'none';
+        staffFields.style.display = userType === 'staff' ? 'block' : 'none';
+    }
+    
+    function resetManualForm() {
+        const manualUserForm = document.getElementById('manualUserForm');
+        const departmentSelect = document.getElementById('departmentSelect');
+        const studentFields = document.getElementById('studentFields');
+        const staffFields = document.getElementById('staffFields');
+        
+        if (manualUserForm) manualUserForm.reset();
+        if (departmentSelect) {
+            departmentSelect.innerHTML = '<option value="">Select Faculty First</option>';
+            departmentSelect.disabled = true;
+        }
+        if (studentFields) studentFields.style.display = 'none';
+        if (staffFields) staffFields.style.display = 'none';
+    }
+    
+    function addToQueue() {
+        const userTypeSelect = document.getElementById('userType');
+        const regNumberInput = document.getElementById('regNumber');
+        const staffTypeSelect = document.getElementById('staffType');
+        const nameInput = document.getElementById('name');
+        const emailInput = document.getElementById('email');
+        const facultySelect = document.getElementById('facultySelect');
+        const departmentSelect = document.getElementById('departmentSelect');
+        
+        if (!userTypeSelect || !nameInput || !emailInput || !facultySelect || !departmentSelect) {
+            showNotification('error', 'Error', 'Form elements not found.');
+            return;
+        }
+        
+        const userType = userTypeSelect.value;
+        const regNumber = regNumberInput ? regNumberInput.value : '';
+        const staffType = staffTypeSelect ? staffTypeSelect.value : '';
+        const name = nameInput.value.trim();
+        const email = emailInput.value.trim();
+        const facultyId = facultySelect.value;
+        const departmentId = departmentSelect.value;
+        const facultyName = facultySelect.options[facultySelect.selectedIndex].text;
+        const departmentName = departmentSelect.options[departmentSelect.selectedIndex].text;
+        
+        // Validation
+        if (!userType || !name || !email || !facultyId || !departmentId) {
+            showNotification('error', 'Validation Error', 'Please fill in all required fields.');
+            return;
+        }
+        
+        if (!isValidEmail(email)) {
+            showNotification('error', 'Validation Error', 'Please enter a valid email address.');
+            return;
+        }
+        
+        if (userType === 'student' && !regNumber) {
+            showNotification('error', 'Validation Error', 'Registration number is required for students.');
+            return;
+        }
+        
+        if (userType === 'staff' && !staffType) {
+            showNotification('error', 'Validation Error', 'Staff type is required for staff members.');
+            return;
+        }
+        
+        const username = userType === 'student' ? regNumber : email.split('@')[0];
+        
+        const userData = {
+            id: Date.now() + Math.random(),
+            type: userType,
+            username: username,
+            name: name,
+            email: email,
+            faculty_id: facultyId,
+            faculty_name: facultyName,
+            department_id: departmentId,
+            department_name: departmentName,
+            staff_type: userType === 'staff' ? staffType : undefined,
+            status: 'pending'
+        };
+        
+        userQueue.push(userData);
+        updateQueueDisplay();
+        resetManualForm();
+        
+        showNotification('success', 'Success', 'User added to queue.');
+    }
+    
+    function updateQueueDisplay() {
+        const queueTableBody = document.getElementById('queueTableBody');
+        const queueCount = document.getElementById('queueCount');
+        const queueSection = document.getElementById('queueSection');
+        
+        if (!queueTableBody || !queueCount || !queueSection) return;
+        
+        queueTableBody.innerHTML = '';
+        queueCount.textContent = userQueue.length;
+        
+        if (userQueue.length > 0) {
+            queueSection.style.display = 'block';
+        } else {
+            queueSection.style.display = 'none';
+        }
+        
+        userQueue.forEach((user, index) => {
+            const row = document.createElement('tr');
+            row.className = 'queue-item';
+            row.innerHTML = `
+                <td>
+                    <span class="badge ${user.type === 'student' ? 'badge-primary' : 'badge-warning'}">
+                        ${user.type === 'student' ? 'Student' : 'Staff'}
+                    </span>
+                </td>
+                <td>${user.username}</td>
+                <td>${user.name}</td>
+                <td>${user.email}</td>
+                <td>${user.faculty_name}</td>
+                <td>${user.department_name}</td>
+                <td>
+                    <button class="btn btn-sm btn-outline" onclick="editQueueItem(${index})" title="Edit">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="btn btn-sm btn-danger" onclick="removeFromQueue(${index})" title="Remove">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </td>
+            `;
+            queueTableBody.appendChild(row);
         });
-    });
+    }
+    
+    function editQueueItem(index) {
+        if (index < 0 || index >= userQueue.length) return;
+        
+        const user = userQueue[index];
+        
+        // Populate form with user data
+        const userTypeSelect = document.getElementById('userType');
+        const regNumberInput = document.getElementById('regNumber');
+        const staffTypeSelect = document.getElementById('staffType');
+        const nameInput = document.getElementById('name');
+        const emailInput = document.getElementById('email');
+        const facultySelect = document.getElementById('facultySelect');
+        
+        if (!userTypeSelect || !nameInput || !emailInput || !facultySelect) return;
+        
+        userTypeSelect.value = user.type;
+        onUserTypeChange();
+        
+        if (user.type === 'student' && regNumberInput) {
+            regNumberInput.value = user.username;
+        } else if (user.type === 'staff' && staffTypeSelect) {
+            staffTypeSelect.value = user.staff_type || '';
+        }
+        
+        nameInput.value = user.name;
+        emailInput.value = user.email;
+        facultySelect.value = user.faculty_id;
+        
+        // Load departments for this faculty
+        loadDepartments();
+        
+        // Set department after a short delay
+        setTimeout(() => {
+            const departmentSelect = document.getElementById('departmentSelect');
+            if (departmentSelect) {
+                departmentSelect.value = user.department_id;
+            }
+        }, 100);
+        
+        // Remove from queue and scroll to form
+        userQueue.splice(index, 1);
+        updateQueueDisplay();
+        const manualEntryTab = document.getElementById('manualEntryTab');
+        if (manualEntryTab) {
+            manualEntryTab.scrollIntoView({ behavior: 'smooth' });
+        }
+        
+        showNotification('info', 'Edit Mode', 'User data loaded into form for editing.');
+    }
+    
+    function removeFromQueue(index) {
+        if (index < 0 || index >= userQueue.length) return;
+        
+        userQueue.splice(index, 1);
+        updateQueueDisplay();
+        showNotification('info', 'Removed', 'User removed from queue.');
+    }
+    
+    function clearQueue() {
+        userQueue = [];
+        updateQueueDisplay();
+        showNotification('info', 'Cleared', 'Queue cleared.');
+    }
+    
+    // CSV Import Functionality
+    function handleCSVUpload() {
+        const fileInput = document.getElementById('csvFile');
+        const csvUserTypeSelect = document.getElementById('csvUserType');
+        
+        if (!fileInput || !csvUserTypeSelect) return;
+        
+        const file = fileInput.files[0];
+        
+        if (!file) {
+            showNotification('error', 'Error', 'No file selected.');
+            return;
+        }
+        
+        const userType = csvUserTypeSelect.value;
+        if (!userType) {
+            showNotification('error', 'Error', 'Please select user type first.');
+            return;
+        }
+        
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const csvData = e.target.result;
+                const rows = csvData.split('\n');
+                const headers = rows[0].split(',').map(h => h.trim().toLowerCase());
+                
+                // Validate headers
+                const requiredHeaders = ['username', 'name', 'email', 'faculty_id', 'department_id'];
+                if (userType === 'staff') {
+                    requiredHeaders.push('staff_type');
+                }
+                
+                const missingHeaders = requiredHeaders.filter(h => !headers.includes(h));
+                if (missingHeaders.length > 0) {
+                    showNotification('error', 'CSV Format Error', 
+                        `Missing headers: ${missingHeaders.join(', ')}. Required: ${requiredHeaders.join(', ')}`);
+                    return;
+                }
+                
+                // Process rows
+                const newUsers = [];
+                for (let i = 1; i < rows.length; i++) {
+                    if (rows[i].trim() === '') continue;
+                    
+                    const values = rows[i].split(',').map(v => v.trim());
+                    const user = {
+                        id: Date.now() + Math.random() + i,
+                        type: userType,
+                        username: values[headers.indexOf('username')],
+                        name: values[headers.indexOf('name')],
+                        email: values[headers.indexOf('email')],
+                        faculty_id: values[headers.indexOf('faculty_id')],
+                        department_id: values[headers.indexOf('department_id')],
+                        status: 'pending'
+                    };
+                    
+                    // Get faculty and department names
+                    const facultySelect = document.getElementById('facultySelect');
+                    if (facultySelect) {
+                        const facultyOption = Array.from(facultySelect.options).find(opt => opt.value === user.faculty_id);
+                        user.faculty_name = facultyOption ? facultyOption.text : 'Unknown Faculty';
+                    } else {
+                        user.faculty_name = 'Unknown Faculty';
+                    }
+                    
+                    if (userType === 'staff') {
+                        user.staff_type = values[headers.indexOf('staff_type')];
+                    }
+                    
+                    // Validate user data
+                    if (user.username && user.name && user.email && user.faculty_id && user.department_id) {
+                        if (isValidEmail(user.email)) {
+                            newUsers.push(user);
+                        } else {
+                            console.warn(`Invalid email in row ${i}: ${user.email}`);
+                        }
+                    }
+                }
+                
+                if (newUsers.length > 0) {
+                    userQueue = userQueue.concat(newUsers);
+                    updateQueueDisplay();
+                    showNotification('success', 'CSV Import', 
+                        `Successfully imported ${newUsers.length} users from CSV.`);
+                    
+                    // Switch to queue view
+                    const queueSection = document.getElementById('queueSection');
+                    if (queueSection) {
+                        queueSection.scrollIntoView({ behavior: 'smooth' });
+                    }
+                } else {
+                    showNotification('warning', 'CSV Import', 'No valid users found in CSV file.');
+                }
+                
+            } catch (error) {
+                showNotification('error', 'CSV Parse Error', 'Failed to parse CSV file. Please check the format.');
+                console.error('CSV parse error:', error);
+            }
+        };
+        
+        reader.readAsText(file);
+    }
+    
+    // Submit users to API
+    async function submitUsers() {
+        if (userQueue.length === 0) {
+            showNotification('warning', 'No Users', 'Queue is empty. Add users first.');
+            return;
+        }
+        
+        const submitBtn = document.getElementById('submitUsersBtn');
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
+        }
+        
+        // Group users by type
+        const students = userQueue.filter(u => u.type === 'student');
+        const staff = userQueue.filter(u => u.type === 'staff');
+        
+        let allSuccess = true;
+        let successCount = 0;
+        let errorCount = 0;
+        
+        // Submit students
+        if (students.length > 0) {
+            const studentData = students.map(s => ({
+                username: s.username,
+                name: s.name,
+                email: s.email,
+                faculty_id: s.faculty_id,
+                department_id: s.department_id
+            }));
+            
+            try {
+                const response = await fetch('/api/create_user/student/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken')
+                    },
+                    body: JSON.stringify({ users: studentData })
+                });
+                
+                if (response.status === 201) {
+                    successCount += students.length;
+                    showNotification('success', 'Students Created', 
+                        `Successfully created ${students.length} students.`);
+                } else {
+                    const error = await response.json();
+                    errorCount += students.length;
+                    showNotification('error', 'Student Creation Failed', 
+                        error.error || 'Failed to create students.');
+                    allSuccess = false;
+                }
+            } catch (error) {
+                errorCount += students.length;
+                showNotification('error', 'Network Error', 'Failed to connect to server.');
+                allSuccess = false;
+            }
+        }
+        
+        // Submit staff
+        if (staff.length > 0) {
+            const staffData = staff.map(s => ({
+                username: s.username,
+                name: s.name,
+                email: s.email,
+                faculty_id: s.faculty_id,
+                department_id: s.department_id,
+                staff_type: s.staff_type
+            }));
+            
+            try {
+                const response = await fetch('/api/create_user/staff/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken')
+                    },
+                    body: JSON.stringify({ users: staffData })
+                });
+                
+                if (response.status === 201) {
+                    successCount += staff.length;
+                    showNotification('success', 'Staff Created', 
+                        `Successfully created ${staff.length} staff members.`);
+                } else {
+                    const error = await response.json();
+                    errorCount += staff.length;
+                    showNotification('error', 'Staff Creation Failed', 
+                        error.error || 'Failed to create staff.');
+                    allSuccess = false;
+                }
+            } catch (error) {
+                errorCount += staff.length;
+                showNotification('error', 'Network Error', 'Failed to connect to server.');
+                allSuccess = false;
+            }
+        }
+        
+        // Reset queue and form
+        if (allSuccess) {
+            userQueue = [];
+            updateQueueDisplay();
+            closeAddUserModal();
+            
+            // Refresh the page to show new users
+            setTimeout(() => {
+                location.reload();
+            }, 2000);
+        }
+        
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Submit Users';
+        }
+    }
+    
+    // Download CSV Template
+    function downloadCSVTemplate(userType) {
+        let csvContent = '';
+        
+        if (userType === 'student') {
+            csvContent = 'username,name,email,faculty_id,department_id\n';
+            csvContent += 'REG001,John Doe,john.doe@university.edu,1,1\n';
+            csvContent += 'REG002,Jane Smith,jane.smith@university.edu,1,2\n';
+            csvContent += 'REG003,Bob Johnson,bob.johnson@university.edu,2,3\n';
+        } else if (userType === 'staff') {
+            csvContent = 'username,name,email,faculty_id,department_id,staff_type\n';
+            csvContent += 'prof.johnson,Prof. Johnson,prof.johnson@university.edu,1,1,teaching\n';
+            csvContent += 'admin.jane,Jane Admin,admin.jane@university.edu,1,2,administrative\n';
+            csvContent += 'tech.bob,Bob Technician,tech.bob@university.edu,2,3,non_teaching\n';
+        }
+        
+        // Add faculty and department references
+        csvContent += '\n\n# Faculty Reference:\n';
+        csvContent += '# ID,Name\n';
+        {% for faculty in faculties %}
+        csvContent += '# {{ faculty.id }},{{ faculty.name }}\n';
+        {% endfor %}
+        
+        csvContent += '\n# Department Reference:\n';
+        csvContent += '# ID,Name,Faculty_ID\n';
+        {% for department in departments %}
+        csvContent += '# {{ department.id }},{{ department.name }},{{ department.faculty.id }}\n';
+        {% endfor %}
+        
+        // Create download link
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        
+        link.setAttribute('href', url);
+        link.setAttribute('download', `${userType}_template.csv`);
+        link.style.visibility = 'hidden';
+        
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        showNotification('info', 'Template Downloaded', `${userType.charAt(0).toUpperCase() + userType.slice(1)} CSV template downloaded.`);
+    }
+    
+    // Update tab counts
+    function updateTabCounts() {
+        const studentCount = document.querySelectorAll('#studentsTab .user-row').length;
+        const staffCount = document.querySelectorAll('#staffTab .user-row').length;
+        
+        const studentCountEl = document.getElementById('studentCount');
+        const staffCountEl = document.getElementById('staffCount');
+        
+        if (studentCountEl) studentCountEl.textContent = studentCount;
+        if (staffCountEl) staffCountEl.textContent = staffCount;
+    }
+    
+    // Notification system
+    function showNotification(type, title, message, duration = 5000) {
+        const container = document.getElementById('notificationContainer');
+        if (!container) return;
+        
+        const notification = document.createElement('div');
+        notification.className = `notification ${type}`;
+        
+        const icons = {
+            success: 'fa-check-circle',
+            error: 'fa-exclamation-circle',
+            warning: 'fa-exclamation-triangle',
+            info: 'fa-info-circle'
+        };
+        
+        notification.innerHTML = `
+            <div class="notification-icon">
+                <i class="fas ${icons[type]}"></i>
+            </div>
+            <div class="notification-content">
+                <div class="notification-title">${title}</div>
+                <div class="notification-message">${message}</div>
+            </div>
+            <button class="notification-close" onclick="this.parentElement.remove()">
+                <i class="fas fa-times"></i>
+            </button>
+        `;
+        
+        container.appendChild(notification);
+        
+        // Auto-remove after duration
+        setTimeout(() => {
+            if (notification.parentElement) {
+                notification.style.animation = 'slideInRight 0.3s ease reverse';
+                setTimeout(() => notification.remove(), 300);
+            }
+        }, duration);
+    }
+    
+    // Utility functions
+    function isValidEmail(email) {
+        const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return re.test(email);
+    }
+    
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
 </script>
 {% endblock %}

@@ -95,7 +95,7 @@
                         </div>
                         <div class="info-row">
                             <span class="info-label">Students:</span>
-                            <span class="info-value student-count">{{ batch.student_count|default:"0" }}</span>
+                            <span class="info-value student-count">{{ batch.student_set.count|default:"N/A" }}</span>
                         </div>
                     </div>
                 </div>

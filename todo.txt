@@ -10,7 +10,6 @@ use javasripts to delete,add,and others with fetch
 
 use POST, PUT, DELETE in api for admin. later
 
-select deans,hod accordingly
-
 add bulk usercreations
 
+check user email,username in user.services

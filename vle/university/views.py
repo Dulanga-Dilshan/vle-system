@@ -161,6 +161,7 @@ def update_subject(request):
 def manage_faculties(request):
     if request.user.is_staff == 0:
         return redirect('dashboard:route')
+
     context = {}
     context['faculties'] = university_models.Faculty.objects.all()
     context['total_departments'] = university_services.department_count()
@@ -178,22 +179,39 @@ def manage_faculties(request):
 
 @login_required(login_url='Users:login')
 def manage_faculty(request,id:int):
+    if request.user.is_staff == 0:
+        return redirect('dashboard:route')
     contex = {}
     contex['faculty'] = university_models.Faculty.objects.filter(id=id).first()
     contex['departments'] = university_models.Department.objects.filter(faculty=id)
     contex['available_hods'] = user_models.Staff.objects.filter(faculty_name=id)
+    if contex['faculty'] is None:
+        return HttpResponse("Page not found", status=404)
     return render(request,'dashboard/admin/manage_faculty.html',contex)
 
-
+@login_required(login_url='Users:login')
 def manage_batches(request):
+    if request.user.is_staff == 0:
+        return redirect('dashboard:route')
     contex = {}
     contex['courses']=university_models.Course.objects.all()
     contex['batches']=university_models.Batch.objects.all()
     contex['active_students_count']=user_models.Student.objects.exclude(batch=None).__len__
+
+    if request.user.role == 'staff':
+        staff = getattr(request.user,'staff',None)
+        if staff is None:
+            return HttpResponse("Bad request", status=400)
+        contex['courses'].filter(department__faculty=staff.faculty_name)
+        contex['batches'].filter(course__department__faculty=staff.faculty_name)
+        contex['active_students_count'] = user_models.Student.objects.filter(faculty_name=staff.faculty_name).exclude(batch=None).count()
+
     return render(request,'dashboard/admin/manage_batches.html',contex)
 
-
+@login_required(login_url='Users:login')
 def manage_batch(request,id:int):
+    if request.user.is_staff == 0:
+        return redirect('dashboard:route')
     context = {}
     context['batch'] = get_object_or_404(university_models.Batch,id=id)
     context['students'] = user_models.Student.objects.filter(batch=id)

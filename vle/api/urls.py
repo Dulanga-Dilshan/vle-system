@@ -18,5 +18,8 @@ urlpatterns = [
     path('batches/<int:id>/remove_student/',views.remove_student_from_batch),
     path('batches/<int:id>/register-new-students/',views.register_new_students),
 
+    path('create_user/student/',views.create_user_student),
+    path('create_user/staff/',views.create_user_staff),
+
 
 ]

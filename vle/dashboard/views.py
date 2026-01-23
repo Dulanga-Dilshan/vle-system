@@ -41,14 +41,8 @@ def staff(request):
 @login_required(login_url='Users:login')
 def admin(request):
     contex=get_name_avatar(request)
-    if request.user.role == 'staff':
-        staff = models.Staff.objects.get(username=request.user)
-        if not staff:
-            return redirect('Users:login')
-        if staff.staff_type == 'admin':
-            return render(request,"dashboard/admin/admin.html",contex)
-
-    if request.user.role != 'admin':
+    
+    if request.user.is_staff == 0:
         return redirect('dashboard:route')
     
     contex['request_count'] = services.get_request_count()
@@ -174,60 +168,6 @@ def manage_users(request):
     if not services.check_permission_administater(request.user):
         return redirect('dashboard:route')
     
-    if request.method == 'POST':
-        action = request.POST.get('action')
-        if action=='update':
-            student_id = request.POST.get('student_id')
-            student = models.Student.objects.get(id=student_id)
-            user = student.username
-            
-            student.name=request.POST.get('name')
-            user.email=request.POST.get('email')
-            
-            try:
-                user.save()
-                student.save()
-
-            except Exception as e:
-                print(e)
-
-        elif action == 'delete':
-            usr_id = request.POST.get('user_id')
-            services.delete_user(int(usr_id))
-        
-        elif action == 'restpasswd':
-            usr_id = request.POST.get('user_id')
-            services.rest_passwd(int(usr_id))
-
-        elif action == 'suspend':
-            usr_id = int(request.POST.get('user_id'))
-            services.set_user_state(usr_id,action='suspend')
-        
-        elif action == 'activate':
-            usr_id = int(request.POST.get('user_id'))
-            services.set_user_state(usr_id,action='activate')
-        
-        elif action == 'update_staff':
-            staff_id = request.POST.get('staff_id')
-            staff = models.Staff.objects.get(id=staff_id)
-            user = staff.username
-
-            new_name = request.POST.get('name')
-            new_email = request.POST.get('email')
-            new_role = request.POST.get('role')
-
-            if staff.name != new_name:
-                staff.name = new_name
-            if staff.staff_type != new_role:
-                staff.staff_type = new_role
-            if user.email != new_email:
-                user.email =new_email
-            
-            try:
-                staff.save()
-                user.save()
-            except Exception as e:
-                print(e)
     if request.user.role == 'admin':
         students = models.Student.objects.select_related('username')
         staff = models.Staff.objects.select_related('username')
@@ -240,6 +180,7 @@ def manage_users(request):
     contex['students']=students
     contex['staff'] = staff
     contex['faculties'] = university_models.Faculty.objects.all()
+    contex['departments'] = university_models.Department.objects.all()
 
 
     return render(request,"dashboard/admin/manage_users.html",contex)
