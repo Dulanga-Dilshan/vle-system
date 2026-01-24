@@ -20,6 +20,8 @@ urlpatterns = [
 
     path('create_user/student/',views.create_user_student),
     path('create_user/staff/',views.create_user_staff),
+    path('toggle_user_status/',views.set_user_state),
+    path('bulk_user_status/',views.bulk_user_status),
 
 
 ]

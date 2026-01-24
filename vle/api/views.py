@@ -214,3 +214,22 @@ def create_user_staff(request):
             return  response.Response({'message': f"added {count}. unable to add {len(request.data['users'])-count}."},status=status.HTTP_400_BAD_REQUEST)
 
     return response.Response({},status=status.HTTP_201_CREATED)
+
+@api_view(['POST'])
+@permission_classes([permissions.IsFacultyAdminUserState])
+def set_user_state(request):
+    user_services.set_user_state(request.data['user_id'],request.data['action'])
+    return response.Response({},status=status.HTTP_200_OK)
+
+
+
+@api_view(['POST'])
+@permission_classes([permissions.IsFacultyAdminUserState])
+def bulk_user_status(request):
+    print(request.data)
+
+    return response.Response({},status=status.HTTP_201_CREATED)
+
+
+            #{'user_id': 2, 'action': 'suspend'}
+            #{'user_ids': ['2', '8', '9', '17', '18', '19', '20', '23', '24', '25', '29', '30'], 'action': 'activate'}

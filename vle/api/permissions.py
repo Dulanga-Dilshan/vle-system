@@ -1,5 +1,6 @@
 from rest_framework.permissions import BasePermission
 from university import models as university_models
+from Users.models import User,Staff,Student
 
 
 class IsSuperUser(BasePermission):
@@ -79,3 +80,61 @@ class IsBatchAdminstrator(BasePermission):
         return request.user.is_staff
 
 
+class IsFacultyAdminUserState(BasePermission):
+    message = 'unouthorized'
+
+    def has_permission(self, request, view):
+        if request.user and request.user.is_superuser:
+            return True
+
+        if request.method == 'POST':
+            user_id = request.data.get('user_id')
+            staff_admin = Staff.objects.filter(username=request.user).first()
+            if user_id != None:
+                user = User.objects.filter(id=user_id).first()
+                if user is None:
+                    print('1')
+                    return False
+                
+                if user.role == 'student':
+                    user = getattr(user,'student',None)
+                elif user.role == 'staff':
+                    user = getattr(user,'staff',None)
+                else:
+                    print('2')
+                    return False
+                
+                if user is None:
+                    print('3')
+                    return False
+                
+                if staff_admin.faculty_name != user.faculty_name:
+                    print('4')
+                    return False
+            
+            else:
+                user_ids = request.data.get('user_ids')
+                if user_ids is None or len(user_ids)<1:
+                    return False
+                
+                users = User.objects.filter(id__in=user_ids)
+                if users is None or len(users)<1:
+                    return False
+                for user in users:
+                    if user is None:
+                        return False
+                    
+                    if user.role == 'student':
+                        faculty_member = getattr(user,'student',None)
+                    elif user.role == 'staff':
+                        faculty_member = getattr(user,'staff',None)
+                    else:
+                        return False
+                    
+                    if staff_admin.faculty_name != faculty_member.faculty_name:
+                        return False
+
+
+            return request.user.is_staff
+        
+        return False
