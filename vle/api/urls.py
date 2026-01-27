@@ -22,6 +22,10 @@ urlpatterns = [
     path('create_user/staff/',views.create_user_staff),
     path('toggle_user_status/',views.set_user_state),
     path('bulk_user_status/',views.bulk_user_status),
+    path('reset_password/',views.rest_user_psswd),
+    path('delete_user/',views.delete_user),
+    path('bulk_delete_users/',views.bulk_delete_users),
+    path('update_user/',views.update_user),
 
 
 ]

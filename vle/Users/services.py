@@ -104,26 +104,39 @@ def delete_ragistration_requests(ids, role):
         raise ValueError("invalid user type")
     
 
-def delete_user(usr_id:int)->None:
-    user=get_object_or_404(User,id=usr_id)
+def delete_user(usr_id:int)->bool:
+    user=User.objects.filter(id=usr_id).first()
     if user:
         user.delete()
+        return True
+    return False
 
 
-def rest_passwd(user_id:int)->None:
-    user=get_object_or_404(User,id=user_id)
+
+def rest_passwd(user_id:int)->bool:
+    user=User.objects.filter(id=user_id).first()
     if user:
         user.set_password(getattr(settings, 'DEFAULT_USER_PASSWORD'))
         user.save()
+        return True
+    return False
 
-def set_user_state(user_id:int,action:str='suspend')->None:
+
+
+def set_user_state(user_id:int,action:str='suspend')->bool:
     user=get_object_or_404(User,id=user_id)
     if user:
         if action=='suspend':
             user.is_active = 0
         elif action=='activate':
             user.is_active= 1
-        user.save()
+        else:
+            return False
+        try:
+            user.save()
+        except Exception as e:
+            return False
+        return True
 
     
 def check_permission_administater(user:User)->bool:
@@ -244,10 +257,3 @@ def create_user_staff(user_data:dict,staff_data:dict)->bool:
         return e
     
     return True
-
-    
-    
-
-
-
-

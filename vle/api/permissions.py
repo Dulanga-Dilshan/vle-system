@@ -87,7 +87,7 @@ class IsFacultyAdminUserState(BasePermission):
         if request.user and request.user.is_superuser:
             return True
 
-        if request.method == 'POST':
+        if request.method == 'POST' or request.method == 'DELETE':
             user_id = request.data.get('user_id')
             staff_admin = Staff.objects.filter(username=request.user).first()
             if user_id != None:

@@ -218,7 +218,9 @@ def create_user_staff(request):
 @api_view(['POST'])
 @permission_classes([permissions.IsFacultyAdminUserState])
 def set_user_state(request):
-    user_services.set_user_state(request.data['user_id'],request.data['action'])
+    if not user_services.set_user_state(request.data['user_id'],request.data['action']):
+        return response.Response({'message':'invalid ids'},status=status.HTTP_400_BAD_REQUEST)
+    
     return response.Response({},status=status.HTTP_200_OK)
 
 
@@ -226,10 +228,39 @@ def set_user_state(request):
 @api_view(['POST'])
 @permission_classes([permissions.IsFacultyAdminUserState])
 def bulk_user_status(request):
-    print(request.data)
-
+    user_ids = request.data['user_ids']
+    for id in user_ids:
+        if not user_services.set_user_state(id,request.data['action']):
+            return response.Response({'message':'invalid id'},status=status.HTTP_400_BAD_REQUEST)
+    
     return response.Response({},status=status.HTTP_201_CREATED)
 
+@api_view(['POST'])
+@permission_classes([permissions.IsFacultyAdminUserState])
+def rest_user_psswd(request):
+    if user_services.rest_passwd(request.data['user_id']):
+        return response.Response({},status=status.HTTP_201_CREATED)
+    return response.Response({'message':'invalid id'},status=status.HTTP_400_BAD_REQUEST)
 
-            #{'user_id': 2, 'action': 'suspend'}
-            #{'user_ids': ['2', '8', '9', '17', '18', '19', '20', '23', '24', '25', '29', '30'], 'action': 'activate'}
+@api_view(['DELETE'])
+@permission_classes([permissions.IsFacultyAdminUserState])
+def delete_user(request):
+    if user_services.delete_user(request.data['user_id']):
+        return response.Response({},status=status.HTTP_204_NO_CONTENT)
+    return response.Response({'message':'invalid id'},status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['POST'])
+@permission_classes([permissions.IsFacultyAdminUserState])
+def bulk_delete_users(request):
+    user_ids = request.data['user_ids']
+    for id in user_ids:
+        if not user_services.delete_user(id):
+            return response.Response({'message':'invalid id'},status=status.HTTP_400_BAD_REQUEST)
+
+    return response.Response({},status=status.HTTP_204_NO_CONTENT)
+
+@api_view(['POST'])
+@permission_classes([permissions.IsFacultyAdminUserState])
+def update_user(request):
+    
+    return response.Response({},status=status.HTTP_204_NO_CONTENT)

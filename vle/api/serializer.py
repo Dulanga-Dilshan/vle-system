@@ -20,3 +20,4 @@ class BatchSerializer(serializers.ModelSerializer):
     class Meta:
         model = university_models.Batch
         fields = '__all__'
+
