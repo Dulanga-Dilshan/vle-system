@@ -9,6 +9,6 @@ _last_update = None
 json_path = os.path.join(os.path.dirname(__file__), "json/settings.json")
 
 
-def load_settings(force:str=):
+def load_settings(force:bool=False)->None:
     with _lock:
         print('loding settings')
