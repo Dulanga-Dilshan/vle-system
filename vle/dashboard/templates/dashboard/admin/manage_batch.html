@@ -129,12 +129,12 @@
                                         </div>
                                         <div>
                                             <strong>{{ student.name }}</strong>
-                                            <small>Joined: {{ student.joined_date|date:"M d, Y"|default:"N/A" }}</small>
+                                            <small>Joined: {{ student.username.date_joined|date:"M d, Y"|default:"N/A" }}</small>
                                         </div>
                                     </div>
                                 </td>
                                 <td>{{ student.username|default:"-" }}</td>
-                                <td>{{ student.email|default:"-" }}</td>
+                                <td>{{ student.username.email|default:"-" }}</td>
                                 <td>
                                     <span class="progress-badge" data-progress="{{ student.progress_year|default:'1.1' }}">
                                         {{ student.progress_year|default:"1.1" }}

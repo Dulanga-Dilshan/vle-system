@@ -209,8 +209,8 @@ def create_user_staff(request):
             'faculty_id':user['faculty_id'],
             'department_id':user['department_id'],
         }
-
-        if user_services.create_user_staff(user_data,staff_data) != True:
+        count += 1
+        if user_services.create_user_staff(user_data,staff_data) != True: 
             return  response.Response({'message': f"added {count}. unable to add {len(request.data['users'])-count}."},status=status.HTTP_400_BAD_REQUEST)
 
     return response.Response({},status=status.HTTP_201_CREATED)
@@ -262,5 +262,21 @@ def bulk_delete_users(request):
 @api_view(['POST'])
 @permission_classes([permissions.IsFacultyAdminUserState])
 def update_user(request):
+    user_services.update_user(request.data)
+    return response.Response({},status=status.HTTP_201_CREATED)
+
+@api_view(['POST'])
+@permission_classes([permissions.IsFacultyAdminUserState])
+def update_user_field(request):
+    data = {
+        'user_id':int(request.data['user_id']),
+        'user_type':'staff' if 'user_type' not in request.data else request.data['user_type']
+    }
+    if 'field' in request.data:
+        data[request.data['field']] = request.data['value']
+    if 'faculty_id' in request.data:
+        data['faculty_id']=request.data['faculty_id']
+        data['department_id']=request.data['department_id']
     
-    return response.Response({},status=status.HTTP_204_NO_CONTENT)
+    user_services.update_user(data)
+    return response.Response({},status=status.HTTP_201_CREATED)

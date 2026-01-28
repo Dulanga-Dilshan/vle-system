@@ -3,6 +3,9 @@ from university import models as univercity_models
 from django.shortcuts import get_object_or_404
 from django.conf import settings
 from django.core.handlers.wsgi import WSGIRequest
+from rest_framework.exceptions import ValidationError, NotFound
+from django.db import transaction
+from django.core.validators import validate_email
 
 def approve_register_request(ids,role):
     if role == 'student':
@@ -21,7 +24,7 @@ def approve_register_request(ids,role):
                 user.save()
             except:
                 return False
-
+        
             student = Student(
                 name = f"{std_request.first_name} {std_request.last_name}" ,
                 username = User.objects.get(username=std_request.username),
@@ -117,7 +120,7 @@ def rest_passwd(user_id:int)->bool:
     user=User.objects.filter(id=user_id).first()
     if user:
         user.set_password(getattr(settings, 'DEFAULT_USER_PASSWORD'))
-        user.save()
+        user.save(update_fields=["password"])
         return True
     return False
 
@@ -186,6 +189,8 @@ def create_user_student(user_data:dict,student_data:dict)->bool:
         role = 'student'
     )
 
+    userAcc.set_password(getattr(settings, 'DEFAULT_USER_PASSWORD'))
+
     try:
         userAcc.save()
     except Exception as e:
@@ -218,7 +223,7 @@ def create_user_student(user_data:dict,student_data:dict)->bool:
 def create_user_staff(user_data:dict,staff_data:dict)->bool:
     if len(user_data['full_name'].split(' ')) > 1:
         first_name = user_data['full_name'].split(' ')[0]
-        last_name = user_data['full_name'].split(' ')[1]
+        last_name = "".join(user_data['full_name'].split(' ')[1:])
     else:
         first_name = user_data['full_name']
         last_name = ''
@@ -235,6 +240,8 @@ def create_user_staff(user_data:dict,staff_data:dict)->bool:
         role = 'staff',
         is_staff = is_staff
     )
+
+    userAcc.set_password(getattr(settings, 'DEFAULT_USER_PASSWORD'))
 
     try:
         userAcc.save()
@@ -257,3 +264,85 @@ def create_user_staff(user_data:dict,staff_data:dict)->bool:
         return e
     
     return True
+
+@transaction.atomic
+def update_user(data:dict):
+
+    #validations
+    if not User.objects.filter(id=data['user_id']).exists():
+            raise NotFound(
+                "user dosn't exsists!"
+            )
+    if 'email' in data:
+        validate_email(data['email'])
+    
+    if 'name' in data and data['name'] is not None:
+        if len(data['name'].strip()) <1:
+            raise ValidationError(
+                "invalid name."
+            )
+    if 'faculty_id' in data:
+        if 'faculty_id' in data['faculty_id'] is not None:
+            if data['department_id'] is None:
+                raise ValidationError(
+                    'wrong faculty and department combo'
+                )
+            
+            try:
+                department = univercity_models.Department.objects.get(id=data['department_id'])
+            except univercity_models.Department.DoesNotExist:
+                raise ValidationError('Invalid department id')
+
+            if department.faculty.id != data['faculty_id']:
+                raise ValidationError(
+                    'wrong faculty and department combo'
+                )
+    
+    #save
+    user = User.objects.get(id=data['user_id'])
+
+    if 'email' in data:
+        if data['email'] != user.email:
+            user.email = data['email']
+
+    try:
+        sub_user = Student.objects.get(username=user) if data['user_type'] == 'student' else Staff.objects.get(username=user)
+    except (Student.DoesNotExist,Staff.DoesNotExist):
+        raise ValidationError(
+            "user dosn't exsists!"
+        )
+    
+    if 'name' in data:
+        if sub_user.name != data['name'] and data['name'] is not None:
+            sub_user.name = data['name']
+            full_name = data['name'].strip().split(' ')
+            if len(full_name)>1:
+                user.first_name = full_name[0]
+                user.last_name = " ".join(full_name[1:])
+
+            else:
+                user.first_name = full_name[0]
+                user.last_name = ''
+    
+    if 'faculty_id' in data and data['faculty_id'] is not None:
+        if sub_user.faculty_name.id != data['faculty_id'] and data['faculty_id'] is not None:
+                sub_user.faculty_name = univercity_models.Faculty.objects.get(id=data['faculty_id'])
+
+        if sub_user.department_name.id != data['department_id'] and data['department_id'] is not None:
+            sub_user.department_name = univercity_models.Department.objects.get(id=data['department_id'])
+        
+        if data['user_type'] == 'student':
+            print('batch')
+            sub_user.batch = None
+
+    if 'staff_type' in data:
+        if data['user_type'] == 'staff':
+            if sub_user.staff_type != data['staff_type'] and data['staff_type'] is not None:
+                sub_user.staff_type = data['staff_type']
+            if data['staff_type']=='admin':
+                user.is_staff = True
+            else:
+                user.is_staff = False
+
+    user.save()
+    sub_user.save()

@@ -127,22 +127,23 @@
                                         {{ student.name|first|upper }}
                                     </div>
                                     <div class="user-details">
-                                        <div class="user-name" id="name-student-{{ student.id }}">{{ student.name }}</div>
+                                        <div class="editable-field" data-field="name" data-id="{{ student.id }}" data-type="student">
+                                            <div class="user-name" id="name-student-{{ student.id }}">{{ student.name }}</div>
+                                            <button class="edit-icon" onclick="editField('name', {{ student.id }}, 'student')" title="Edit Name">
+                                                <i class="fas fa-pencil-alt"></i>
+                                            </button>
+                                        </div>
                                         <div class="user-username">{{ student.username.username }}</div>
                                     </div>
                                 </div>
                             </td>
                             <td>
                                 <div class="academic-info">
-                                    <div class="editable-field" data-field="faculty" data-id="{{ student.id }}" data-type="student">
+                                    <div class="editable-field" data-field="faculty_department" data-id="{{ student.id }}" data-type="student">
                                         <strong id="faculty-student-{{ student.id }}">{{ student.faculty_name.name }}</strong>
-                                        <button class="edit-icon" onclick="editField('faculty', {{ student.id }}, 'student')" title="Edit Faculty">
-                                            <i class="fas fa-pencil-alt"></i>
-                                        </button>
-                                    </div>
-                                    <div class="editable-field" data-field="department" data-id="{{ student.id }}" data-type="student">
+                                        <br>
                                         <p id="department-student-{{ student.id }}">{{ student.department_name.name }}</p>
-                                        <button class="edit-icon" onclick="editField('department', {{ student.id }}, 'student')" title="Edit Department">
+                                        <button class="edit-icon" onclick="editFacultyDepartment({{ student.id }}, 'student')" title="Edit Faculty & Department">
                                             <i class="fas fa-pencil-alt"></i>
                                         </button>
                                     </div>
@@ -240,7 +241,12 @@
                                         {{ stf.name|first|upper }}
                                     </div>
                                     <div class="user-details">
-                                        <div class="user-name" id="name-staff-{{ stf.id }}">{{ stf.name }}</div>
+                                        <div class="editable-field" data-field="name" data-id="{{ stf.id }}" data-type="staff">
+                                            <div class="user-name" id="name-staff-{{ stf.id }}">{{ stf.name }}</div>
+                                            <button class="edit-icon" onclick="editField('name', {{ stf.id }}, 'staff')" title="Edit Name">
+                                                <i class="fas fa-pencil-alt"></i>
+                                            </button>
+                                        </div>
                                         <div class="user-username">{{ stf.username.username }}</div>
                                     </div>
                                 </div>
@@ -253,9 +259,9 @@
                                             <i class="fas fa-pencil-alt"></i>
                                         </button>
                                     </div>
-                                    <div class="editable-field" data-field="department" data-id="{{ stf.id }}" data-type="staff">
+                                    <div class="editable-field" data-field="faculty_department" data-id="{{ stf.id }}" data-type="staff">
                                         <p id="department-staff-{{ stf.id }}">{{ stf.department_name.name }}</p>
-                                        <button class="edit-icon" onclick="editField('department', {{ stf.id }}, 'staff')" title="Edit Department">
+                                        <button class="edit-icon" onclick="editFacultyDepartment({{ stf.id }}, 'staff')" title="Edit Faculty & Department">
                                             <i class="fas fa-pencil-alt"></i>
                                         </button>
                                     </div>
@@ -374,7 +380,7 @@
                                     <option value="">Select Staff Type</option>
                                     <option value="lecture">Lecture</option>
                                     <option value="profesor">Profesor</option>
-                                    <option value="administrative">Administrative</option>
+                                    <option value="admin">Administrative</option>
                                     <option value="support">Support Staff</option>
                                 </select>
                             </div>
@@ -436,7 +442,7 @@
                             <i class="fas fa-cloud-upload-alt" style="font-size: 3rem; color: #3b2fd4; margin-bottom: 1rem;"></i>
                             <p>Drag and drop your CSV file here or click to browse</p>
                             <input type="file" id="csvFile" accept=".csv" style="display: none;" onchange="handleCSVUpload()">
-                            <button class="btn btn-outline" onclick="document.getElementById('csvFile').click()">
+                            <button class="btn btn-outline" onclick="browseCSVFile()">
                                 <i class="fas fa-folder-open"></i> Browse Files
                             </button>
                             <p class="file-hint" style="margin-top: 0.5rem; font-size: 0.85rem; color: #666;">
@@ -517,6 +523,50 @@
         </div>
     </div>
     
+    <!-- Edit Faculty & Department Modal -->
+    <div class="modal-overlay" id="editFacultyDepartmentModalOverlay" style="display: none;">
+        <div class="modal" id="editFacultyDepartmentModal" style="max-width: 500px;">
+            <div class="modal-header">
+                <h3><i class="fas fa-building"></i> Edit Faculty & Department</h3>
+                <button class="modal-close" onclick="closeEditFacultyDepartmentModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="editFacultyDepartmentForm">
+                    <input type="hidden" id="fdRecordId" value="">
+                    <input type="hidden" id="fdUserType" value="">
+                    <input type="hidden" id="fdUserId" value=""> <!-- ADD THIS LINE -->
+                    
+                    <div class="form-row">
+                        <div class="form-group" style="flex: 1;">
+                            <label class="form-label">Faculty</label>
+                            <select id="fdFacultySelect" class="form-control" onchange="loadFdDepartments()" required>
+                                <option value="">Select Faculty</option>
+                                {% for faculty in faculties %}
+                                <option value="{{ faculty.id }}">{{ faculty.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="form-group" style="flex: 1;">
+                            <label class="form-label">Department</label>
+                            <select id="fdDepartmentSelect" class="form-control" required disabled>
+                                <option value="">Select Faculty First</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="modal-actions">
+                        <button type="button" class="btn btn-primary" onclick="saveFacultyDepartment()">
+                            <i class="fas fa-save"></i> Save Changes
+                        </button>
+                        <button type="button" class="btn btn-outline" onclick="closeEditFacultyDepartmentModal()">
+                            <i class="fas fa-times"></i> Cancel
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
     <!-- Edit User Modal (Full User Edit) -->
     <div class="modal-overlay" id="editUserModalOverlay" style="display: none;">
         <div class="modal" id="editUserModal" style="max-width: 600px;">
@@ -565,7 +615,7 @@
                                 <option value="">Select Staff Type</option>
                                 <option value="lecture">Lecture</option>
                                 <option value="profesor">Profesor</option>
-                                <option value="administrative">Administrative</option>
+                                <option value="admin">Administrative</option>
                                 <option value="support">Support Staff</option>
                             </select>
                         </div>
@@ -1927,8 +1977,9 @@
     let userQueue = [];
     let selectedUsers = new Set();
     let currentEditField = null;
-    let currentEditRecordId = null;
+    let currentEditUserId = null;  // Changed from currentEditRecordId
     let currentEditType = null;
+    let csvUploadBlocked = false;
     
     // Department data from template
     const departments = {
@@ -1950,6 +2001,22 @@
     const facultyMap = {
         {% for faculty in faculties %}
             '{{ faculty.id }}': '{{ faculty.name|escapejs }}',
+        {% endfor %}
+    };
+    
+    // User ID to Record ID mapping
+    const userRecordMap = {
+        {% for student in students %}
+            '{{ student.username.id }}': {
+                record_id: {{ student.id }},
+                type: 'student'
+            },
+        {% endfor %}
+        {% for stf in staff %}
+            '{{ stf.username.id }}': {
+                record_id: {{ stf.id }},
+                type: 'staff'
+            },
         {% endfor %}
     };
     
@@ -1982,15 +2049,19 @@
         const csvUploadArea = document.getElementById('csvUploadArea');
         if (csvUploadArea) {
             csvUploadArea.addEventListener('click', function() {
-                const csvFileInput = document.getElementById('csvFile');
-                if (csvFileInput) csvFileInput.click();
+                if (csvUploadBlocked) {
+                    showNotification('warning', 'CSV Upload Blocked', 'Please clear the current queue before uploading another CSV file.');
+                    return;
+                }
             });
             
             // Setup drag and drop for CSV
             csvUploadArea.addEventListener('dragover', function(e) {
                 e.preventDefault();
-                this.style.borderColor = 'var(--primary)';
-                this.style.background = '#f0f2ff';
+                if (!csvUploadBlocked) {
+                    this.style.borderColor = 'var(--primary)';
+                    this.style.background = '#f0f2ff';
+                }
             });
             
             csvUploadArea.addEventListener('dragleave', function(e) {
@@ -2003,6 +2074,11 @@
                 e.preventDefault();
                 this.style.borderColor = '#ccc';
                 this.style.background = '#f8f9ff';
+                
+                if (csvUploadBlocked) {
+                    showNotification('warning', 'CSV Upload Blocked', 'Please clear the current queue before uploading another CSV file.');
+                    return;
+                }
                 
                 if (e.dataTransfer.files.length > 0) {
                     const csvFileInput = document.getElementById('csvFile');
@@ -2019,6 +2095,7 @@
             overlay.addEventListener('click', function(e) {
                 if (e.target === this) {
                     if (this.id === 'editFieldModalOverlay') closeEditFieldModal();
+                    if (this.id === 'editFacultyDepartmentModalOverlay') closeEditFacultyDepartmentModal();
                     if (this.id === 'editUserModalOverlay') closeEditUserModal();
                     if (this.id === 'addUserModalOverlay') closeAddUserModal();
                 }
@@ -2037,6 +2114,9 @@
             // Close modals
             if (document.getElementById('editFieldModalOverlay')?.style.display === 'flex') {
                 closeEditFieldModal();
+            }
+            if (document.getElementById('editFacultyDepartmentModalOverlay')?.style.display === 'flex') {
+                closeEditFacultyDepartmentModal();
             }
             if (document.getElementById('editUserModalOverlay')?.style.display === 'flex') {
                 closeEditUserModal();
@@ -2219,11 +2299,46 @@
         }
     }
     
+    // Load departments for faculty & department modal
+    function loadFdDepartments() {
+        const facultySelect = document.getElementById('fdFacultySelect');
+        const departmentSelect = document.getElementById('fdDepartmentSelect');
+        
+        if (!facultySelect || !departmentSelect) return;
+        
+        const facultyId = facultySelect.value;
+        
+        departmentSelect.innerHTML = '<option value="">Select Department</option>';
+        
+        if (facultyId && departments[facultyId]) {
+            const deptList = departments[facultyId];
+            
+            deptList.forEach(dept => {
+                const option = document.createElement('option');
+                option.value = dept.id;
+                option.textContent = dept.name;
+                departmentSelect.appendChild(option);
+            });
+            
+            departmentSelect.disabled = false;
+        } else {
+            departmentSelect.disabled = true;
+        }
+    }
+    
     // Edit individual fields inline
     function editField(field, recordId, type) {
         currentEditField = field;
-        currentEditRecordId = recordId;
         currentEditType = type;
+        
+        // Find user_id from row
+        const row = document.querySelector(`.user-row [data-field="${field}"][data-id="${recordId}"][data-type="${type}"]`).closest('.user-row');
+        if (!row) return;
+        
+        const userId = row.getAttribute('data-user-id');
+        if (!userId) return;
+        
+        currentEditUserId = userId;
         
         const modal = document.getElementById('editFieldModalOverlay');
         const title = document.getElementById('editFieldTitle');
@@ -2238,6 +2353,7 @@
         
         // Set modal title and label
         const fieldLabels = {
+            'name': 'Full Name',
             'email': 'Email Address',
             'faculty': 'Faculty',
             'department': 'Department',
@@ -2250,68 +2366,27 @@
         // Create appropriate input based on field type
         container.innerHTML = '';
         
-        if (field === 'email') {
+        if (field === 'name' || field === 'email') {
             const input = document.createElement('input');
-            input.type = 'email';
+            input.type = field === 'email' ? 'email' : 'text';
             input.id = 'fieldEditInput';
             input.className = 'form-control';
             input.value = currentValue;
             input.required = true;
-            container.appendChild(input);
-        } else if (field === 'faculty') {
-            const select = document.createElement('select');
-            select.id = 'fieldEditInput';
-            select.className = 'form-control';
-            select.innerHTML = '<option value="">Select Faculty</option>';
-            
-            Object.entries(facultyMap).forEach(([id, name]) => {
-                const option = document.createElement('option');
-                option.value = id;
-                option.textContent = name;
-                if (currentValue === name) option.selected = true;
-                select.appendChild(option);
-            });
-            
-            container.appendChild(select);
-        } else if (field === 'department') {
-            // First get the current faculty to show relevant departments
-            const facultyElement = document.getElementById(`faculty-${type}-${recordId}`);
-            const currentFacultyName = facultyElement ? facultyElement.textContent.trim() : '';
-            let currentFacultyId = '';
-            
-            // Find faculty ID by name
-            Object.entries(facultyMap).forEach(([id, name]) => {
-                if (name === currentFacultyName) {
-                    currentFacultyId = id;
-                }
-            });
-            
-            const select = document.createElement('select');
-            select.id = 'fieldEditInput';
-            select.className = 'form-control';
-            select.innerHTML = '<option value="">Select Department</option>';
-            
-            if (currentFacultyId && departments[currentFacultyId]) {
-                departments[currentFacultyId].forEach(dept => {
-                    const option = document.createElement('option');
-                    option.value = dept.id;
-                    option.textContent = dept.name;
-                    if (currentValue === dept.name) option.selected = true;
-                    select.appendChild(option);
-                });
+            if (field === 'email') {
+                input.pattern = "[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$";
             }
-            
-            container.appendChild(select);
+            container.appendChild(input);
         } else if (field === 'staff_type') {
             const select = document.createElement('select');
             select.id = 'fieldEditInput';
             select.className = 'form-control';
             select.innerHTML = `
                 <option value="">Select Staff Type</option> 
-                <option value="lecture" ${currentValue === 'lecture' ? 'selected' : ''}>Lecture</option>
-                <option value="profesor" ${currentValue === 'profesor' ? 'selected' : ''}>Profesor</option>
-                <option value="administrative" ${currentValue === 'admin' ? 'selected' : ''}>Administrative</option>
-                <option value="support" ${currentValue === 'admin' ? 'selected' : ''}>Support Staff</option>
+                <option value="lecture" ${currentValue.toLowerCase() === 'lecture' ? 'selected' : ''}>Lecture</option>
+                <option value="profesor" ${currentValue.toLowerCase() === 'profesor' ? 'selected' : ''}>Profesor</option>
+                <option value="admin" ${currentValue.toLowerCase().includes('administrative') ? 'selected' : ''}>Administrative</option>
+                <option value="support" ${currentValue.toLowerCase().includes('support') ? 'selected' : ''}>Support Staff</option>
             `;
             container.appendChild(select);
         }
@@ -2326,12 +2401,138 @@
         if (modal) modal.style.display = 'none';
         
         currentEditField = null;
-        currentEditRecordId = null;
+        currentEditUserId = null;
         currentEditType = null;
     }
     
+    // NEW: Edit Faculty & Department combined
+    function editFacultyDepartment(recordId, type) {
+        // Find user_id from row
+        const row = document.querySelector(`.user-row [data-field="faculty_department"][data-id="${recordId}"][data-type="${type}"]`).closest('.user-row');
+        if (!row) return;
+        
+        const userId = row.getAttribute('data-user-id');
+        if (!userId) return;
+        
+        const modal = document.getElementById('editFacultyDepartmentModalOverlay');
+        const facultyElement = document.getElementById(`faculty-${type}-${recordId}`);
+        const departmentElement = document.getElementById(`department-${type}-${recordId}`);
+        
+        if (!modal || !facultyElement || !departmentElement) return;
+        
+        // Get current values
+        const currentFacultyName = facultyElement.textContent.trim();
+        const currentDepartmentName = departmentElement.textContent.trim();
+        
+        // Find current faculty ID
+        let currentFacultyId = '';
+        Object.entries(facultyMap).forEach(([id, name]) => {
+            if (name === currentFacultyName) {
+                currentFacultyId = id;
+            }
+        });
+        
+        // Find current department ID
+        let currentDepartmentId = '';
+        if (currentFacultyId && departments[currentFacultyId]) {
+            departments[currentFacultyId].forEach(dept => {
+                if (dept.name === currentDepartmentName) {
+                    currentDepartmentId = dept.id;
+                }
+            });
+        }
+        
+        // Set modal values
+        document.getElementById('fdRecordId').value = recordId;
+        document.getElementById('fdUserType').value = type;
+        document.getElementById('fdUserId').value = userId;  // Add this line
+        document.getElementById('fdFacultySelect').value = currentFacultyId;
+        
+        // Load departments for current faculty
+        loadFdDepartments();
+        
+        // Set department after departments are loaded
+        setTimeout(() => {
+            const deptSelect = document.getElementById('fdDepartmentSelect');
+            if (deptSelect && currentDepartmentId) {
+                deptSelect.value = currentDepartmentId;
+            }
+        }, 100);
+        
+        modal.style.display = 'flex';
+        document.getElementById('fdFacultySelect').focus();
+    }
+    
+    function closeEditFacultyDepartmentModal() {
+        const modal = document.getElementById('editFacultyDepartmentModalOverlay');
+        if (modal) modal.style.display = 'none';
+    }
+    
+    async function saveFacultyDepartment() {
+        const recordId = document.getElementById('fdRecordId').value;
+        const type = document.getElementById('fdUserType').value;
+        const userId = document.getElementById('fdUserId').value;  // Get user_id
+        const facultyId = document.getElementById('fdFacultySelect').value;
+        const departmentId = document.getElementById('fdDepartmentSelect').value;
+        
+        if (!facultyId || !departmentId) {
+            showNotification('error', 'Validation Error', 'Please select both faculty and department');
+            return;
+        }
+        
+        const facultyName = facultyMap[facultyId] || '';
+        let departmentName = '';
+        
+        if (facultyId && departments[facultyId]) {
+            const dept = departments[facultyId].find(d => d.id == departmentId);
+            departmentName = dept ? dept.name : '';
+        }
+        
+        // Prepare API data - USING user_id INSTEAD OF record_id
+        const apiData = {
+            user_type: type,
+            user_id: userId,  // Changed from record_id to user_id
+            faculty_id: facultyId,
+            department_id: departmentId
+        };
+        
+        try {
+            const response = await fetch('/api/update_user_faculty_department/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify(apiData)
+            });
+            
+            if (response.ok) {
+                // Update the UI immediately
+                const facultyElement = document.getElementById(`faculty-${type}-${recordId}`);
+                const departmentElement = document.getElementById(`department-${type}-${recordId}`);
+                
+                if (facultyElement) facultyElement.textContent = facultyName;
+                if (departmentElement) departmentElement.textContent = departmentName;
+                
+                // Update data attributes for filtering
+                const row = document.querySelector(`tr[data-user-id="${userId}"]`);
+                if (row) {
+                    row.setAttribute('data-faculty', facultyId);
+                }
+                
+                showNotification('success', 'Success', 'Faculty and department updated successfully');
+                closeEditFacultyDepartmentModal();
+            } else {
+                const error = await response.json();
+                showNotification('error', 'Update Failed', error.error || 'Failed to update faculty and department');
+            }
+        } catch (error) {
+            showNotification('error', 'Network Error', 'Failed to connect to server');
+        }
+    }
+    
     async function saveField() {
-        if (!currentEditField || !currentEditRecordId || !currentEditType) return;
+        if (!currentEditField || !currentEditUserId || !currentEditType) return;
         
         const input = document.getElementById('fieldEditInput');
         if (!input) return;
@@ -2342,34 +2543,28 @@
             return;
         }
         
+        // Email validation
+        if (currentEditField === 'email' && !isValidEmail(newValue)) {
+            showNotification('error', 'Validation Error', 'Please enter a valid email address');
+            return;
+        }
+        
         // Get the actual display value
         let displayValue = newValue;
-        if (currentEditField === 'faculty') {
-            displayValue = facultyMap[newValue] || newValue;
-        } else if (currentEditField === 'department') {
-            // Find department name by ID
-            let deptName = newValue;
-            Object.values(departments).forEach(deptList => {
-                deptList.forEach(dept => {
-                    if (dept.id == newValue) {
-                        deptName = dept.name;
-                    }
-                });
-            });
-            displayValue = deptName;
-        } else if (currentEditField === 'staff_type') {
+        if (currentEditField === 'staff_type') {
             const typeMap = {
-                'teaching': 'Teaching Staff',
-                'non_teaching': 'Non-Teaching Staff',
-                'administrative': 'Administrative'
+                'lecture': 'Lecture',
+                'profesor': 'Profesor',
+                'admin': 'Administrative',
+                'support': 'Support Staff'
             };
             displayValue = typeMap[newValue] || newValue;
         }
         
-        // Prepare API data
+        // Prepare API data - USING user_id INSTEAD OF record_id
         const apiData = {
             user_type: currentEditType,
-            record_id: currentEditRecordId,
+            user_id: currentEditUserId,  // Changed from record_id to user_id
             field: currentEditField,
             value: newValue
         };
@@ -2386,9 +2581,17 @@
             
             if (response.ok) {
                 // Update the UI immediately
-                const fieldElement = document.getElementById(`${currentEditField}-${currentEditType}-${currentEditRecordId}`);
-                if (fieldElement) {
-                    fieldElement.textContent = displayValue;
+                // Find the record_id from userRecordMap
+                let recordId = null;
+                if (userRecordMap[currentEditUserId]) {
+                    recordId = userRecordMap[currentEditUserId].record_id;
+                }
+                
+                if (recordId) {
+                    const fieldElement = document.getElementById(`${currentEditField}-${currentEditType}-${recordId}`);
+                    if (fieldElement) {
+                        fieldElement.textContent = displayValue;
+                    }
                 }
                 
                 showNotification('success', 'Success', 'Field updated successfully');
@@ -2471,11 +2674,10 @@
             return;
         }
         
-        // Prepare API data
+        // Prepare API data - USING user_id INSTEAD OF record_id
         const apiData = {
-            user_id: userId,
+            user_id: userId,  // Changed from user_id to user_id (already correct, but keeping for consistency)
             user_type: userType,
-            record_id: recordId,
             name: name,
             email: email,
             faculty_id: facultyId,
@@ -2519,12 +2721,19 @@
                     const staffTypeElement = document.getElementById(`staff_type-staff-${recordId}`);
                     if (staffTypeElement) {
                         const typeMap = {
-                            'teaching': 'Teaching Staff',
-                            'non_teaching': 'Non-Teaching Staff',
-                            'administrative': 'Administrative'
+                            'lecture': 'Lecture',
+                            'profesor': 'Profesor',
+                            'admin': 'Administrative',
+                            'support': 'Support Staff'
                         };
                         staffTypeElement.textContent = typeMap[staffType] || staffType;
                     }
+                }
+                
+                // Update data attributes for filtering
+                const row = document.querySelector(`tr[data-user-id="${userId}"]`);
+                if (row) {
+                    row.setAttribute('data-faculty', facultyId);
                 }
                 
                 showNotification('success', 'Success', 'User updated successfully');
@@ -2705,6 +2914,8 @@
         if (modal) modal.style.display = 'none';
         userQueue = [];
         updateQueueDisplay();
+        csvUploadBlocked = false;
+        enableCSVUpload();
     }
     
     function switchAddMethod(method) {
@@ -2923,15 +3134,33 @@
     function clearQueue() {
         userQueue = [];
         updateQueueDisplay();
-        showNotification('info', 'Cleared', 'Queue cleared.');
+        csvUploadBlocked = false;
+        enableCSVUpload();
+        showNotification('info', 'Cleared', 'Queue cleared. CSV upload is now enabled.');
     }
     
     // CSV Import Functionality
+    function browseCSVFile() {
+        if (csvUploadBlocked) {
+            showNotification('warning', 'CSV Upload Blocked', 'Please clear the current queue before uploading another CSV file.');
+            return;
+        }
+        document.getElementById('csvFile').click();
+    }
+    
     function handleCSVUpload() {
         const fileInput = document.getElementById('csvFile');
         const csvUserTypeSelect = document.getElementById('csvUserType');
+        const csvUploadArea = document.getElementById('csvUploadArea');
         
-        if (!fileInput || !csvUserTypeSelect) return;
+        if (!fileInput || !csvUserTypeSelect || !csvUploadArea) return;
+        
+        // Block if queue already has users from CSV
+        if (csvUploadBlocked) {
+            showNotification('warning', 'CSV Upload Blocked', 'Please clear the current queue before uploading another CSV file.');
+            fileInput.value = '';
+            return;
+        }
         
         const file = fileInput.files[0];
         
@@ -2992,6 +3221,14 @@
                         user.faculty_name = 'Unknown Faculty';
                     }
                     
+                    // Get department name
+                    let deptName = 'Unknown Department';
+                    if (user.faculty_id && departments[user.faculty_id]) {
+                        const deptObj = departments[user.faculty_id].find(d => d.id == user.department_id);
+                        deptName = deptObj ? deptObj.name : deptName;
+                    }
+                    user.department_name = deptName;
+                    
                     if (userType === 'staff') {
                         user.staff_type = values[headers.indexOf('staff_type')];
                     }
@@ -3009,8 +3246,13 @@
                 if (newUsers.length > 0) {
                     userQueue = userQueue.concat(newUsers);
                     updateQueueDisplay();
+                    
+                    // Block further CSV uploads
+                    csvUploadBlocked = true;
+                    disableCSVUpload();
+                    
                     showNotification('success', 'CSV Import', 
-                        `Successfully imported ${newUsers.length} users from CSV.`);
+                        `Successfully imported ${newUsers.length} users from CSV. CSV upload is now blocked until queue is cleared.`);
                     
                     // Switch to queue view
                     const queueSection = document.getElementById('queueSection');
@@ -3028,6 +3270,51 @@
         };
         
         reader.readAsText(file);
+    }
+    
+    function disableCSVUpload() {
+        const csvUploadArea = document.getElementById('csvUploadArea');
+        const csvFileInput = document.getElementById('csvFile');
+        const csvTabBtn = document.getElementById('csvTab');
+        
+        if (csvUploadArea) {
+            csvUploadArea.style.opacity = '0.6';
+            csvUploadArea.style.cursor = 'not-allowed';
+            csvUploadArea.style.pointerEvents = 'none';
+            csvUploadArea.title = 'Clear queue to upload another CSV';
+        }
+        
+        if (csvFileInput) {
+            csvFileInput.disabled = true;
+        }
+        
+        if (csvTabBtn) {
+            csvTabBtn.style.opacity = '0.6';
+            csvTabBtn.style.cursor = 'not-allowed';
+        }
+    }
+    
+    function enableCSVUpload() {
+        const csvUploadArea = document.getElementById('csvUploadArea');
+        const csvFileInput = document.getElementById('csvFile');
+        const csvTabBtn = document.getElementById('csvTab');
+        
+        if (csvUploadArea) {
+            csvUploadArea.style.opacity = '1';
+            csvUploadArea.style.cursor = 'pointer';
+            csvUploadArea.style.pointerEvents = 'auto';
+            csvUploadArea.title = '';
+        }
+        
+        if (csvFileInput) {
+            csvFileInput.disabled = false;
+            csvFileInput.value = '';
+        }
+        
+        if (csvTabBtn) {
+            csvTabBtn.style.opacity = '1';
+            csvTabBtn.style.cursor = 'pointer';
+        }
     }
     
     // Submit users to API
@@ -3132,7 +3419,13 @@
         if (allSuccess) {
             userQueue = [];
             updateQueueDisplay();
-            closeAddUserModal();
+            csvUploadBlocked = false;
+            enableCSVUpload();
+            
+            // Close modal after success
+            setTimeout(() => {
+                closeAddUserModal();
+            }, 1500);
             
             // Refresh the page to show new users
             setTimeout(() => {
@@ -3157,9 +3450,9 @@
             csvContent += 'REG003,Bob Johnson,bob.johnson@university.edu,2,3\n';
         } else if (userType === 'staff') {
             csvContent = 'username,name,email,faculty_id,department_id,staff_type\n';
-            csvContent += 'prof.johnson,Prof. Johnson,prof.johnson@university.edu,1,1,teaching\n';
-            csvContent += 'admin.jane,Jane Admin,admin.jane@university.edu,1,2,administrative\n';
-            csvContent += 'tech.bob,Bob Technician,tech.bob@university.edu,2,3,non_teaching\n';
+            csvContent += 'prof.johnson,Prof. Johnson,prof.johnson@university.edu,1,1,lecture\n';
+            csvContent += 'admin.jane,Jane Admin,admin.jane@university.edu,1,2,admin\n';
+            csvContent += 'tech.bob,Bob Technician,tech.bob@university.edu,2,3,support\n';
         }
         
         // Add faculty and department references

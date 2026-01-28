@@ -46,7 +46,7 @@ def admin(request):
         return redirect('dashboard:route')
     
     contex['request_count'] = services.get_request_count()
-    contex['user_presentage'] = f"{(services.user_count() / services.max_user_count()) *100 }%"
+    contex['user_presentage'] = f"{round((services.user_count() / services.max_user_count()) *100,2) }%"
     contex['user_count'] = services.user_count()
     contex['course_count'] = university_services.get_course_count()
     

@@ -1,7 +1,32 @@
 from django.contrib.auth.models import AbstractUser
+from django.contrib.auth.models import BaseUserManager
 from django.db import models
 from university.models import Faculty,Department,Batch
 from django.contrib.auth.hashers import make_password
+
+class UserManager(BaseUserManager):
+    def create_user(self, username, password=None, **extra_fields):
+        if not username:
+            raise ValueError("Username is required")
+
+        extra_fields.setdefault('role', User.Roles.STUDENT)
+
+        user = self.model(username=username, **extra_fields)
+        user.set_password(password)
+        user.save(using=self._db)
+        return user
+
+    def create_superuser(self, username, password=None, **extra_fields):
+        extra_fields.setdefault('is_staff', True)
+        extra_fields.setdefault('is_superuser', True)
+        extra_fields['role'] = User.Roles.ADMIN
+
+        if extra_fields.get('is_staff') is not True:
+            raise ValueError('Superuser must have is_staff=True')
+        if extra_fields.get('is_superuser') is not True:
+            raise ValueError('Superuser must have is_superuser=True')
+
+        return self.create_user(username, password, **extra_fields)
 
 
 class User(AbstractUser):
@@ -13,9 +38,11 @@ class User(AbstractUser):
     role = models.CharField(max_length=20, choices=Roles.choices, default='student')
     last_activity = models.DateTimeField(blank=True, null=True)
 
-    def __str__(self):
-        return super().__str__() 
+    objects = UserManager()
 
+    def __str__(self):
+        return super().__str__()
+    
 class Staff(models.Model):
     class stf_type(models.TextChoices):
         lecture = 'lecture'
@@ -81,3 +108,4 @@ class StaffRegistretionRequest(models.Model):
 
     def __str__(self):
         return f"{self.fullname} - {self.username}"
+    

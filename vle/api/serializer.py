@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from university import models as university_models
+from Users import models as user_models
 
 
 
@@ -20,4 +21,3 @@ class BatchSerializer(serializers.ModelSerializer):
     class Meta:
         model = university_models.Batch
         fields = '__all__'
-

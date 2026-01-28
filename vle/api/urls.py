@@ -26,6 +26,7 @@ urlpatterns = [
     path('delete_user/',views.delete_user),
     path('bulk_delete_users/',views.bulk_delete_users),
     path('update_user/',views.update_user),
-
+    path('update_user_field/',views.update_user_field),
+    path('update_user_faculty_department/',views.update_user_field),
 
 ]
