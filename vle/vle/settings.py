@@ -27,7 +27,7 @@ SECRET_KEY = 'django-insecure-yr8pul=pd&bs85za(!trq0hfs$63dakee-5a2l$i@)mzm=z#!j
 DEBUG = True
 
 # system-settings
-config.load_settings()
+config.load_settings(True)
 
 ALLOWED_HOSTS = []
 
