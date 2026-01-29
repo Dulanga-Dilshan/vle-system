@@ -1,4 +1,6 @@
+import os
 from django.apps import AppConfig
+from config.config import load_settings
 
 
 class ConfigConfig(AppConfig):

@@ -49,6 +49,10 @@ def admin(request):
     contex['user_presentage'] = f"{round((services.user_count() / services.max_user_count()) *100,2) }%"
     contex['user_count'] = services.user_count()
     contex['course_count'] = university_services.get_course_count()
+
+    #from config.config import 
+    
+
     
     return render(request,"dashboard/admin/admin.html",contex)
 

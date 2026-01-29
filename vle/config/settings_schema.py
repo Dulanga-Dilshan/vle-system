@@ -1,0 +1,5 @@
+
+
+SETTINGS_SCHEMA = {
+    'SYSTEM_NAME':'UOV VLE',
+}
