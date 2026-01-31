@@ -29,4 +29,10 @@ urlpatterns = [
     path('update_user_field/',views.update_user_field),
     path('update_user_faculty_department/',views.update_user_field),
 
+    path('get-setting/<str:key>/',views.get_settings),
+    path('get-all-setting/',views.get_all_settings),
+    path('update-setting/',views.update_settings),
+
+
 ]
+

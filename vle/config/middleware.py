@@ -1,18 +1,41 @@
-from django.contrib.auth import logout
-from django.conf import settings
-from django.utils import timezone
+from config.config import sync_setting,_last_update
+from config.models import SystemSettings
 
-class UpdateLastActivityMiddleware:
+
+
+class SyncSettingsMiddleware:
     def __init__(self,get_responce):
-        self.get_responce=get_responce
-
+        self.get_responce = get_responce
+    
     def __call__(self, request):
-        if request.user.is_authenticated:
-            request.user.last_activity = timezone.now()
-            request.user.save(update_fields=['last_activity'])
+        sync_setting()
         return self.get_responce(request)
     
-    
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+'''
 class AutoLogoutMiddleware:
     def __init__(self,get_responce):
         self.get_responce=get_responce
@@ -25,3 +48,5 @@ class AutoLogoutMiddleware:
                 if inactivity > getattr(settings, 'INACTIVITY_LOGOUT_TIME',900):
                     logout(request)
         return self.get_responce(request)
+'''
+

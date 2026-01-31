@@ -7,6 +7,7 @@ from Users import models as user_models
 from . import permissions
 from django.shortcuts import get_object_or_404
 from Users import services as user_services
+from config.config import get_setting,update_setting,get_all_setting
 
 
 @api_view(['GET'])
@@ -280,3 +281,30 @@ def update_user_field(request):
     
     user_services.update_user(data)
     return response.Response({},status=status.HTTP_201_CREATED)
+
+
+
+@api_view(['GET'])
+@permission_classes([permissions.IsSuperUser])
+def get_settings(request,key):
+    try:
+        value = get_setting(key)
+    except KeyError:
+        return response.Response({'detail':f"setting {key} dosn't exsits"},status=status.HTTP_404_NOT_FOUND)
+    return response.Response({'value':value},status=status.HTTP_200_OK)
+
+@api_view(['GET'])
+@permission_classes([permissions.IsSuperUser])
+def get_all_settings(request):
+    return response.Response(get_all_setting(),status=status.HTTP_200_OK)
+
+
+@api_view(['PATCH'])
+@permission_classes([permissions.IsSuperUser])
+def update_settings(request):
+    #update_setting(key=request.data.key,value=request.data.value)
+    return response.Response({'detail':f"setting {'key'} dosn't exsits"},status=status.HTTP_406_NOT_ACCEPTABLE)
+
+
+
+#{'key': 'SYSTEM_NAME', 'value': 'UOV VL'}

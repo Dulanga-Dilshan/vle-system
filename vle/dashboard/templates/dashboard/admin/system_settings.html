@@ -8,14 +8,21 @@
 
 {% block body %}
 <div class="system-settings">
-    <!-- Page Header -->
+    <!-- Page Header with Save Button -->
     <div class="page-header">
-        <h1 class="page-title">
-            <i class="fas fa-cogs"></i> System Settings
-        </h1>
-        <p class="page-subtitle">
-            Configure global system variables and preferences
-        </p>
+        <div class="header-content">
+            <div>
+                <h1 class="page-title">
+                    <i class="fas fa-cogs"></i> System Settings
+                </h1>
+                <p class="page-subtitle">
+                    Configure global system variables and preferences
+                </p>
+            </div>
+            <button id="saveAllChanges" class="btn btn-primary" style="display: none;">
+                <i class="fas fa-save"></i> Save All Changes
+            </button>
+        </div>
     </div>
 
     <!-- Settings Tabs -->
@@ -24,425 +31,286 @@
             <button class="tab active" onclick="switchSettingsTab('general')">
                 <i class="fas fa-sliders-h"></i> General
             </button>
-            <button class="tab" onclick="switchSettingsTab('security')">
-                <i class="fas fa-shield-alt"></i> Security
+            <button class="tab" onclick="switchSettingsTab('maintenance')">
+                <i class="fas fa-tools"></i> Maintenance
             </button>
-            <button class="tab" onclick="switchSettingsTab('users')">
-                <i class="fas fa-users"></i> User Settings
+            <button class="tab" onclick="switchSettingsTab('uploads')">
+                <i class="fas fa-upload"></i> Uploads
             </button>
             <button class="tab" onclick="switchSettingsTab('email')">
                 <i class="fas fa-envelope"></i> Email
             </button>
-            <button class="tab" onclick="switchSettingsTab('system')">
-                <i class="fas fa-server"></i> System
+            <button class="tab" onclick="switchSettingsTab('security')">
+                <i class="fas fa-shield-alt"></i> Security
             </button>
         </div>
     </div>
 
     <!-- General Settings -->
     <div id="generalTab" class="settings-tab-content active">
-        <form method="post" action="" class="settings-form">
-            {% csrf_token %}
-            <input type="hidden" name="settings_type" value="general">
-            
-            <div class="settings-section card">
-                <div class="settings-section-header">
-                    <h3><i class="fas fa-globe"></i> General Configuration</h3>
+        <div class="settings-section card">
+            <div class="settings-section-header">
+                <h3><i class="fas fa-globe"></i> General Configuration</h3>
+            </div>
+            <div class="settings-section-body">
+                <!-- SYSTEM_NAME -->
+                <div class="form-group setting-item" data-key="SYSTEM_NAME" data-type="str">
+                    <label class="form-label">System Name</label>
+                    <input type="text" 
+                           class="form-control setting-input" 
+                           data-original="{{ settings.SYSTEM_NAME|default:'UOV VLE' }}"
+                           value="{{ settings.SYSTEM_NAME|default:'UOV VLE' }}">
+                    <div class="form-help">Display name for the application</div>
                 </div>
-                <div class="settings-section-body">
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label class="form-label">System Name *</label>
-                            <input type="text" name="system_name" class="form-control" value="{{ settings.system_name|default:'University VLE' }}" required>
-                            <div class="form-help">Display name for the application</div>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Timezone</label>
-                            <select name="timezone" class="form-control">
-                                {% for tz in timezones %}
-                                <option value="{{ tz }}" {% if settings.timezone == tz %}selected{% endif %}>{{ tz }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                    </div>
-                    
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label class="form-label">Default Language</label>
-                            <select name="default_language" class="form-control">
-                                <option value="en" {% if settings.default_language == 'en' %}selected{% endif %}>English</option>
-                                <option value="si" {% if settings.default_language == 'si' %}selected{% endif %}>Sinhala</option>
-                                <option value="ta" {% if settings.default_language == 'ta' %}selected{% endif %}>Tamil</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Date Format</label>
-                            <select name="date_format" class="form-control">
-                                <option value="Y-m-d" {% if settings.date_format == 'Y-m-d' %}selected{% endif %}>YYYY-MM-DD</option>
-                                <option value="d/m/Y" {% if settings.date_format == 'd/m/Y' %}selected{% endif %}>DD/MM/YYYY</option>
-                                <option value="m/d/Y" {% if settings.date_format == 'm/d/Y' %}selected{% endif %}>MM/DD/YYYY</option>
-                            </select>
-                        </div>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label class="form-label">System URL</label>
-                        <input type="url" name="system_url" class="form-control" value="{{ settings.system_url|default:request.build_absolute_uri }}" required>
-                    </div>
+
+                <!-- SYSTEM_TAGLINE -->
+                <div class="form-group setting-item" data-key="SYSTEM_TAGLINE" data-type="str">
+                    <label class="form-label">System Tagline</label>
+                    <input type="text" 
+                           class="form-control setting-input" 
+                           data-original="{{ settings.SYSTEM_TAGLINE|default:'' }}"
+                           value="{{ settings.SYSTEM_TAGLINE|default:'' }}">
+                    <div class="form-help">Optional tagline or subtitle</div>
+                </div>
+
+                <!-- USERS_PER_PAGE -->
+                <div class="form-group setting-item" data-key="USERS_PER_PAGE" data-type="int">
+                    <label class="form-label">Users Per Page</label>
+                    <input type="number" 
+                           class="form-control setting-input" 
+                           data-original="{{ settings.USERS_PER_PAGE|default:50 }}"
+                           value="{{ settings.USERS_PER_PAGE|default:50 }}"
+                           min="10" max="200">
+                    <div class="form-help">Number of users displayed per page in lists</div>
                 </div>
             </div>
-            
-            <div class="form-actions">
-                <button type="submit" class="btn btn-primary">
-                    <i class="fas fa-save"></i> Save General Settings
-                </button>
-            </div>
-        </form>
+        </div>
     </div>
 
-    <!-- Security Settings -->
-    <div id="securityTab" class="settings-tab-content">
-        <form method="post" action="" class="settings-form">
-            {% csrf_token %}
-            <input type="hidden" name="settings_type" value="security">
-            
-            <div class="settings-section card">
-                <div class="settings-section-header">
-                    <h3><i class="fas fa-user-lock"></i> Authentication & Session</h3>
+    <!-- Maintenance Settings -->
+    <div id="maintenanceTab" class="settings-tab-content">
+        <div class="settings-section card">
+            <div class="settings-section-header">
+                <h3><i class="fas fa-tools"></i> Maintenance Settings</h3>
+            </div>
+            <div class="settings-section-body">
+                <!-- MAINTENANCE_MODE -->
+                <div class="form-group setting-item" data-key="MAINTENANCE_MODE" data-type="bool">
+                    <label class="checkbox">
+                        <input type="checkbox" 
+                               class="setting-input"
+                               data-original="{{ settings.MAINTENANCE_MODE|default:'false' }}"
+                               {% if settings.MAINTENANCE_MODE %}checked{% endif %}>
+                        <span>Maintenance Mode</span>
+                    </label>
+                    <div class="form-help">When enabled, only allowed roles can access the system</div>
                 </div>
-                <div class="settings-section-body">
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label class="form-label">Max Inactive Logout Time (minutes) *</label>
-                            <input type="number" name="inactive_logout_minutes" class="form-control" value="{{ settings.inactive_logout_minutes|default:30 }}" min="5" max="480" required>
-                            <div class="form-help">Automatic logout after inactivity (5-480 minutes)</div>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Session Lifetime (hours) *</label>
-                            <input type="number" name="session_lifetime_hours" class="form-control" value="{{ settings.session_lifetime_hours|default:24 }}" min="1" max="720" required>
-                            <div class="form-help">Maximum session duration (1-720 hours)</div>
-                        </div>
+
+                <!-- MAINTENANCE_MESSAGE -->
+                <div class="form-group setting-item" data-key="MAINTENANCE_MESSAGE" data-type="str">
+                    <label class="form-label">Maintenance Message</label>
+                    <textarea class="form-control setting-input" 
+                              data-original="{{ settings.MAINTENANCE_MESSAGE|default:'System is under maintenance. Try again later.' }}">
+{{ settings.MAINTENANCE_MESSAGE|default:'System is under maintenance. Try again later.' }}</textarea>
+                    <div class="form-help">Message shown to users during maintenance</div>
+                </div>
+
+                <!-- MAINTENANCE_ALLOWED_ROLES -->
+                <div class="form-group setting-item" data-key="MAINTENANCE_ALLOWED_ROLES" data-type="list">
+                    <label class="form-label">Allowed Roles During Maintenance</label>
+                    <div class="role-checkboxes">
+                        <label class="checkbox">
+                            <input type="checkbox" value="admin" class="role-checkbox" {% if 'admin' in settings.MAINTENANCE_ALLOWED_ROLES %}checked{% endif %}>
+                            <span>Admin</span>
+                        </label>
+                        <label class="checkbox">
+                            <input type="checkbox" value="staff" class="role-checkbox" {% if 'staff' in settings.MAINTENANCE_ALLOWED_ROLES %}checked{% endif %}>
+                            <span>Staff</span>
+                        </label>
+                        <label class="checkbox">
+                            <input type="checkbox" value="instructor" class="role-checkbox" {% if 'instructor' in settings.MAINTENANCE_ALLOWED_ROLES %}checked{% endif %}>
+                            <span>Instructor</span>
+                        </label>
                     </div>
-                    
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label class="form-label">Max Login Attempts *</label>
-                            <input type="number" name="max_login_attempts" class="form-control" value="{{ settings.max_login_attempts|default:5 }}" min="1" max="10" required>
-                            <div class="form-help">Maximum failed login attempts before lockout</div>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Login Lockout Time (minutes) *</label>
-                            <input type="number" name="login_lockout_minutes" class="form-control" value="{{ settings.login_lockout_minutes|default:15 }}" min="1" max="1440" required>
-                            <div class="form-help">Account lockout duration after max attempts</div>
-                        </div>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label class="form-label">Password Policy</label>
-                        <div class="checkbox-group">
-                            <label class="checkbox">
-                                <input type="checkbox" name="password_require_uppercase" {% if settings.password_require_uppercase %}checked{% endif %}>
-                                <span>Require uppercase letters</span>
-                            </label>
-                            <label class="checkbox">
-                                <input type="checkbox" name="password_require_lowercase" {% if settings.password_require_lowercase %}checked{% endif %}>
-                                <span>Require lowercase letters</span>
-                            </label>
-                            <label class="checkbox">
-                                <input type="checkbox" name="password_require_numbers" {% if settings.password_require_numbers %}checked{% endif %}>
-                                <span>Require numbers</span>
-                            </label>
-                            <label class="checkbox">
-                                <input type="checkbox" name="password_require_special" {% if settings.password_require_special %}checked{% endif %}>
-                                <span>Require special characters</span>
-                            </label>
-                        </div>
-                    </div>
-                    
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label class="form-label">Minimum Password Length *</label>
-                            <input type="number" name="min_password_length" class="form-control" value="{{ settings.min_password_length|default:8 }}" min="6" max="32" required>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Password Expiry (days)</label>
-                            <input type="number" name="password_expiry_days" class="form-control" value="{{ settings.password_expiry_days|default:90 }}" min="0" max="365">
-                            <div class="form-help">Set to 0 for no expiry</div>
-                        </div>
-                    </div>
+                    <input type="hidden" class="setting-input hidden-roles-input" 
+                           data-original='["admin"]'
+                           value='["admin"]'>
+                    <div class="form-help">Roles that can access the system during maintenance</div>
                 </div>
             </div>
-            
-            <div class="form-actions">
-                <button type="submit" class="btn btn-primary">
-                    <i class="fas fa-save"></i> Save Security Settings
-                </button>
-            </div>
-        </form>
+        </div>
     </div>
 
-    <!-- User Settings -->
-    <div id="usersTab" class="settings-tab-content">
-        <form method="post" action="" class="settings-form">
-            {% csrf_token %}
-            <input type="hidden" name="settings_type" value="users">
-            
-            <div class="settings-section card">
-                <div class="settings-section-header">
-                    <h3><i class="fas fa-user-cog"></i> User Management</h3>
+    <!-- Upload Settings -->
+    <div id="uploadsTab" class="settings-tab-content">
+        <div class="settings-section card">
+            <div class="settings-section-header">
+                <h3><i class="fas fa-upload"></i> Upload Settings</h3>
+            </div>
+            <div class="settings-section-body">
+                <!-- MAX_UPLOAD_MB -->
+                <div class="form-group setting-item" data-key="MAX_UPLOAD_MB" data-type="int">
+                    <label class="form-label">Maximum Upload Size (MB)</label>
+                    <input type="number" 
+                           class="form-control setting-input" 
+                           data-original="{{ settings.MAX_UPLOAD_MB|default:10 }}"
+                           value="{{ settings.MAX_UPLOAD_MB|default:10 }}"
+                           min="1" max="100">
+                    <div class="form-help">Maximum file size allowed for uploads</div>
                 </div>
-                <div class="settings-section-body">
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label class="form-label">Default User Password *</label>
-                            <div class="password-input-group">
-                                <input type="password" id="defaultPassword" name="default_user_password" class="form-control" value="{{ settings.default_user_password|default:'password123' }}" required>
-                                <button type="button" class="btn btn-outline btn-sm" onclick="togglePassword('defaultPassword')">
-                                    <i class="fas fa-eye"></i>
-                                </button>
-                                <button type="button" class="btn btn-outline btn-sm" onclick="generatePassword('defaultPassword')">
-                                    <i class="fas fa-random"></i>
-                                </button>
-                            </div>
-                            <div class="form-help">Default password for new users</div>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Force Password Change</label>
-                            <select name="force_password_change" class="form-control">
-                                <option value="true" {% if settings.force_password_change %}selected{% endif %}>Yes, on first login</option>
-                                <option value="false" {% if not settings.force_password_change %}selected{% endif %}>No</option>
-                            </select>
-                        </div>
-                    </div>
-                    
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label class="form-label">Max Users per Page</label>
-                            <input type="number" name="users_per_page" class="form-control" value="{{ settings.users_per_page|default:50 }}" min="10" max="200">
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">User Registration</label>
-                            <select name="user_registration" class="form-control">
-                                <option value="enabled" {% if settings.user_registration == 'enabled' %}selected{% endif %}>Enabled</option>
-                                <option value="disabled" {% if settings.user_registration == 'disabled' %}selected{% endif %}>Disabled (Admin only)</option>
-                                <option value="invite_only" {% if settings.user_registration == 'invite_only' %}selected{% endif %}>Invite Only</option>
-                            </select>
-                        </div>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label class="form-label">Default User Role</label>
-                        <select name="default_user_role" class="form-control">
-                            <option value="student" {% if settings.default_user_role == 'student' %}selected{% endif %}>Student</option>
-                            <option value="staff" {% if settings.default_user_role == 'staff' %}selected{% endif %}>Staff</option>
-                            <option value="viewer" {% if settings.default_user_role == 'viewer' %}selected{% endif %}>Viewer</option>
-                        </select>
-                    </div>
+
+                <!-- ALLOWED_FILE_EXTENSIONS -->
+                <div class="form-group setting-item" data-key="ALLOWED_FILE_EXTENSIONS" data-type="str">
+                    <label class="form-label">Allowed File Extensions</label>
+                    <input type="text" 
+                           class="form-control setting-input" 
+                           data-original="{{ settings.ALLOWED_FILE_EXTENSIONS|default:'.pdf,.doc,.docx,.jpg,.jpeg,.png' }}"
+                           value="{{ settings.ALLOWED_FILE_EXTENSIONS|default:'.pdf,.doc,.docx,.jpg,.jpeg,.png' }}">
+                    <div class="form-help">Comma-separated list of allowed file extensions</div>
+                </div>
+
+                <!-- BLOCK_EXECUTABLE_UPLOADS -->
+                <div class="form-group setting-item" data-key="BLOCK_EXECUTABLE_UPLOADS" data-type="bool">
+                    <label class="checkbox">
+                        <input type="checkbox" 
+                               class="setting-input"
+                               data-original="{{ settings.BLOCK_EXECUTABLE_UPLOADS|default:'true' }}"
+                               {% if settings.BLOCK_EXECUTABLE_UPLOADS %}checked{% endif %}>
+                        <span>Block Executable File Uploads</span>
+                    </label>
+                    <div class="form-help">Prevent uploading of executable files (.exe, .bat, .sh, etc.)</div>
                 </div>
             </div>
-            
-            <div class="form-actions">
-                <button type="submit" class="btn btn-primary">
-                    <i class="fas fa-save"></i> Save User Settings
-                </button>
-            </div>
-        </form>
+        </div>
     </div>
 
     <!-- Email Settings -->
     <div id="emailTab" class="settings-tab-content">
-        <form method="post" action="" class="settings-form">
-            {% csrf_token %}
-            <input type="hidden" name="settings_type" value="email">
-            
-            <div class="settings-section card">
-                <div class="settings-section-header">
-                    <h3><i class="fas fa-at"></i> Email Configuration</h3>
+        <div class="settings-section card">
+            <div class="settings-section-header">
+                <h3><i class="fas fa-envelope"></i> Email Settings</h3>
+            </div>
+            <div class="settings-section-body">
+                <!-- EMAIL_ENABLED -->
+                <div class="form-group setting-item" data-key="EMAIL_ENABLED" data-type="bool">
+                    <label class="checkbox">
+                        <input type="checkbox" 
+                               class="setting-input"
+                               data-original="{{ settings.EMAIL_ENABLED|default:'false' }}"
+                               {% if settings.EMAIL_ENABLED %}checked{% endif %}>
+                        <span>Enable Email System</span>
+                    </label>
+                    <div class="form-help">Enable or disable the email system</div>
                 </div>
-                <div class="settings-section-body">
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label class="form-label">SMTP Host *</label>
-                            <input type="text" name="smtp_host" class="form-control" value="{{ settings.smtp_host|default:'smtp.gmail.com' }}" required>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">SMTP Port *</label>
-                            <input type="number" name="smtp_port" class="form-control" value="{{ settings.smtp_port|default:587 }}" required>
-                        </div>
-                    </div>
-                    
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label class="form-label">SMTP Username *</label>
-                            <input type="text" name="smtp_username" class="form-control" value="{{ settings.smtp_username|default:'' }}" required>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">SMTP Password</label>
-                            <div class="password-input-group">
-                                <input type="password" id="smtpPassword" name="smtp_password" class="form-control" value="{{ settings.smtp_password|default:'' }}">
-                                <button type="button" class="btn btn-outline btn-sm" onclick="togglePassword('smtpPassword')">
-                                    <i class="fas fa-eye"></i>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label class="form-label">From Email *</label>
-                            <input type="email" name="from_email" class="form-control" value="{{ settings.from_email|default:'noreply@university.edu' }}" required>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">From Name *</label>
-                            <input type="text" name="from_name" class="form-control" value="{{ settings.from_name|default:'University VLE' }}" required>
-                        </div>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label class="form-label">Email Security</label>
-                        <select name="smtp_security" class="form-control">
-                            <option value="tls" {% if settings.smtp_security == 'tls' %}selected{% endif %}>TLS</option>
-                            <option value="ssl" {% if settings.smtp_security == 'ssl' %}selected{% endif %}>SSL</option>
-                            <option value="none" {% if settings.smtp_security == 'none' %}selected{% endif %}>None</option>
-                        </select>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label class="form-label">Test Email Configuration</label>
-                        <div class="test-email-section">
-                            <input type="email" id="testEmail" class="form-control" placeholder="Enter email to test" style="flex: 1;">
-                            <button type="button" class="btn btn-outline" onclick="sendTestEmail()">
-                                <i class="fas fa-paper-plane"></i> Send Test Email
-                            </button>
-                        </div>
-                    </div>
+
+                <!-- EMAIL_PROVIDER -->
+                <div class="form-group setting-item" data-key="EMAIL_PROVIDER" data-type="str">
+                    <label class="form-label">Email Provider</label>
+                    <select class="form-control setting-input" 
+                            data-original="{{ settings.EMAIL_PROVIDER|default:'none' }}">
+                        <option value="none" {% if settings.EMAIL_PROVIDER == 'none' %}selected{% endif %}>None</option>
+                        <option value="smtp" {% if settings.EMAIL_PROVIDER == 'smtp' %}selected{% endif %}>SMTP</option>
+                        <option value="sendgrid" {% if settings.EMAIL_PROVIDER == 'sendgrid' %}selected{% endif %}>SendGrid</option>
+                        <option value="mailgun" {% if settings.EMAIL_PROVIDER == 'mailgun' %}selected{% endif %}>Mailgun</option>
+                    </select>
+                    <div class="form-help">Email service provider to use</div>
+                </div>
+
+                <!-- EMAIL_FROM_NAME -->
+                <div class="form-group setting-item" data-key="EMAIL_FROM_NAME" data-type="str">
+                    <label class="form-label">From Name</label>
+                    <input type="text" 
+                           class="form-control setting-input" 
+                           data-original="{{ settings.EMAIL_FROM_NAME|default:'UOV VLE' }}"
+                           value="{{ settings.EMAIL_FROM_NAME|default:'UOV VLE' }}">
+                    <div class="form-help">Display name for sent emails</div>
+                </div>
+
+                <!-- EMAIL_FROM_ADDRESS -->
+                <div class="form-group setting-item" data-key="EMAIL_FROM_ADDRESS" data-type="str">
+                    <label class="form-label">From Address</label>
+                    <input type="email" 
+                           class="form-control setting-input" 
+                           data-original="{{ settings.EMAIL_FROM_ADDRESS|default:'noreply@university.edu' }}"
+                           value="{{ settings.EMAIL_FROM_ADDRESS|default:'noreply@university.edu' }}">
+                    <div class="form-help">Email address for sent emails</div>
+                </div>
+
+                <!-- EMAIL_REPLY_TO -->
+                <div class="form-group setting-item" data-key="EMAIL_REPLY_TO" data-type="str">
+                    <label class="form-label">Reply-To Address</label>
+                    <input type="email" 
+                           class="form-control setting-input" 
+                           data-original="{{ settings.EMAIL_REPLY_TO|default:'' }}"
+                           value="{{ settings.EMAIL_REPLY_TO|default:'' }}">
+                    <div class="form-help">Reply-to email address (optional)</div>
+                </div>
+
+                <!-- EMAIL_FOOTER_TEXT -->
+                <div class="form-group setting-item" data-key="EMAIL_FOOTER_TEXT" data-type="str">
+                    <label class="form-label">Email Footer Text</label>
+                    <textarea class="form-control setting-input" 
+                              data-original="{{ settings.EMAIL_FOOTER_TEXT|default:'' }}">
+{{ settings.EMAIL_FOOTER_TEXT|default:'' }}</textarea>
+                    <div class="form-help">Text to include in email footer (optional)</div>
                 </div>
             </div>
-            
-            <div class="form-actions">
-                <button type="submit" class="btn btn-primary">
-                    <i class="fas fa-save"></i> Save Email Settings
-                </button>
-            </div>
-        </form>
+        </div>
     </div>
 
-    <!-- System Settings -->
-    <div id="systemTab" class="settings-tab-content">
-        <form method="post" action="" class="settings-form">
-            {% csrf_token %}
-            <input type="hidden" name="settings_type" value="system">
-            
-            <div class="settings-section card">
-                <div class="settings-section-header">
-                    <h3><i class="fas fa-server"></i> System Configuration</h3>
+    <!-- Security Settings -->
+    <div id="securityTab" class="settings-tab-content">
+        <div class="settings-section card">
+            <div class="settings-section-header">
+                <h3><i class="fas fa-shield-alt"></i> Security Settings</h3>
+            </div>
+            <div class="settings-section-body">
+                <!-- PASSWORD_RESET_ENABLED -->
+                <div class="form-group setting-item" data-key="PASSWORD_RESET_ENABLED" data-type="bool">
+                    <label class="checkbox">
+                        <input type="checkbox" 
+                               class="setting-input"
+                               data-original="{{ settings.PASSWORD_RESET_ENABLED|default:'false' }}"
+                               {% if settings.PASSWORD_RESET_ENABLED %}checked{% endif %}>
+                        <span>Enable Password Reset</span>
+                    </label>
+                    <div class="form-help">Allow users to reset their passwords via email</div>
                 </div>
-                <div class="settings-section-body">
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label class="form-label">Maintenance Mode</label>
-                            <select name="maintenance_mode" class="form-control">
-                                <option value="false" {% if not settings.maintenance_mode %}selected{% endif %}>Disabled</option>
-                                <option value="true" {% if settings.maintenance_mode %}selected{% endif %}>Enabled</option>
-                            </select>
-                            <div class="form-help">Enable to restrict access to admins only</div>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Debug Mode</label>
-                            <select name="debug_mode" class="form-control">
-                                <option value="false" {% if not settings.debug_mode %}selected{% endif %}>Disabled</option>
-                                <option value="true" {% if settings.debug_mode %}selected{% endif %}>Enabled</option>
-                            </select>
-                            <div class="form-help">Enable for development only</div>
-                        </div>
-                    </div>
-                    
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label class="form-label">Max Upload Size (MB) *</label>
-                            <input type="number" name="max_upload_size" class="form-control" value="{{ settings.max_upload_size|default:10 }}" min="1" max="100" required>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Allowed File Types</label>
-                            <input type="text" name="allowed_file_types" class="form-control" value="{{ settings.allowed_file_types|default:'.pdf,.doc,.docx,.jpg,.jpeg,.png' }}" placeholder=".pdf,.doc,.jpg,.png">
-                        </div>
-                    </div>
-                    
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label class="form-label">Backup Schedule</label>
-                            <select name="backup_schedule" class="form-control">
-                                <option value="daily" {% if settings.backup_schedule == 'daily' %}selected{% endif %}>Daily</option>
-                                <option value="weekly" {% if settings.backup_schedule == 'weekly' %}selected{% endif %}>Weekly</option>
-                                <option value="monthly" {% if settings.backup_schedule == 'monthly' %}selected{% endif %}>Monthly</option>
-                                <option value="manual" {% if settings.backup_schedule == 'manual' %}selected{% endif %}>Manual Only</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Backup Retention (days)</label>
-                            <input type="number" name="backup_retention_days" class="form-control" value="{{ settings.backup_retention_days|default:30 }}" min="1" max="365">
-                        </div>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label class="form-label">System Logs</label>
-                        <div class="checkbox-group">
-                            <label class="checkbox">
-                                <input type="checkbox" name="log_user_activity" {% if settings.log_user_activity %}checked{% endif %}>
-                                <span>Log user activity</span>
-                            </label>
-                            <label class="checkbox">
-                                <input type="checkbox" name="log_system_errors" {% if settings.log_system_errors %}checked{% endif %}>
-                                <span>Log system errors</span>
-                            </label>
-                            <label class="checkbox">
-                                <input type="checkbox" name="log_email_sent" {% if settings.log_email_sent %}checked{% endif %}>
-                                <span>Log email sent</span>
-                            </label>
-                        </div>
-                    </div>
+
+                <!-- RESET_TOKEN_EXPIRY_MIN -->
+                <div class="form-group setting-item" data-key="RESET_TOKEN_EXPIRY_MIN" data-type="int">
+                    <label class="form-label">Password Reset Token Expiry (minutes)</label>
+                    <input type="number" 
+                           class="form-control setting-input" 
+                           data-original="{{ settings.RESET_TOKEN_EXPIRY_MIN|default:30 }}"
+                           value="{{ settings.RESET_TOKEN_EXPIRY_MIN|default:30 }}"
+                           min="1" max="1440">
+                    <div class="form-help">How long password reset tokens remain valid</div>
+                </div>
+
+                <!-- RESET_LINK_BASE_URL -->
+                <div class="form-group setting-item" data-key="RESET_LINK_BASE_URL" data-type="str">
+                    <label class="form-label">Password Reset Link Base URL</label>
+                    <input type="text" 
+                           class="form-control setting-input" 
+                           data-original="{{ settings.RESET_LINK_BASE_URL|default:'' }}"
+                           value="{{ settings.RESET_LINK_BASE_URL|default:'' }}">
+                    <div class="form-help">Base URL for password reset links (leave empty for auto-detection)</div>
+                </div>
+
+                <!-- FORCE_PASSWORD_CHANGE_ON_FIRST_LOGIN -->
+                <div class="form-group setting-item" data-key="FORCE_PASSWORD_CHANGE_ON_FIRST_LOGIN" data-type="bool">
+                    <label class="checkbox">
+                        <input type="checkbox" 
+                               class="setting-input"
+                               data-original="{{ settings.FORCE_PASSWORD_CHANGE_ON_FIRST_LOGIN|default:'true' }}"
+                               {% if settings.FORCE_PASSWORD_CHANGE_ON_FIRST_LOGIN %}checked{% endif %}>
+                        <span>Force Password Change on First Login</span>
+                    </label>
+                    <div class="form-help">Require users to change their password on first login</div>
                 </div>
             </div>
-            
-            <div class="settings-section card" style="margin-top: 1.5rem;">
-                <div class="settings-section-header">
-                    <h3><i class="fas fa-exclamation-triangle"></i> System Actions</h3>
-                </div>
-                <div class="settings-section-body">
-                    <div class="danger-actions">
-                        <div class="danger-action-item">
-                            <h4>Clear System Cache</h4>
-                            <p>Clear all cached data to free up memory</p>
-                            <button type="button" class="btn btn-outline" onclick="clearSystemCache()">
-                                <i class="fas fa-broom"></i> Clear Cache
-                            </button>
-                        </div>
-                        
-                        <div class="danger-action-item">
-                            <h4>Run Database Backup</h4>
-                            <p>Create a manual backup of the database</p>
-                            <button type="button" class="btn btn-outline" onclick="runDatabaseBackup()">
-                                <i class="fas fa-database"></i> Backup Now
-                            </button>
-                        </div>
-                        
-                        <div class="danger-action-item">
-                            <h4>View System Logs</h4>
-                            <p>View and download system logs</p>
-                            <button type="button" class="btn btn-outline" onclick="viewSystemLogs()">
-                                <i class="fas fa-file-alt"></i> View Logs
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="form-actions">
-                <button type="submit" class="btn btn-primary">
-                    <i class="fas fa-save"></i> Save System Settings
-                </button>
-            </div>
-        </form>
+        </div>
     </div>
 </div>
 
@@ -450,6 +318,12 @@
 <div class="loading-overlay" id="loadingOverlay" style="display: none;">
     <div class="loading-spinner"></div>
     <div class="loading-text">Saving Settings...</div>
+</div>
+
+<!-- Toast Notification -->
+<div class="toast" id="toastNotification">
+    <i class="fas fa-check-circle"></i>
+    <span id="toastMessage">Settings saved successfully</span>
 </div>
 {% endblock %}
 
@@ -464,6 +338,14 @@
     /* Page Header */
     .page-header {
         margin-bottom: 1rem;
+    }
+
+    .header-content {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
     }
 
     .page-title {
@@ -566,20 +448,15 @@
     }
 
     /* Form Styling */
-    .settings-form {
-        display: flex;
-        flex-direction: column;
-        gap: 1.5rem;
-    }
-
-    .form-row {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-        gap: 1.5rem;
-    }
-
     .form-group {
         margin-bottom: 1.5rem;
+    }
+
+    .setting-item.setting-changed {
+        background: #f8f9ff;
+        padding: 1rem;
+        border-radius: 8px;
+        border-left: 4px solid #3b2fd4;
     }
 
     .form-label {
@@ -610,33 +487,13 @@
         margin-top: 0.25rem;
     }
 
-    /* Password Input Group */
-    .password-input-group {
-        display: flex;
-        gap: 0.5rem;
-    }
-
-    .password-input-group .form-control {
-        flex: 1;
-    }
-
-    .password-input-group .btn {
-        padding: 0.75rem;
-        min-width: 40px;
-    }
-
     /* Checkbox Group */
-    .checkbox-group {
-        display: flex;
-        flex-direction: column;
-        gap: 0.75rem;
-    }
-
     .checkbox {
         display: flex;
         align-items: center;
         gap: 0.75rem;
         cursor: pointer;
+        margin-bottom: 0.5rem;
     }
 
     .checkbox input[type="checkbox"] {
@@ -650,44 +507,17 @@
         color: var(--dark);
     }
 
-    /* Test Email Section */
-    .test-email-section {
+    /* Role Checkboxes */
+    .role-checkboxes {
         display: flex;
+        flex-wrap: wrap;
         gap: 1rem;
-        align-items: center;
-    }
-
-    /* Danger Actions */
-    .danger-actions {
-        display: flex;
-        flex-direction: column;
-        gap: 1.5rem;
-    }
-
-    .danger-action-item {
-        padding: 1rem;
-        background: #f8f9ff;
-        border-radius: 8px;
-        border-left: 4px solid #3b2fd4;
-    }
-
-    .danger-action-item h4 {
-        font-size: 1rem;
-        color: var(--dark);
         margin-bottom: 0.5rem;
     }
 
-    .danger-action-item p {
-        font-size: 0.9rem;
-        color: #666;
-        margin-bottom: 1rem;
-    }
-
-    /* Form Actions */
-    .form-actions {
-        display: flex;
-        justify-content: flex-end;
-        margin-top: 1rem;
+    /* Hidden input for roles */
+    .hidden-roles-input {
+        display: none;
     }
 
     /* Button Styling */
@@ -713,19 +543,11 @@
         box-shadow: 0 6px 16px rgba(59, 47, 212, 0.3);
     }
 
-    .btn-outline {
-        background: white;
-        color: #3b2fd4;
-        border: 1px solid #3b2fd4;
-    }
-
-    .btn-outline:hover {
-        background: #f8f9ff;
-    }
-
-    .btn-sm {
-        padding: 0.5rem 1rem;
-        font-size: 0.85rem;
+    .btn-primary:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+        transform: none !important;
+        box-shadow: none !important;
     }
 
     /* Loading Overlay */
@@ -763,12 +585,44 @@
         font-weight: 600;
     }
 
+    /* Toast Notification */
+    .toast {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        background: #10b981;
+        color: white;
+        padding: 1rem 1.5rem;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        z-index: 1000;
+        transform: translateY(100px);
+        opacity: 0;
+        transition: transform 0.3s ease, opacity 0.3s ease;
+    }
+
+    .toast.show {
+        transform: translateY(0);
+        opacity: 1;
+    }
+
+    .toast.error {
+        background: #ef4444;
+    }
+
+    .toast.warning {
+        background: #f59e0b;
+    }
+
+    .toast.info {
+        background: #3b82f6;
+    }
+
     /* Responsive */
     @media (max-width: 1024px) {
-        .form-row {
-            grid-template-columns: 1fr;
-        }
-        
         .settings-tabs {
             overflow-x: auto;
             white-space: nowrap;
@@ -778,6 +632,11 @@
             padding: 1rem;
             flex-shrink: 0;
         }
+        
+        .header-content {
+            flex-direction: column;
+            align-items: flex-start;
+        }
     }
 
     @media (max-width: 768px) {
@@ -785,23 +644,7 @@
             font-size: 1.5rem;
         }
         
-        .test-email-section {
-            flex-direction: column;
-        }
-        
-        .test-email-section .btn {
-            width: 100%;
-        }
-        
-        .password-input-group {
-            flex-direction: column;
-        }
-        
-        .password-input-group .btn {
-            width: 100%;
-        }
-        
-        .form-actions .btn {
+        .btn {
             width: 100%;
         }
     }
@@ -812,8 +655,8 @@
             padding: 1rem;
         }
         
-        .danger-action-item .btn {
-            width: 100%;
+        .role-checkboxes {
+            flex-direction: column;
         }
     }
 </style>
@@ -821,6 +664,470 @@
 
 {% block script %}
 <script>
+    class SettingsManager {
+        constructor() {
+            this.originalSettings = {};
+            this.currentSettings = {};
+            this.changedSettings = new Map();
+            this.isLoading = false;
+            this.updateInterval = null;
+            this.autoUpdateInterval = 30000; // 30 seconds
+            
+            this.init();
+        }
+        
+        init() {
+            this.loadInitialSettings();
+            this.setupEventListeners();
+            this.loadSettingsFromAPI();
+            this.setupAutoUpdate();
+        }
+        
+        loadInitialSettings() {
+            // Extract settings from data attributes
+            document.querySelectorAll('.setting-item').forEach(item => {
+                const key = item.dataset.key;
+                const type = item.dataset.type;
+                const input = this.getInputElement(item);
+                
+                if (input) {
+                    let originalValue;
+                    
+                    // Special handling for MAINTENANCE_ALLOWED_ROLES
+                    if (key === 'MAINTENANCE_ALLOWED_ROLES') {
+                        originalValue = this.getRolesFromCheckboxes();
+                    } else {
+                        originalValue = this.parseValue(input.dataset.original, type);
+                    }
+                    
+                    this.originalSettings[key] = originalValue;
+                    this.currentSettings[key] = originalValue;
+                }
+            });
+        }
+        
+        setupEventListeners() {
+            // Input change events
+            document.querySelectorAll('.setting-input').forEach(input => {
+                if (input.type === 'checkbox') {
+                    input.addEventListener('change', (e) => this.onSettingChange(e));
+                } else {
+                    input.addEventListener('input', (e) => this.onSettingChange(e));
+                }
+            });
+            
+            // Role checkboxes
+            document.querySelectorAll('.role-checkbox').forEach(checkbox => {
+                checkbox.addEventListener('change', (e) => this.onRoleCheckboxChange(e));
+            });
+            
+            // Save button
+            document.getElementById('saveAllChanges').addEventListener('click', () => this.saveChanges());
+        }
+        
+        onSettingChange(event) {
+            const input = event.target;
+            const item = input.closest('.setting-item');
+            if (!item) return;
+            
+            const key = item.dataset.key;
+            const type = item.dataset.type;
+            const newValue = this.getValueFromInput(input, type);
+            
+            this.updateSetting(key, newValue, item);
+        }
+        
+        onRoleCheckboxChange(event) {
+            const key = 'MAINTENANCE_ALLOWED_ROLES';
+            const newValue = this.getRolesFromCheckboxes();
+            const item = document.querySelector(`.setting-item[data-key="${key}"]`);
+            
+            if (item) {
+                this.updateSetting(key, newValue, item);
+            }
+        }
+        
+        getRolesFromCheckboxes() {
+            const checkboxes = document.querySelectorAll('.role-checkbox');
+            return Array.from(checkboxes)
+                .filter(cb => cb.checked)
+                .map(cb => cb.value);
+        }
+        
+        updateSetting(key, newValue, item) {
+            const originalValue = this.originalSettings[key];
+            
+            // Compare with original value
+            const hasChanged = JSON.stringify(newValue) !== JSON.stringify(originalValue);
+            
+            if (hasChanged) {
+                this.changedSettings.set(key, newValue);
+                this.currentSettings[key] = newValue;
+                
+                // Mark as changed in UI
+                item.classList.add('setting-changed');
+            } else {
+                this.changedSettings.delete(key);
+                this.currentSettings[key] = originalValue;
+                
+                // Remove changed mark
+                item.classList.remove('setting-changed');
+            }
+            
+            this.updateSaveButton();
+        }
+        
+        async loadSettingsFromAPI() {
+            try {
+                console.log('Fetching settings from API...');
+                const response = await fetch('/api/get-all-setting/');
+                
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    const errorMessage = errorData.detail || `HTTP ${response.status}: ${response.statusText}`;
+                    this.showToast(`Failed to load settings: ${errorMessage}`, 'error');
+                    return;
+                }
+                
+                const apiSettings = await response.json();
+                console.log('API settings received:', apiSettings);
+                
+                // Update UI with API values
+                this.updateUIFromAPISettings(apiSettings);
+                
+            } catch (error) {
+                console.error('Error loading settings from API:', error);
+                this.showToast('Network error: Failed to connect to server', 'error');
+            }
+        }
+        
+        updateUIFromAPISettings(apiSettings) {
+            let updatedCount = 0;
+            
+            Object.entries(apiSettings).forEach(([key, value]) => {
+                const item = document.querySelector(`.setting-item[data-key="${key}"]`);
+                if (item) {
+                    // Only update if not changed by user
+                    if (!this.changedSettings.has(key)) {
+                        const input = this.getInputElement(item);
+                        const type = item.dataset.type;
+                        
+                        // Parse and update value
+                        const parsedValue = this.parseValue(value, type);
+                        
+                        // Update input value
+                        this.setInputValue(input, parsedValue, type);
+                        
+                        // Update data-original attribute
+                        input.dataset.original = this.serializeValue(parsedValue, type);
+                        
+                        // Update original settings
+                        this.originalSettings[key] = parsedValue;
+                        this.currentSettings[key] = parsedValue;
+                        
+                        // Special handling for roles
+                        if (key === 'MAINTENANCE_ALLOWED_ROLES') {
+                            this.updateRoleCheckboxes(parsedValue);
+                        }
+                        
+                        updatedCount++;
+                        console.log(`Updated ${key} from API:`, parsedValue);
+                    }
+                }
+            });
+            
+            if (updatedCount > 0) {
+                console.log(`Updated ${updatedCount} settings from API`);
+                this.showToast(`Settings updated from server (${updatedCount} values)`, 'info');
+            }
+        }
+        
+        updateRoleCheckboxes(roles) {
+            document.querySelectorAll('.role-checkbox').forEach(checkbox => {
+                checkbox.checked = roles.includes(checkbox.value);
+            });
+        }
+        
+        async saveChanges() {
+            if (this.changedSettings.size === 0 || this.isLoading) return;
+            
+            this.isLoading = true;
+            const saveBtn = document.getElementById('saveAllChanges');
+            const originalText = saveBtn.innerHTML;
+            saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+            saveBtn.disabled = true;
+            
+            // Show loading
+            document.getElementById('loadingOverlay').style.display = 'flex';
+            
+            try {
+                // Create array of update promises
+                const updatePromises = Array.from(this.changedSettings.entries()).map(([key, value]) => {
+                    return this.updateSettingAPI(key, value);
+                });
+                
+                // Send updates in parallel
+                const results = await Promise.allSettled(updatePromises);
+                
+                // Check results
+                const successfulUpdates = [];
+                const failedUpdates = [];
+                
+                results.forEach((result, index) => {
+                    const key = Array.from(this.changedSettings.keys())[index];
+                    if (result.status === 'fulfilled') {
+                        successfulUpdates.push(key);
+                    } else {
+                        failedUpdates.push({
+                            key: key,
+                            error: result.reason
+                        });
+                    }
+                });
+                
+                if (failedUpdates.length === 0) {
+                    // Success - update original settings
+                    this.changedSettings.forEach((value, key) => {
+                        this.originalSettings[key] = value;
+                        
+                        // Remove changed mark
+                        const item = document.querySelector(`.setting-item[data-key="${key}"]`);
+                        if (item) {
+                            item.classList.remove('setting-changed');
+                        }
+                    });
+                    
+                    this.changedSettings.clear();
+                    this.updateSaveButton();
+                    
+                    // Show success message
+                    this.showToast(`${successfulUpdates.length} settings saved successfully`, 'success');
+                    
+                    // Refresh from API to get any server-side validations
+                    setTimeout(() => this.loadSettingsFromAPI(), 1000);
+                } else {
+                    // Some updates failed
+                    const errorMessages = failedUpdates.map(f => `${f.key}: ${f.error.message}`).join(', ');
+                    this.showToast(`Failed to save ${failedUpdates.length} settings: ${errorMessages}`, 'error');
+                    
+                    // Keep successful changes in changedSettings
+                    failedUpdates.forEach(failed => {
+                        // Failed ones stay in changedSettings
+                    });
+                    
+                    // Remove successful ones from changedSettings
+                    successfulUpdates.forEach(key => {
+                        this.changedSettings.delete(key);
+                        const item = document.querySelector(`.setting-item[data-key="${key}"]`);
+                        if (item) {
+                            item.classList.remove('setting-changed');
+                        }
+                    });
+                    
+                    this.updateSaveButton();
+                }
+                
+            } catch (error) {
+                console.error('Error saving settings:', error);
+                this.showToast(`Error saving settings: ${error.message}`, 'error');
+            } finally {
+                this.isLoading = false;
+                saveBtn.innerHTML = originalText;
+                saveBtn.disabled = false;
+                document.getElementById('loadingOverlay').style.display = 'none';
+            }
+        }
+        
+        async updateSettingAPI(key, value) {
+            const csrfToken = this.getCSRFToken();
+            
+            const response = await fetch('/api/update-setting/', {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken
+                },
+                body: JSON.stringify({
+                    key: key,
+                    value: value
+                })
+            });
+            
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                const errorMessage = errorData.detail || `HTTP ${response.status}: ${response.statusText}`;
+                throw new Error(errorMessage);
+            }
+            
+            return response.json();
+        }
+        
+        updateSaveButton() {
+            const saveBtn = document.getElementById('saveAllChanges');
+            if (this.changedSettings.size > 0) {
+                saveBtn.style.display = 'flex';
+                saveBtn.innerHTML = `<i class="fas fa-save"></i> Save ${this.changedSettings.size} Change(s)`;
+            } else {
+                saveBtn.style.display = 'none';
+            }
+        }
+        
+        // Helper methods
+        getInputElement(item) {
+            return item.querySelector('.setting-input');
+        }
+        
+        getValueFromInput(input, type) {
+            switch (type) {
+                case 'bool':
+                    return input.type === 'checkbox' ? input.checked : input.value === 'true';
+                case 'int':
+                    return parseInt(input.value) || 0;
+                case 'list':
+                    if (input.classList.contains('hidden-roles-input')) {
+                        return this.getRolesFromCheckboxes();
+                    }
+                    return input.value ? input.value.split(',') : [];
+                default:
+                    return input.value;
+            }
+        }
+        
+        setInputValue(input, value, type) {
+            switch (type) {
+                case 'bool':
+                    if (input.type === 'checkbox') {
+                        input.checked = value;
+                    } else {
+                        input.value = value ? 'true' : 'false';
+                    }
+                    break;
+                case 'int':
+                    input.value = parseInt(value) || 0;
+                    break;
+                case 'list':
+                    if (input.type === 'hidden') {
+                        input.value = JSON.stringify(value || []);
+                    } else if (input.tagName === 'SELECT') {
+                        input.value = value;
+                    }
+                    break;
+                default:
+                    if (input.tagName === 'SELECT') {
+                        input.value = value;
+                    } else if (input.tagName === 'TEXTAREA') {
+                        input.value = value || '';
+                    } else {
+                        input.value = value || '';
+                    }
+            }
+        }
+        
+        parseValue(value, type) {
+            if (value === undefined || value === null) {
+                switch (type) {
+                    case 'bool': return false;
+                    case 'int': return 0;
+                    case 'list': return [];
+                    default: return '';
+                }
+            }
+            
+            switch (type) {
+                case 'bool':
+                    // Handle string values like 'true', 'false'
+                    if (typeof value === 'string') {
+                        return value.toLowerCase() === 'true';
+                    }
+                    return Boolean(value);
+                case 'int':
+                    return parseInt(value) || 0;
+                case 'list':
+                    if (typeof value === 'string') {
+                        try {
+                            return JSON.parse(value);
+                        } catch {
+                            return value ? value.split(',') : [];
+                        }
+                    }
+                    return Array.isArray(value) ? value : [];
+                default:
+                    return String(value);
+            }
+        }
+        
+        serializeValue(value, type) {
+            switch (type) {
+                case 'bool':
+                    return value ? 'true' : 'false';
+                case 'list':
+                    return JSON.stringify(value || []);
+                default:
+                    return String(value || '');
+            }
+        }
+        
+        getCSRFToken() {
+            // Try to get CSRF token from cookie
+            const name = 'csrftoken';
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+        
+        showToast(message, type = 'success') {
+            const toast = document.getElementById('toastNotification');
+            const toastMessage = document.getElementById('toastMessage');
+            
+            toastMessage.textContent = message;
+            toast.className = `toast ${type}`;
+            
+            // Clear any existing timeout
+            if (toast.timeoutId) {
+                clearTimeout(toast.timeoutId);
+            }
+            
+            // Show toast
+            toast.classList.add('show');
+            
+            // Auto-hide after 5 seconds for errors, 3 seconds for others
+            const hideTime = type === 'error' ? 5000 : 3000;
+            toast.timeoutId = setTimeout(() => {
+                toast.classList.remove('show');
+            }, hideTime);
+        }
+        
+        setupAutoUpdate() {
+            // Clear any existing interval
+            if (this.updateInterval) {
+                clearInterval(this.updateInterval);
+            }
+            
+            // Set up new interval
+            this.updateInterval = setInterval(() => {
+                this.loadSettingsFromAPI();
+            }, this.autoUpdateInterval);
+            
+            console.log('Auto-update interval set for every', this.autoUpdateInterval / 1000, 'seconds');
+        }
+        
+        cleanup() {
+            if (this.updateInterval) {
+                clearInterval(this.updateInterval);
+                this.updateInterval = null;
+            }
+        }
+    }
+    
     // Tab switching
     function switchSettingsTab(tabName) {
         // Hide all tabs
@@ -840,155 +1147,21 @@
         document.querySelector(`.tab[onclick*="${tabName}"]`).classList.add('active');
     }
     
-    // Password visibility toggle
-    function togglePassword(inputId) {
-        const input = document.getElementById(inputId);
-        const button = input.nextElementSibling;
-        const icon = button.querySelector('i');
-        
-        if (input.type === 'password') {
-            input.type = 'text';
-            icon.classList.remove('fa-eye');
-            icon.classList.add('fa-eye-slash');
-        } else {
-            input.type = 'password';
-            icon.classList.remove('fa-eye-slash');
-            icon.classList.add('fa-eye');
-        }
-    }
-    
-    // Generate random password
-    function generatePassword(inputId) {
-        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*';
-        let password = '';
-        for (let i = 0; i < 12; i++) {
-            password += chars.charAt(Math.floor(Math.random() * chars.length));
-        }
-        document.getElementById(inputId).value = password;
-    }
-    
-    // Show loading overlay
-    function showLoading() {
-        document.getElementById('loadingOverlay').style.display = 'flex';
-    }
-    
-    function hideLoading() {
-        document.getElementById('loadingOverlay').style.display = 'none';
-    }
-    
-    // Form submission handling
-    document.querySelectorAll('.settings-form').forEach(form => {
-        form.addEventListener('submit', function(e) {
-            showLoading();
-            
-            // Optional: Add validation here
-            const submitBtn = this.querySelector('button[type="submit"]');
-            const originalText = submitBtn.innerHTML;
-            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
-            submitBtn.disabled = true;
-            
-            // Form will submit normally to Django
-        });
-    });
-    
-    // System Actions
-    function clearSystemCache() {
-        if (confirm('Are you sure you want to clear the system cache?')) {
-            showLoading();
-            fetch('/dashboard/admin/clear-cache/', {
-                method: 'POST',
-                headers: {
-                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
-                    'Content-Type': 'application/json'
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                hideLoading();
-                if (data.success) {
-                    alert('System cache cleared successfully!');
-                } else {
-                    alert('Error: ' + data.error);
-                }
-            })
-            .catch(error => {
-                hideLoading();
-                alert('Error clearing cache');
-            });
-        }
-    }
-    
-    function runDatabaseBackup() {
-        if (confirm('Create a database backup now?')) {
-            showLoading();
-            fetch('/dashboard/admin/backup-database/', {
-                method: 'POST',
-                headers: {
-                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
-                    'Content-Type': 'application/json'
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                hideLoading();
-                if (data.success) {
-                    alert('Database backup completed successfully!');
-                } else {
-                    alert('Error: ' + data.error);
-                }
-            })
-            .catch(error => {
-                hideLoading();
-                alert('Error creating backup');
-            });
-        }
-    }
-    
-    function viewSystemLogs() {
-        window.open('/dashboard/admin/view-logs/', '_blank');
-    }
-    
-    function sendTestEmail() {
-        const email = document.getElementById('testEmail').value;
-        
-        if (!email || !validateEmail(email)) {
-            alert('Please enter a valid email address');
-            return;
-        }
-        
-        showLoading();
-        fetch('/dashboard/admin/send-test-email/', {
-            method: 'POST',
-            headers: {
-                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ email: email })
-        })
-        .then(response => response.json())
-        .then(data => {
-            hideLoading();
-            if (data.success) {
-                alert('Test email sent successfully!');
-            } else {
-                alert('Error: ' + data.error);
-            }
-        })
-        .catch(error => {
-            hideLoading();
-            alert('Error sending test email');
-        });
-    }
-    
-    function validateEmail(email) {
-        const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        return re.test(email);
-    }
-    
     // Initialize
     document.addEventListener('DOMContentLoaded', function() {
+        console.log('Initializing Settings Manager...');
+        // Initialize settings manager
+        window.settingsManager = new SettingsManager();
+        
         // Initialize first tab as active
         switchSettingsTab('general');
+        
+        // Clean up on page unload
+        window.addEventListener('beforeunload', () => {
+            if (window.settingsManager) {
+                window.settingsManager.cleanup();
+            }
+        });
     });
 </script>
 {% endblock %}

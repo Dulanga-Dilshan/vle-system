@@ -1,9 +1,8 @@
-{% comment %} admin_navigation.html {% endcomment %}
 <aside class="sidebar">
     <div class="sidebar-header">
         <div class="logo">
             <i class="fas fa-university"></i>
-            <span class="logo-text">University VLE</span>
+            <span class="logo-text" id="systemName">{{ settings.SYSTEM_NAME|default:"University VLE" }}</span>
             <span class="logo-badge">Admin</span>
         </div>
         <button class="sidebar-toggle" id="sidebarToggle">
@@ -184,7 +183,7 @@
         background: linear-gradient(135deg, var(--primary), var(--secondary));
         display: flex;
         align-items: center;
-        justify-content: center;
+            justify-content: center;
         font-size: 1.2rem;
         font-weight: 600;
         color: white;
@@ -321,7 +320,32 @@
     document.addEventListener('DOMContentLoaded', function() {
         const sidebarToggle = document.getElementById('sidebarToggle');
         const sidebar = document.querySelector('.sidebar');
+        const systemNameElement = document.getElementById('systemName');
         
+        // Function to fetch and update system name
+        async function updateSystemName() {
+            try {
+                const response = await fetch('/api/get-setting/SYSTEM_NAME/');
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.value && data.value !== systemNameElement.textContent) {
+                        systemNameElement.textContent = data.value;
+                        console.log(data.value);
+                    }
+                }
+            } catch (error) {
+                console.error('Error updating system name:', error);
+                // Keep the current value if API fails
+            }
+        }
+        
+        // Update system name every 30 seconds
+        setInterval(updateSystemName, 30000);
+        
+        // Initial update after page load
+        setTimeout(updateSystemName, 1000);
+        
+        // Sidebar toggle functionality
         sidebarToggle.addEventListener('click', function() {
             sidebar.classList.toggle('active');
         });
