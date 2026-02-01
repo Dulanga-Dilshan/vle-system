@@ -163,3 +163,12 @@ SETTINGS_SCHEMA = {
         "rules": {},
     },
 }
+
+TYPE_MAP = {
+    "str": str,
+    "int": int,
+    "bool": bool,
+    "float": float,
+    "list": list,
+    "dict": dict,
+}

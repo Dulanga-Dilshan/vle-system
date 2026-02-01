@@ -299,11 +299,13 @@ def get_all_settings(request):
     return response.Response(get_all_setting(),status=status.HTTP_200_OK)
 
 
-@api_view(['PATCH'])
+@api_view(['PUT','PATCH'])
 @permission_classes([permissions.IsSuperUser])
 def update_settings(request):
+    print(request.data)
     #update_setting(key=request.data.key,value=request.data.value)
-    return response.Response({'detail':f"setting {'key'} dosn't exsits"},status=status.HTTP_406_NOT_ACCEPTABLE)
+    update_setting('SYSTEM_NAME','test')
+    return response.Response({'detail':f"setting {'huth'} dosn't exsits"},status=status.HTTP_400_BAD_REQUEST)
 
 
 

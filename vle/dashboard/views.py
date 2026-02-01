@@ -271,6 +271,7 @@ def system_state(request):
 
 
 def system_settings(request):
-    return render(request,'dashboard/admin/system_settings.html')
+
+    return render(request,'dashboard/admin/system_settings.html',{})
 
 
