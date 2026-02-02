@@ -9,6 +9,13 @@ class IsSuperUser(BasePermission):
     def has_permission(self, request, view):
         return bool(request.user and request.user.is_superuser)
     
+class IsAdmin(BasePermission):
+    message = 'no permissions'
+
+    def has_permission(self, request, view):
+        return bool(request.user and request.user.is_staff)
+
+    
 class IsFacultyAdminstrator(BasePermission):
     message = 'unotherized'
 

@@ -29,14 +29,7 @@ ALLOWED_HOSTS = []
 
 AUTH_USER_MODEL = 'Users.User'
 
-INACTIVITY_LOGOUT_TIME = 60 * 60 * 6 # 6 HOURS
-
-SESSION_EXPIRE = 60 * 60 * 24 * 2 # 2 DAYS 
-
-MAX_IMAGE_SIZE = 1024 * 1024 * 5 #5MB
-
 DEFAULT_USER_PASSWORD = 'Abc@123'
-
 
 # Application definition
 
@@ -69,6 +62,7 @@ MIDDLEWARE = [
     'Users.middleware.UpdateLastActivityMiddleware',
     'Users.middleware.AutoLogoutMiddleware',
     'config.middleware.SyncSettingsMiddleware',
+    'Users.middleware.CheckMaintainModeMiddleware',
 
 ]
 

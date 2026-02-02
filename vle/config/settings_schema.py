@@ -57,7 +57,7 @@ SETTINGS_SCHEMA = {
         "type": "list",
         "rules": {
             "item_type": "str",
-            "choices": ["admin", "staff", "lecturer", "student"],
+            "choices": ["admin", "staff", "lecturer"],
             "unique_items": True,
             "min_items": 0,
             "max_items": 10,
@@ -162,6 +162,43 @@ SETTINGS_SCHEMA = {
         "type": "bool",
         "rules": {},
     },
+
+    "INACTIVITY_LOGOUT_TIME":{
+        "default":21600, #6 HOURS
+        "type":'int',
+        "rules": {
+            "min": 3600, #1 hour
+            "max": 2592000,#30 day
+        },
+    },
+
+    "SESSION_EXPIRE":{
+        "default":172800,#2 days
+        "type":'int',
+        "rules": {
+            "min": 86400,# day
+            "max": 7776000,#3 months
+        },
+    },
+
+    "ALLOW_REGISTRATION": {
+        "default": True,
+        "type": "bool",
+        "rules": {},
+    },
+
+    "CONTACT_EMAIL": {
+        "default": "contact@university.edu",
+        "type": "str",
+        "rules": {
+            "min_length": 5,
+            "max_length": 254,
+            "format": "email",
+        },
+    },
+
+
+    
 }
 
 TYPE_MAP = {

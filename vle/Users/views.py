@@ -1,14 +1,13 @@
 from django.shortcuts import render,HttpResponse,redirect
 from .models import User,StudentRegistretionRequest,StaffRegistretionRequest
 from django.contrib.auth import authenticate,login,logout
-from django.conf import settings
 from university.models import Faculty,Department
 from django.db.models import Q
-from django.db import IntegrityError
 from django.http import JsonResponse
 from django.core.validators import validate_email,validate_image_file_extension
 from django.core.exceptions import ValidationError
 from PIL import Image
+from config.config import get_setting
 
 
 
@@ -28,6 +27,9 @@ def test(request):
 
 
 def login_user(request):
+    if request.user.is_authenticated:
+        return redirect('dashboard:route')
+    
     if request.method == "POST":
         username = request.POST.get('username')
         password = request.POST.get('password')
@@ -36,13 +38,23 @@ def login_user(request):
         except:
             return render(request,"Users/login.html",{'error':'wrong username','errno':'1' })
         
+        if not user.is_active:
+            return render(request,"Users/login.html",{'error':f'User Account is Suspended. Contact System Admin at {get_setting('CONTACT_EMAIL')}'})
+        
+        if get_setting("MAINTENANCE_MODE") is True:
+            if user.role not in get_setting("MAINTENANCE_ALLOWED_ROLES"):
+                return render(request,"Users/login.html",{'error':"Not Allowed During MAINTENANCE_MODE"})
+            
+            if not user.is_staff:
+                return render(request,"Users/login.html",{'error':"Not Allowed During MAINTENANCE_MODE"})
+
         user = authenticate(request,username=username,password=password)
 
         if user is not None:
             login(request,user) 
 
             if request.POST.get('remember_me')=='1':
-                request.session.set_expiry(getattr(settings, 'SESSION_EXPIRE', 60 * 60 * 24 * 1))
+                request.session.set_expiry(get_setting("SESSION_EXPIRE"))
             else:
                 request.session.set_expiry(0)
 
@@ -59,6 +71,12 @@ def logout_user(request):
     return redirect('Users:login')
 
 def register_user(request):
+    if request.user.is_authenticated:
+        return redirect('dashboard:route')
+    
+    if not get_setting('ALLOW_REGISTRATION'):
+        return render(request,"Users/login.html",{'error':'Registration not Allowed at the Moment'})
+    
     faculties  = Faculty.objects.all()
     departments = Department.objects.all()
     if request.method == 'POST':
@@ -84,9 +102,6 @@ def register_user(request):
         except ValidationError:
             errors['email']="invalid email"
 
-
-
-
         if errors:
             return render(request,"Users/register.html",{'faculties':faculties,'departments':departments,'errors':errors})
         
@@ -109,7 +124,7 @@ def register_user(request):
             id_img = request.FILES.get('idImg')
             if id_img:
                 validate_image_file_extension(id_img)
-                max_size = getattr(settings, 'MAX_IMAGE_SIZE',1024*1024*5)
+                max_size = get_setting('MAX_UPLOAD_MB')
                 if id_img.size > max_size:
                     return JsonResponse({'error':f'loo large img (max size:{max_size})'})
                 try:

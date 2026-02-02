@@ -71,6 +71,17 @@
                     <div class="form-help">Optional tagline or subtitle</div>
                 </div>
 
+                <!-- ALLOW_REGISTRATION -->
+                <div class="form-group setting-item" data-key="ALLOW_REGISTRATION" data-type="bool">
+                    <label class="checkbox">
+                        <input type="checkbox" 
+                               class="setting-input"
+                               {% if settings.ALLOW_REGISTRATION %}checked{% endif %}>
+                        <span>Allow User Registration</span>
+                    </label>
+                    <div class="form-help">Allow new users to register accounts on the platform now {{settings.ALLOW_REGISTRATION}}</div>
+                </div>
+
                 <!-- USERS_PER_PAGE -->
                 <div class="form-group setting-item" data-key="USERS_PER_PAGE" data-type="int">
                     <label class="form-label">Users Per Page</label>
@@ -121,12 +132,7 @@
                         <label class="checkbox">
                             <input type="checkbox" value="staff" class="role-checkbox"
                                    {% if 'staff' in settings.MAINTENANCE_ALLOWED_ROLES %}checked{% endif %}>
-                            <span>Staff</span>
-                        </label>
-                        <label class="checkbox">
-                            <input type="checkbox" value="instructor" class="role-checkbox"
-                                   {% if 'instructor' in settings.MAINTENANCE_ALLOWED_ROLES %}checked{% endif %}>
-                            <span>Instructor</span>
+                            <span>Staff Admin</span>
                         </label>
                     </div>
                     <div class="form-help">Roles that can access the system during maintenance</div>
@@ -223,6 +229,17 @@
                     <div class="form-help">Email address for sent emails</div>
                 </div>
 
+                <!-- CONTACT_EMAIL -->
+                <div class="form-group setting-item" data-key="CONTACT_EMAIL" data-type="str">
+                    <label class="form-label">Contact Email</label>
+                    <input type="email" 
+                           class="form-control setting-input" 
+                           value="{{ settings.CONTACT_EMAIL|default:'admin@example.com' }}"
+                           pattern="[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$"
+                           maxlength="254">
+                    <div class="form-help">Email address for user inquiries and support requests</div>
+                </div>
+
                 <!-- EMAIL_REPLY_TO -->
                 <div class="form-group setting-item" data-key="EMAIL_REPLY_TO" data-type="str">
                     <label class="form-label">Reply-To Address</label>
@@ -288,6 +305,60 @@
                         <span>Force Password Change on First Login</span>
                     </label>
                     <div class="form-help">Require users to change their password on first login</div>
+                </div>
+
+                <!-- INACTIVITY_LOGOUT_TIME -->
+                <div class="form-group setting-item" data-key="INACTIVITY_LOGOUT_TIME" data-type="int">
+                    <label class="form-label">Inactivity Logout Time</label>
+                    <div class="time-input-group">
+                        <input type="number" 
+                               class="form-control setting-input time-input" 
+                               value="{{ settings.INACTIVITY_LOGOUT_TIME|default:21600 }}"
+                               min="3600" max="2592000" step="3600">
+                        <div class="time-unit-selector">
+                            <select class="time-unit-select" data-target="INACTIVITY_LOGOUT_TIME">
+                                <option value="seconds">Seconds</option>
+                                <option value="minutes">Minutes</option>
+                                <option value="hours">Hours</option>
+                                <option value="days">Days</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="time-description" id="INACTIVITY_LOGOUT_TIME_desc">
+                        <i class="fas fa-info-circle"></i>
+                        <span>Currently: 6 hours (21600 seconds)</span>
+                    </div>
+                    <div class="form-help">
+                        Time of inactivity after which user is automatically logged out. 
+                        Range: 1 hour (3600 seconds) to 30 days (2592000 seconds)
+                    </div>
+                </div>
+
+                <!-- SESSION_EXPIRE -->
+                <div class="form-group setting-item" data-key="SESSION_EXPIRE" data-type="int">
+                    <label class="form-label">Session Expiry Time</label>
+                    <div class="time-input-group">
+                        <input type="number" 
+                               class="form-control setting-input time-input" 
+                               value="{{ settings.SESSION_EXPIRE|default:172800 }}"
+                               min="86400" max="7776000" step="86400">
+                        <div class="time-unit-selector">
+                            <select class="time-unit-select" data-target="SESSION_EXPIRE">
+                                <option value="seconds">Seconds</option>
+                                <option value="minutes">Minutes</option>
+                                <option value="hours">Hours</option>
+                                <option value="days">Days</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="time-description" id="SESSION_EXPIRE_desc">
+                        <i class="fas fa-info-circle"></i>
+                        <span>Currently: 2 days (172800 seconds)</span>
+                    </div>
+                    <div class="form-help">
+                        Maximum session lifetime regardless of activity.
+                        Range: 1 day (86400 seconds) to 90 days (7776000 seconds)
+                    </div>
                 </div>
             </div>
         </div>
@@ -459,6 +530,14 @@
         box-shadow: 0 0 0 3px rgba(59, 47, 212, 0.1);
     }
 
+    .form-control:invalid {
+        border-color: #ef4444;
+    }
+
+    .form-control:invalid:focus {
+        box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+    }
+
     .form-help {
         font-size: 0.85rem;
         color: #666;
@@ -489,6 +568,58 @@
         flex-wrap: wrap;
         gap: 1rem;
         margin-bottom: 0.5rem;
+    }
+
+    /* Time Input Styles */
+    .time-input-group {
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+    }
+
+    .time-input-group .time-input {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .time-unit-selector {
+        min-width: 120px;
+    }
+
+    .time-unit-select {
+        width: 100%;
+        padding: 0.75rem 1rem;
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        font-size: 0.95rem;
+        background: white;
+        cursor: pointer;
+    }
+
+    .time-unit-select:focus {
+        outline: none;
+        border-color: #3b2fd4;
+        box-shadow: 0 0 0 3px rgba(59, 47, 212, 0.1);
+    }
+
+    .time-description {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-top: 0.5rem;
+        padding: 0.5rem 0.75rem;
+        background: #f8f9ff;
+        border-radius: 6px;
+        font-size: 0.85rem;
+        color: #3b2fd4;
+    }
+
+    .time-description i {
+        font-size: 0.9rem;
+    }
+
+    .time-description span {
+        font-weight: 500;
     }
 
     .btn {
@@ -600,6 +731,15 @@
             flex-direction: column;
             align-items: flex-start;
         }
+        
+        .time-input-group {
+            flex-direction: column;
+            align-items: stretch;
+        }
+        
+        .time-unit-selector {
+            min-width: 100%;
+        }
     }
 
     @media (max-width: 768px) {
@@ -642,6 +782,8 @@
             // Get initial values from Django template context
             this.captureInitialValues();
             this.setupEventListeners();
+            this.setupTimeUnitConverters();
+            this.setupEmailValidation();
         }
         
         captureInitialValues() {
@@ -653,6 +795,10 @@
                 
                 if (input) {
                     this.originalValues[key] = this.getValueFromInput(input, type);
+                    // Update time descriptions
+                    if (key === 'INACTIVITY_LOGOUT_TIME' || key === 'SESSION_EXPIRE') {
+                        this.updateTimeDescription(key, this.originalValues[key]);
+                    }
                 }
             });
             
@@ -674,8 +820,75 @@
                 checkbox.addEventListener('change', (e) => this.onRoleCheckboxChange(e));
             });
             
+            // Listen for time unit selector changes
+            document.querySelectorAll('.time-unit-select').forEach(select => {
+                select.addEventListener('change', (e) => this.onTimeUnitChange(e));
+            });
+            
             // Save button
             document.getElementById('saveAllChanges').addEventListener('click', () => this.saveAllChanges());
+        }
+        
+        setupTimeUnitConverters() {
+            // Initialize time unit selectors
+            document.querySelectorAll('.time-unit-select').forEach(select => {
+                const targetKey = select.dataset.target;
+                const input = document.querySelector(`.setting-item[data-key="${targetKey}"] .time-input`);
+                if (input) {
+                    // Update description initially
+                    this.updateTimeDescription(targetKey, parseFloat(input.value) || 0);
+                }
+            });
+        }
+        
+        setupEmailValidation() {
+            // Add email validation feedback
+            const contactEmailInput = document.querySelector('.setting-item[data-key="CONTACT_EMAIL"] .setting-input');
+            if (contactEmailInput) {
+                contactEmailInput.addEventListener('input', (e) => {
+                    this.validateEmailField(e.target);
+                });
+                contactEmailInput.addEventListener('blur', (e) => {
+                    this.validateEmailField(e.target);
+                });
+            }
+        }
+        
+        validateEmailField(input) {
+            const value = input.value.trim();
+            const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+            const isValid = value === '' || emailRegex.test(value);
+            
+            if (!isValid && value) {
+                input.classList.add('is-invalid');
+                this.showFieldError(input, 'Please enter a valid email address');
+            } else {
+                input.classList.remove('is-invalid');
+                this.hideFieldError(input);
+            }
+        }
+        
+        showFieldError(input, message) {
+            // Remove existing error message
+            this.hideFieldError(input);
+            
+            // Create error message element
+            const errorElement = document.createElement('div');
+            errorElement.className = 'field-error';
+            errorElement.style.color = '#ef4444';
+            errorElement.style.fontSize = '0.85rem';
+            errorElement.style.marginTop = '0.25rem';
+            errorElement.textContent = message;
+            
+            // Insert after input
+            input.parentNode.insertBefore(errorElement, input.nextSibling);
+        }
+        
+        hideFieldError(input) {
+            const existingError = input.parentNode.querySelector('.field-error');
+            if (existingError) {
+                existingError.remove();
+            }
         }
         
         onSettingChange(event) {
@@ -685,7 +898,29 @@
             
             const key = item.dataset.key;
             const type = item.dataset.type;
-            const newValue = this.getValueFromInput(input, type);
+            let newValue = this.getValueFromInput(input, type);
+            
+            // Validate CONTACT_EMAIL format
+            if (key === 'CONTACT_EMAIL') {
+                const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+                if (newValue && !emailRegex.test(newValue)) {
+                    // Don't track invalid emails as changed
+                    return;
+                }
+            }
+            
+            // Handle time inputs
+            if (key === 'INACTIVITY_LOGOUT_TIME' || key === 'SESSION_EXPIRE') {
+                // Update time description
+                this.updateTimeDescription(key, newValue);
+                
+                // Convert to seconds if using different unit
+                const unitSelector = item.querySelector('.time-unit-select');
+                if (unitSelector && unitSelector.value !== 'seconds') {
+                    newValue = this.convertToSeconds(newValue, unitSelector.value);
+                }
+            }
+            
             const originalValue = this.originalValues[key];
             
             // Check if value has changed
@@ -700,6 +935,87 @@
             }
             
             this.updateSaveButton();
+        }
+        
+        onTimeUnitChange(event) {
+            const select = event.target;
+            const targetKey = select.dataset.target;
+            const item = document.querySelector(`.setting-item[data-key="${targetKey}"]`);
+            const input = item.querySelector('.time-input');
+            const currentValue = parseFloat(input.value) || 0;
+            
+            // Convert from current unit to new unit
+            const fromUnit = select.previousUnit || 'seconds';
+            const toUnit = select.value;
+            
+            // First convert to seconds
+            let valueInSeconds = this.convertToSeconds(currentValue, fromUnit);
+            // Then convert to new unit
+            let newValue = this.convertFromSeconds(valueInSeconds, toUnit);
+            
+            // Update input value and step
+            input.value = Math.round(newValue * 100) / 100;
+            input.step = toUnit === 'seconds' ? '3600' : 
+                        toUnit === 'minutes' ? '60' : 
+                        toUnit === 'hours' ? '1' : '1';
+            
+            // Store previous unit for next conversion
+            select.previousUnit = toUnit;
+            
+            // Update description in seconds
+            this.updateTimeDescription(targetKey, valueInSeconds);
+            
+            // Trigger change event
+            input.dispatchEvent(new Event('input'));
+        }
+        
+        convertToSeconds(value, unit) {
+            switch(unit) {
+                case 'minutes': return Math.round(value * 60);
+                case 'hours': return Math.round(value * 3600);
+                case 'days': return Math.round(value * 86400);
+                default: return Math.round(value);
+            }
+        }
+        
+        convertFromSeconds(seconds, unit) {
+            switch(unit) {
+                case 'minutes': return seconds / 60;
+                case 'hours': return seconds / 3600;
+                case 'days': return seconds / 86400;
+                default: return seconds;
+            }
+        }
+        
+        formatTimeDescription(seconds) {
+            if (seconds < 60) {
+                return `${seconds} seconds`;
+            } else if (seconds < 3600) {
+                const minutes = Math.floor(seconds / 60);
+                return `${minutes} minute${minutes !== 1 ? 's' : ''} (${seconds} seconds)`;
+            } else if (seconds < 86400) {
+                const hours = Math.floor(seconds / 3600);
+                const remainingMinutes = Math.floor((seconds % 3600) / 60);
+                if (remainingMinutes > 0) {
+                    return `${hours} hour${hours !== 1 ? 's' : ''} ${remainingMinutes} minute${remainingMinutes !== 1 ? 's' : ''} (${seconds} seconds)`;
+                }
+                return `${hours} hour${hours !== 1 ? 's' : ''} (${seconds} seconds)`;
+            } else {
+                const days = Math.floor(seconds / 86400);
+                const remainingHours = Math.floor((seconds % 86400) / 3600);
+                if (remainingHours > 0) {
+                    return `${days} day${days !== 1 ? 's' : ''} ${remainingHours} hour${remainingHours !== 1 ? 's' : ''} (${seconds} seconds)`;
+                }
+                return `${days} day${days !== 1 ? 's' : ''} (${seconds} seconds)`;
+            }
+        }
+        
+        updateTimeDescription(key, seconds) {
+            const descriptionElement = document.getElementById(`${key}_desc`);
+            if (descriptionElement) {
+                const formatted = this.formatTimeDescription(seconds);
+                descriptionElement.querySelector('span').textContent = `Currently: ${formatted}`;
+            }
         }
         
         onRoleCheckboxChange() {
@@ -744,7 +1060,7 @@
                     // For role checkboxes
                     return this.getRolesFromCheckboxes();
                 default:
-                    return input.value;
+                    return input.value.trim();
             }
         }
         
@@ -772,8 +1088,30 @@
             }
         }
         
+        validateAllFields() {
+            let isValid = true;
+            
+            // Validate CONTACT_EMAIL
+            const contactEmailInput = document.querySelector('.setting-item[data-key="CONTACT_EMAIL"] .setting-input');
+            if (contactEmailInput && contactEmailInput.value.trim()) {
+                const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+                if (!emailRegex.test(contactEmailInput.value.trim())) {
+                    this.showFieldError(contactEmailInput, 'Please enter a valid email address');
+                    isValid = false;
+                }
+            }
+            
+            return isValid;
+        }
+        
         async saveAllChanges() {
             if (this.changedSettings.size === 0 || this.isSaving) return;
+            
+            // Validate all fields before saving
+            if (!this.validateAllFields()) {
+                this.showToast('Please fix validation errors before saving', 'error');
+                return;
+            }
             
             this.isSaving = true;
             const saveBtn = document.getElementById('saveAllChanges');
@@ -808,7 +1146,16 @@
                 
             } catch (error) {
                 console.error('Error saving settings:', error);
-                this.showToast(`Error: ${error.message}`, 'error');
+                // Extract clean error message from ErrorDetail object
+                let errorMessage = error.message;
+                if (error.responseData && error.responseData.detail) {
+                    if (error.responseData.detail.string !== undefined) {
+                        errorMessage = String(error.responseData.detail.string);
+                    } else {
+                        errorMessage = String(error.responseData.detail);
+                    }
+                }
+                this.showToast(`Error: ${errorMessage}`, 'error');
                 
                 // Re-enable save button
                 saveBtn.disabled = false;
@@ -821,48 +1168,105 @@
         }
         
         async saveSettings(requestBody) {
-            // Get CSRF token
-            const csrfToken = this.getCSRFToken();
-            
-            if (!csrfToken) {
-                throw new Error('CSRF token not found. Please refresh the page.');
-            }
-            
-            console.log('Sending request body:', requestBody);
-            
-            // Send PATCH request with all settings
-            const response = await fetch('/api/update-setting/', {
-                method: 'PATCH',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': csrfToken
-                },
-                body: JSON.stringify(requestBody)
-            });
-            
-            console.log('Response status:', response.status);
-            
-            // Try to parse response as JSON
-            let responseData;
             try {
-                responseData = await response.json();
-                console.log('Response data:', responseData);
+                // Get CSRF token
+                const csrfToken = this.getCSRFToken();
+                
+                if (!csrfToken) {
+                    throw new Error('CSRF token not found. Please refresh the page.');
+                }
+                
+                console.log('Sending request body:', requestBody);
+                
+                // Send PATCH request with all settings
+                const response = await fetch('/api/update-setting/', {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken
+                    },
+                    body: JSON.stringify(requestBody)
+                });
+                
+                console.log('Response status:', response.status);
+                
+                // Try to parse response as JSON
+                let responseData;
+                try {
+                    responseData = await response.json();
+                    console.log('Response data:', responseData);
+                } catch (error) {
+                    console.error('Failed to parse JSON response:', error);
+                    const text = await response.text();
+                    throw new Error(`Server returned invalid response: ${text.substring(0, 200)}`);
+                }
+                
+                if (!response.ok) {
+                    // Extract clean error message from responseData
+                    let errorMessage;
+                    
+                    // Handle different error formats
+                    if (responseData.detail) {
+                        // Extract string from ErrorDetail object or use as is
+                        errorMessage = this.extractErrorMessage(responseData.detail);
+                    } else if (responseData.error) {
+                        errorMessage = this.extractErrorMessage(responseData.error);
+                    } else if (responseData.message) {
+                        errorMessage = this.extractErrorMessage(responseData.message);
+                    } else {
+                        errorMessage = `Failed to save settings (Status: ${response.status})`;
+                    }
+                    
+                    // Create a more informative error object
+                    const error = new Error(errorMessage);
+                    error.status = response.status;
+                    error.responseData = responseData;
+                    throw error;
+                }
+                
+                return responseData;
+                
             } catch (error) {
-                console.error('Failed to parse JSON response:', error);
-                const text = await response.text();
-                throw new Error(`Server returned invalid response: ${text.substring(0, 100)}`);
+                // Re-throw the error with better context
+                if (error instanceof TypeError && error.message === 'Failed to fetch') {
+                    throw new Error('Network error. Please check your connection and try again.');
+                }
+                throw error;
+            }
+        }
+        
+        extractErrorMessage(errorDetail) {
+            // If it's a string, return it directly
+            if (typeof errorDetail === 'string') {
+                return errorDetail;
             }
             
-            if (!response.ok) {
-                // Use the detail field from response or default message
-                const errorMessage = responseData.detail || 
-                                   responseData.error || 
-                                   responseData.message || 
-                                   `Server returned ${response.status} status`;
-                throw new Error(errorMessage);
+            // If it's an object, check for common patterns
+            if (errorDetail && typeof errorDetail === 'object') {
+                // Handle Django ErrorDetail object
+                if (errorDetail.string !== undefined) {
+                    return String(errorDetail.string);
+                }
+                
+                // Handle nested detail
+                if (errorDetail.detail !== undefined) {
+                    return this.extractErrorMessage(errorDetail.detail);
+                }
+                
+                // Handle array of errors
+                if (Array.isArray(errorDetail)) {
+                    return errorDetail.map(err => this.extractErrorMessage(err)).join(', ');
+                }
+                
+                // Try to stringify the object's first property
+                const keys = Object.keys(errorDetail);
+                if (keys.length > 0) {
+                    return String(errorDetail[keys[0]]);
+                }
             }
             
-            return responseData;
+            // Fallback to string conversion
+            return String(errorDetail);
         }
         
         getCSRFToken() {

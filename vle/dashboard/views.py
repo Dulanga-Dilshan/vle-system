@@ -269,9 +269,11 @@ def system_state(request):
 
 
 
-
+@login_required(login_url='Users:login')
 def system_settings(request):
-
+    if not request.user.is_superuser:
+        return redirect('dashboard:route')
+ 
     return render(request,'dashboard/admin/system_settings.html',{})
 
 

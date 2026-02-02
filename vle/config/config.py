@@ -89,13 +89,12 @@ def update_setting(key: str, value):
         raise KeyError(f"System setting '{key}' does not exist")
     
     validate_setting(key=key,value=value)
-    
 
-'''
     with _lock:
         _settings_cache[key] = value
+        print(_settings_cache)
         update_db()
-'''
+
 def get_all_setting():
     if not _settings_cache:
         load_settings()
@@ -113,36 +112,34 @@ def validate_setting(key:str,value):
 
     if 'type' in setting:
         if setting['type'] not in TYPE_MAP:
-            raise ValidationError(f"Invalide type for value{value}. expected type:{setting['type']}")
+            raise ValidationError(f"Invalide type for value:{value}. expected type:{setting['type']}")
         
         if type(value) != TYPE_MAP[setting['type']]:
             raise ValidationError(f"Invalide type for value:{value}. expected type:{setting['type']}, received {type(value)}")
-    
-
+        
     if 'rules' in setting:
         if 'strip' in setting['rules'] and setting['rules']['strip']==True:
                 value = value.strip()
 
         for rule_key,rue_value in setting['rules'].items():
-            rule = {rule_key:rue_value}
 
-            if rule == 'allow_empty' and value=="":
+            if rule_key == 'allow_empty' and value=="":
                 return value
 
-            if rule == 'min_length':
-                if len(value)<rule['min_length']:
-                    raise ValidationError(f"Value is too short for key:{key}. Minimum length is {rule['min_length']} characters, received {len(value)}.")
+            if rule_key == 'min_length':
+                if len(value)<rue_value:
+                    raise ValidationError(f"Value is too short for key:{key}. Minimum length is {rue_value} characters, received {len(value)}.")
             
-            if rule == 'max_length':
-                if len(value)>rule['max_length']:
-                    raise ValidationError(f"Value is too large for key:{key}. Max length is {rule['max_length']} characters, received {len(value)}.")
+            if rule_key == 'max_length':
+                if len(value)>rue_value:
+                    raise ValidationError(f"Value is too large for key:{key}. Max length is {rue_value} characters, received {len(value)}.")
             
-            if rule == 'format':
-                if rule['format'] == 'url':
+            if rule_key == 'format':
+                if rue_value == 'url':
                     if not url(value):
                             raise ValidationError("Invalid URL format. eg:- https://example.com")
                 
-                if rule['format'] == 'csv_extensions':
+                if rue_value == 'csv_extensions':
                     extensions = value.split(',')
                     for extnsion in extensions:
                         if extnsion[0] != '.':
@@ -150,34 +147,34 @@ def validate_setting(key:str,value):
                                 f"extensions in incorrect format. expected {SETTINGS_SCHEMA['ALLOWED_FILE_EXTENSIONS']['default']}."
                             )
                 
-                if rule['format'] == 'email':
+                if rue_value == 'email':
                     if not email(value):
                         raise ValidationError("Invalid Email format. eg:- user@example.com")
                     
 
 
-            if rule == 'min':
-                if value<rule['min']:
-                    raise ValidationError(f"Value is too short for key:{key}. Minimum is {rule['min']} , received {value}.")
+            if rule_key == 'min':
+                if value<rue_value:
+                    raise ValidationError(f"Value is too short for key:{key}. Minimum is {rue_value} , received {value}.")
 
-            if rule == 'max':
-                if value>rule['max']:
-                    raise ValidationError(f"Value is too big for key:{key}. max is {rule['max']} , received {value}.")
+            if rule_key == 'max':
+                if value>rue_value:
+                    raise ValidationError(f"Value is too big for key:{key}. max is {rue_value} , received {value}.")
             
-            if rule == 'item_type':
+            if rule_key == 'item_type':
                 for item in value:
-                    if type(item) != TYPE_MAP[rule['item_type']]:
+                    if type(item) != TYPE_MAP[rue_value]:
                         raise ValidationError(f"Invalid item type: all items must be same type")
             
-            if rule == 'choices':
+            if rule_key == 'choices':
                 for item in value:
-                    if item not in rule['choices']:
+                    if item not in rue_value:
                         raise ValidationError(
                             f"Invalid item in list: {item}. "
-                            f"Valid items are: {', '.join(map(str, rule['choices']))}"
+                            f"Valid items are: {', '.join(map(str, rue_value))}"
                         )
             
-            if rule == "unique_items":
+            if rule_key == "unique_items":
                 items = []
                 for item in value:
                     if item not in items:
@@ -185,13 +182,13 @@ def validate_setting(key:str,value):
                     else:
                         raise ValidationError(f"values must be unique. got repeted item {item}")
             
-            if rule == 'min_items':
-                if len(value)<rule['min_items']:
-                    raise ValidationError(f"value count cant be less than {rule['min_items']}. got {len(value)}")
+            if rule_key == 'min_items':
+                if len(value)<rue_value:
+                    raise ValidationError(f"value count cant be less than {rue_value}. got {len(value)}")
             
-            if rule == 'max_items':
-                if len(value)>rule['max_items']:
-                    raise ValidationError(f"value count cant be greter than {rule['max_items']}. got {len(value)}")
+            if rule_key == 'max_items':
+                if len(value)>rue_value:
+                    raise ValidationError(f"value count cant be greter than {rue_value}. got {len(value)}")
     return value
 
                 

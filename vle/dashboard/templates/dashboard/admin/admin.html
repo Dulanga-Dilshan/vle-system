@@ -1,6 +1,6 @@
 {% extends 'main.html' %}
 
-{% block title %}Admin Dashboard - University VLE{% endblock %}
+{% block title %}Admin Dashboard - {{ settings.SYSTEM_NAME }}{% endblock %}
 
 {% block navigation %}
     {% include 'admin_navigation.html' %}
@@ -154,17 +154,18 @@
                 View Analytics <i class="fas fa-arrow-right"></i>
             </a>
         </div>
-        
-        <div class="management-card card">
-            <div class="management-icon orange">
-                <i class="fas fa-cogs"></i>
+        {% if request.user.is_superuser %}
+            <div class="management-card card">
+                <div class="management-icon orange">
+                    <i class="fas fa-cogs"></i>
+                </div>
+                <h3>System Settings</h3>
+                <p>Configure system preferences and security settings</p>
+                <a href="{% url 'dashboard:system_settings' %}" class="btn btn-primary">
+                    Configure <i class="fas fa-arrow-right"></i>
+                </a>
             </div>
-            <h3>System Settings</h3>
-            <p>Configure system preferences and security settings</p>
-            <a href="{% url 'dashboard:system_settings' %}" class="btn btn-primary">
-                Configure <i class="fas fa-arrow-right"></i>
-            </a>
-        </div>
+        {% endif %}
     </div>
 
     <!-- Recent Activity -->
@@ -235,9 +236,18 @@
                 <div class="status-item">
                     <div class="status-info">
                         <span class="status-name">Email Service</span>
-                        <span class="status-value">Operational</span>
+                        {% if settings.EMAIL_ENABLED %}
+                            <span class="status-value">Operational</span>
+                        {% else %}
+                            <span class="status-value">Not Operational</span>
+                        {% endif %}
                     </div>
-                    <div class="status-indicator online"></div>
+                    {% if settings.EMAIL_ENABLED %}
+                            <div class="status-indicator online"></div>
+                    {% else %}
+                            <div class="status-indicator warning"></div>
+                    {% endif %}
+                    
                 </div>
             </div>
         </div>

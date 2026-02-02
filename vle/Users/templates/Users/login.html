@@ -1,6 +1,6 @@
 {% extends "main.html" %}
 
-{% block title %}Login - University VLE{% endblock %}
+{% block title %}Login - {{ settings.SYSTEM_NAME }}{% endblock %}
 
 {% block body %}
 <div class="auth-container">
@@ -16,11 +16,11 @@
         <div class="background-content">
             <div class="university-logo">
                 <i class="fas fa-university"></i>
-                <h1>University VLE</h1>
+                <h1>{{ settings.SYSTEM_NAME }}</h1>
             </div>
             <div class="background-text">
                 <h2>Welcome Back!</h2>
-                <p>Access your courses, assignments, and learning resources</p>
+                <p>{{ settings.SYSTEM_TAGLINE }}</p>
             </div>
             <div class="background-features">
                 <div class="feature">
@@ -46,13 +46,20 @@
             <div class="auth-header">
                 <div class="auth-logo">
                     <i class="fas fa-university"></i>
-                    <span>University VLE</span>
+                    <span>{{ settings.SYSTEM_NAME }}</span>
                 </div>
                 <h2>Sign In to Your Account</h2>
                 <p>Enter your credentials to access the platform</p>
             </div>
 
             <!-- Error Messages -->
+            {% if settings.MAINTENANCE_MODE %}
+            <div class="auth-error">
+                <i class="fas fa-exclamation-circle"></i>
+                <span>System In MAINTENANCE MODE</span>
+            </div>
+            {% endif %}
+
             {% if error %}
             <div class="auth-error">
                 <i class="fas fa-exclamation-circle"></i>
@@ -99,7 +106,7 @@
                     <i class="fas fa-sign-in-alt"></i>
                     Sign In
                 </button>
-
+                {% if settings.ALLOW_REGISTRATION %}
                 <div class="auth-divider">
                     <span>or</span>
                 </div>
@@ -111,6 +118,7 @@
                         Create New Account
                     </a>
                 </div>
+                {% endif %}
             </form>
 
             <!-- Quick Login Demo (for development) -->

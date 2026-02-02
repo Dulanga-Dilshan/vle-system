@@ -8,6 +8,8 @@ from . import permissions
 from django.shortcuts import get_object_or_404
 from Users import services as user_services
 from config.config import get_setting,update_setting,get_all_setting
+from rest_framework.exceptions import ValidationError
+
 
 
 @api_view(['GET'])
@@ -285,7 +287,7 @@ def update_user_field(request):
 
 
 @api_view(['GET'])
-@permission_classes([permissions.IsSuperUser])
+@permission_classes([permissions.IsAdmin])
 def get_settings(request,key):
     try:
         value = get_setting(key)
@@ -294,7 +296,7 @@ def get_settings(request,key):
     return response.Response({'value':value},status=status.HTTP_200_OK)
 
 @api_view(['GET'])
-@permission_classes([permissions.IsSuperUser])
+@permission_classes([permissions.IsAdmin])
 def get_all_settings(request):
     return response.Response(get_all_setting(),status=status.HTTP_200_OK)
 
@@ -302,11 +304,16 @@ def get_all_settings(request):
 @api_view(['PUT','PATCH'])
 @permission_classes([permissions.IsSuperUser])
 def update_settings(request):
-    print(request.data)
-    #update_setting(key=request.data.key,value=request.data.value)
-    update_setting('SYSTEM_NAME','test')
-    return response.Response({'detail':f"setting {'huth'} dosn't exsits"},status=status.HTTP_400_BAD_REQUEST)
-
-
-
-#{'key': 'SYSTEM_NAME', 'value': 'UOV VL'}
+    try:
+        settings = request.data['settings']
+    except KeyError:
+        return response.Response({'detail':"request is not i corroct format. expects {'settings':'[key:value]'}"},status=status.HTTP_400_BAD_REQUEST)
+    
+    for setting in settings:
+        (key,value), = setting.items()
+        try:
+            update_setting(key=key,value=value)
+        except ValidationError as e:
+            return response.Response({'detail':e.detail},status=status.HTTP_400_BAD_REQUEST)
+        
+    return response.Response({'detail':f"settings updated"},status=status.HTTP_200_OK)
