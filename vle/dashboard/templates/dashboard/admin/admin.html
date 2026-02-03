@@ -64,9 +64,9 @@
                 <i class="fas fa-server"></i>
             </div>
             <div class="stat-content">
-                <h3 class="stat-value" id="systemLoad">78%</h3>
-                <p class="stat-label">System Load</p>
-                <span class="stat-trend warning">+5%</span>
+                <h3 class="stat-value" id="systemLoad">{{ storage_useage }}%</h3>
+                <p class="stat-label">Storage usage</p>
+
             </div>
         </div>
     </div>
@@ -229,9 +229,14 @@
                 <div class="status-item">
                     <div class="status-info">
                         <span class="status-name">Storage</span>
-                        <span class="status-value">78% used</span>
+                        <span class="status-value">{{ storage_useage }}% used</span>
                     </div>
-                    <div class="status-indicator warning"></div>
+                    {% if storage_useage < 70 %}
+                        <div class="status-indicator online"></div>
+                    {% else %}
+                        <div class="status-indicator warning"></div>
+                    {% endif %}
+                    
                 </div>
                 <div class="status-item">
                     <div class="status-info">
@@ -243,7 +248,7 @@
                         {% endif %}
                     </div>
                     {% if settings.EMAIL_ENABLED %}
-                            <div class="status-indicator online"></div>
+                            
                     {% else %}
                             <div class="status-indicator warning"></div>
                     {% endif %}
@@ -673,7 +678,6 @@
             animateValue(document.getElementById('totalUsers'), 1500 ,`{{ user_count }}`, 1500);
             animateValue(document.getElementById('activeCourses'), 10, `{{ course_count }}`, 1500);
             animateValue(document.getElementById('pendingRequests'), 0, `{{ request_count }}`, 1500);
-            animateValue(document.getElementById('systemLoad'), 0, 78, 1500);
         }, 500);
         
 

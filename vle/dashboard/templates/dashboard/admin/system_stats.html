@@ -18,15 +18,6 @@
         </p>
         
         <div class="header-actions">
-            <div class="date-range">
-                <select class="filter-select" id="timeRange">
-                    <option value="today">Today</option>
-                    <option value="week" selected>Last 7 Days</option>
-                    <option value="month">Last 30 Days</option>
-                    <option value="quarter">Last Quarter</option>
-                    <option value="year">Last Year</option>
-                </select>
-            </div>
             <button class="btn btn-primary" onclick="exportReport()">
                 <i class="fas fa-download"></i> Export Report
             </button>
@@ -123,22 +114,18 @@
             </div>
         </div>
         
+        <!-- Removed Course Popularity Chart -->
         <div class="chart-card card">
             <div class="card-header">
                 <h3 class="card-title">
-                    <i class="fas fa-book"></i> Course Popularity
+                    <i class="fas fa-server"></i> System Performance
                 </h3>
-                <select class="chart-filter">
-                    <option value="enrollment">By Enrollment</option>
-                    <option value="activity">By Activity</option>
-                    <option value="completion">By Completion</option>
-                </select>
             </div>
             <div class="chart-container">
                 <div class="chart-placeholder">
                     <div class="placeholder-content">
-                        <i class="fas fa-chart-pie"></i>
-                        <p>Course popularity chart visualization</p>
+                        <i class="fas fa-chart-line"></i>
+                        <p>System performance over time</p>
                     </div>
                 </div>
             </div>
@@ -178,17 +165,7 @@
                     </div>
                 </div>
                 
-                <div class="performance-item">
-                    <div class="performance-info">
-                        <span class="performance-label">Database Load</span>
-                        <span class="performance-value">65%</span>
-                    </div>
-                    <div class="performance-progress">
-                        <div class="progress-bar">
-                            <div class="progress" style="width: 65%"></div>
-                        </div>
-                    </div>
-                </div>
+                <!-- Removed Database Load -->
                 
                 <div class="performance-item">
                     <div class="performance-info">
@@ -357,21 +334,10 @@
                 <h3 class="card-title">
                     <i class="fas fa-exclamation-triangle"></i> System Alerts
                 </h3>
-                <span class="badge badge-warning">3 Active</span>
+                <span class="badge badge-warning">2 Active</span>
             </div>
             <div class="alerts-list">
-                <div class="alert-item critical">
-                    <div class="alert-icon">
-                        <i class="fas fa-exclamation-circle"></i>
-                    </div>
-                    <div class="alert-content">
-                        <h4>Database backup overdue</h4>
-                        <p>Last backup was 3 days ago. Schedule a backup soon.</p>
-                    </div>
-                    <button class="btn btn-sm btn-outline" onclick="runBackup()">
-                        Run Now
-                    </button>
-                </div>
+                <!-- Removed Database backup alert -->
                 
                 <div class="alert-item warning">
                     <div class="alert-icon">
@@ -416,8 +382,8 @@
                         <i class="fas fa-check-circle"></i>
                     </div>
                     <div class="notification-content">
-                        <h4>System backup completed</h4>
-                        <p>Daily backup completed successfully</p>
+                        <h4>System update completed</h4>
+                        <p>System successfully updated to version 2.1.3</p>
                         <span class="notification-time">2 hours ago</span>
                     </div>
                 </div>
@@ -427,8 +393,8 @@
                         <i class="fas fa-info-circle"></i>
                     </div>
                     <div class="notification-content">
-                        <h4>New course created</h4>
-                        <p>"Advanced Machine Learning" course added</p>
+                        <h4>New user group created</h4>
+                        <p>"Research Staff" group added with 8 members</p>
                         <span class="notification-time">Yesterday</span>
                     </div>
                 </div>
@@ -464,11 +430,6 @@
         align-items: center;
         flex-wrap: wrap;
         margin-top: 1rem;
-    }
-
-    .date-range {
-        flex: 1;
-        min-width: 200px;
     }
 
     /* Key Metrics */
@@ -614,14 +575,6 @@
 
     .legend-color.staff {
         background: #7209b7;
-    }
-
-    .chart-filter {
-        padding: 6px 12px;
-        border: 2px solid var(--gray-light);
-        border-radius: 6px;
-        font-size: 0.9rem;
-        background: white;
     }
 
     .chart-container {
@@ -901,10 +854,6 @@
             flex-direction: column;
             align-items: stretch;
         }
-        
-        .date-range {
-            width: 100%;
-        }
     }
 
     @media (max-width: 768px) {
@@ -961,44 +910,6 @@
 
 {% block script %}
 <script>
-    // Time range selection
-    document.getElementById('timeRange').addEventListener('change', function() {
-        const range = this.value;
-        showLoading();
-        
-        // Simulate data reload based on time range
-        setTimeout(() => {
-            hideLoading();
-            updateMetrics(range);
-        }, 1000);
-    });
-    
-    function updateMetrics(range) {
-        // In real app, this would fetch and update metrics based on time range
-        console.log('Updating metrics for range:', range);
-        
-        // Update metric values based on range (simulated)
-        const metrics = {
-            'today': { users: '1,845', uptime: '99.96%', response: '248ms', storage: '78.2%' },
-            'week': { users: '12,845', uptime: '99.95%', response: '255ms', storage: '78.5%' },
-            'month': { users: '54,230', uptime: '99.92%', response: '262ms', storage: '79.1%' },
-            'quarter': { users: '162,450', uptime: '99.88%', response: '275ms', storage: '80.5%' },
-            'year': { users: '648,900', uptime: '99.82%', response: '290ms', storage: '85.2%' }
-        };
-        
-        const data = metrics[range] || metrics.week;
-        
-        // Update metric displays
-        document.querySelectorAll('.metric-value')[0].textContent = data.users;
-        document.querySelectorAll('.metric-value')[1].textContent = data.uptime;
-        document.querySelectorAll('.metric-value')[2].textContent = data.response;
-        document.querySelectorAll('.metric-value')[3].textContent = data.storage;
-        
-        // Update progress bars
-        document.querySelectorAll('.progress')[1].style.width = data.uptime;
-        document.querySelectorAll('.progress')[3].style.width = data.storage;
-    }
-    
     // Export report
     function exportReport() {
         showLoading();
@@ -1062,19 +973,6 @@
     }
     
     // System actions
-    function runBackup() {
-        if (confirm('Run database backup now? This may affect performance temporarily.')) {
-            showLoading();
-            
-            setTimeout(() => {
-                hideLoading();
-                alert('Backup completed successfully!');
-                // Update alert status
-                document.querySelector('.alert-item.critical').style.opacity = '0.5';
-            }, 2000);
-        }
-    }
-    
     function manageStorage() {
         window.location.href = '#storage-settings'; // Would link to storage settings page
     }

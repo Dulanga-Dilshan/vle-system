@@ -124,7 +124,7 @@ def register_user(request):
             id_img = request.FILES.get('idImg')
             if id_img:
                 validate_image_file_extension(id_img)
-                max_size = get_setting('MAX_UPLOAD_MB')
+                max_size = get_setting('MAX_UPLOAD_MB')*(1024*1024) #MB
                 if id_img.size > max_size:
                     return JsonResponse({'error':f'loo large img (max size:{max_size})'})
                 try:
@@ -135,7 +135,6 @@ def register_user(request):
             else:
                 return JsonResponse({'img_error':'no img'},status=409)
             
-
             try:
                 register_request = StudentRegistretionRequest( 
                     faculty_name=faculty,

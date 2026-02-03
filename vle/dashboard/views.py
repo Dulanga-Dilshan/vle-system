@@ -5,6 +5,7 @@ from university import models as university_models
 from university import services as university_services
 from . import annosments
 from django.http import HttpResponse
+from config.services import get_disk_usage
 
 
 def get_name_avatar(request):
@@ -49,8 +50,8 @@ def admin(request):
     contex['user_presentage'] = f"{round((services.user_count() / services.max_user_count()) *100,2) }%"
     contex['user_count'] = services.user_count()
     contex['course_count'] = university_services.get_course_count()
+    contex['storage_useage'] = get_disk_usage()
 
-    #from config.config import 
     
 
     
