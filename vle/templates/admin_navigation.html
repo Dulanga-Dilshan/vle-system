@@ -341,12 +341,9 @@
             }
         }
         
-        // Update system name every 5 m
-        setInterval(updateSystemName, 300000);
-        
-        // Initial update after page load
-        setTimeout(updateSystemName, 1000);
-        
+        // Update system name every 1h
+        setInterval(updateSystemName, 3600000);
+         
         // Sidebar toggle functionality
         sidebarToggle.addEventListener('click', function() {
             sidebar.classList.toggle('active');

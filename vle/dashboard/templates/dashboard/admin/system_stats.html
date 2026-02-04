@@ -24,6 +24,11 @@
             <button class="btn btn-outline" onclick="refreshAnalytics()">
                 <i class="fas fa-sync"></i> Refresh
             </button>
+            <div class="refresh-indicator">
+                <span class="indicator-dot"></span>
+                <small>Auto-refresh every 5s</small>
+                <span id="last-update-time" class="last-update">Just now</span>
+            </div>
         </div>
     </div>
 
@@ -33,10 +38,10 @@
             <div class="metric-header">
                 <h3 class="metric-title">Active Users</h3>
                 <div class="metric-trend up">
-                    <i class="fas fa-arrow-up"></i> 12.5%
+                    <i class="fas fa-arrow-up"></i> {{ user_presentage }}
                 </div>
             </div>
-            <div class="metric-value">1,845</div>
+            <div class="metric-value">{{ user_count }}</div>
             <div class="metric-chart">
                 <div class="sparkline" data-values="30,40,35,50,45,60,55"></div>
             </div>
@@ -45,26 +50,20 @@
         <div class="metric-card card">
             <div class="metric-header">
                 <h3 class="metric-title">System Uptime</h3>
-                <div class="metric-trend stable">
-                    <i class="fas fa-minus"></i> 0.0%
-                </div>
             </div>
-            <div class="metric-value">99.96%</div>
+            <div class="metric-value" id="system-uptime">{{ system_up_time }}</div>
             <div class="metric-progress">
-                <div class="progress-bar">
-                    <div class="progress" style="width: 99.96%"></div>
-                </div>
+               <div class="metric-chart">
+                <div class="sparkline" data-values="280,265,255,245,240,250,248"></div>
+            </div>
             </div>
         </div>
         
         <div class="metric-card card">
             <div class="metric-header">
                 <h3 class="metric-title">Avg. Response Time</h3>
-                <div class="metric-trend down">
-                    <i class="fas fa-arrow-down"></i> 8.3%
-                </div>
             </div>
-            <div class="metric-value">248ms</div>
+            <div class="metric-value" id="avg-response-time">{{ avg_response_time }}</div>
             <div class="metric-chart">
                 <div class="sparkline" data-values="280,265,255,245,240,250,248"></div>
             </div>
@@ -73,60 +72,11 @@
         <div class="metric-card card">
             <div class="metric-header">
                 <h3 class="metric-title">Storage Usage</h3>
-                <div class="metric-trend warning">
-                    <i class="fas fa-exclamation"></i> 5.2%
-                </div>
             </div>
-            <div class="metric-value">78.2%</div>
+            <div class="metric-value" id="storage-usage">{{ storage_usage }}%</div>
             <div class="metric-progress">
                 <div class="progress-bar warning">
-                    <div class="progress" style="width: 78.2%"></div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Charts Section -->
-    <div class="charts-section grid grid-2">
-        <div class="chart-card card">
-            <div class="card-header">
-                <h3 class="card-title">
-                    <i class="fas fa-users"></i> User Growth
-                </h3>
-                <div class="chart-legend">
-                    <span class="legend-item">
-                        <span class="legend-color students"></span>
-                        Students
-                    </span>
-                    <span class="legend-item">
-                        <span class="legend-color staff"></span>
-                        Staff
-                    </span>
-                </div>
-            </div>
-            <div class="chart-container">
-                <div class="chart-placeholder">
-                    <div class="placeholder-content">
-                        <i class="fas fa-chart-bar"></i>
-                        <p>User growth chart visualization</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Removed Course Popularity Chart -->
-        <div class="chart-card card">
-            <div class="card-header">
-                <h3 class="card-title">
-                    <i class="fas fa-server"></i> System Performance
-                </h3>
-            </div>
-            <div class="chart-container">
-                <div class="chart-placeholder">
-                    <div class="placeholder-content">
-                        <i class="fas fa-chart-line"></i>
-                        <p>System performance over time</p>
-                    </div>
+                    <div class="progress" id="storage-progress" style="width: {{ storage_usage }}%"></div>
                 </div>
             </div>
         </div>
@@ -144,11 +94,11 @@
                 <div class="performance-item">
                     <div class="performance-info">
                         <span class="performance-label">CPU Usage</span>
-                        <span class="performance-value">42%</span>
+                        <span class="performance-value" id="cpu-usage">{{ cpu_usage }}%</span>
                     </div>
                     <div class="performance-progress">
                         <div class="progress-bar">
-                            <div class="progress" style="width: 42%"></div>
+                            <div class="progress" id="cpu-progress" style="width: {{ cpu_usage }}%"></div>
                         </div>
                     </div>
                 </div>
@@ -156,25 +106,48 @@
                 <div class="performance-item">
                     <div class="performance-info">
                         <span class="performance-label">Memory Usage</span>
-                        <span class="performance-value">78%</span>
+                        <span class="performance-value" id="memory-usage">{{ memory_usage }}%</span>
                     </div>
                     <div class="performance-progress">
                         <div class="progress-bar warning">
-                            <div class="progress" style="width: 78%"></div>
+                            <div class="progress" id="memory-progress" style="width: {{ memory_usage }}%"></div>
                         </div>
                     </div>
                 </div>
                 
-                <!-- Removed Database Load -->
-                
+                <!-- Network I/O with dual bars -->
                 <div class="performance-item">
                     <div class="performance-info">
-                        <span class="performance-label">Network I/O</span>
-                        <span class="performance-value">32%</span>
+                        <span class="performance-label">Network Traffic</span>
+                        <div class="network-stats">
+                            <div class="network-stat">
+                                <span class="network-stat-label">↓ Download:</span>
+                                <span class="network-stat-value" id="download-speed">
+                                    {{ net_down_bps|filesizeformat }}/s
+                                </span>
+                            </div>
+                            <div class="network-stat">
+                                <span class="network-stat-label">↑ Upload:</span>
+                                <span class="network-stat-value" id="upload-speed">
+                                    {{ net_up_bps|filesizeformat }}/s
+                                </span>
+                            </div>
+                        </div>
                     </div>
                     <div class="performance-progress">
-                        <div class="progress-bar">
-                            <div class="progress" style="width: 32%"></div>
+                        <div class="progress-bar dual-progress">
+                            <div class="progress download-progress" 
+                                 style="width: 0%"
+                                 data-percentage="0%">
+                            </div>
+                            <div class="progress upload-progress" 
+                                 style="width: 0%"
+                                 data-percentage="0%">
+                            </div>
+                        </div>
+                        <div class="network-legend">
+                            <span class="legend-download" id="download-legend">Download</span>
+                            <span class="legend-upload" id="upload-legend">Upload</span>
                         </div>
                     </div>
                 </div>
@@ -337,8 +310,6 @@
                 <span class="badge badge-warning">2 Active</span>
             </div>
             <div class="alerts-list">
-                <!-- Removed Database backup alert -->
-                
                 <div class="alert-item warning">
                     <div class="alert-icon">
                         <i class="fas fa-hdd"></i>
@@ -430,6 +401,39 @@
         align-items: center;
         flex-wrap: wrap;
         margin-top: 1rem;
+    }
+
+    /* Refresh Indicator */
+    .refresh-indicator {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem 1rem;
+        background: var(--light);
+        border-radius: 20px;
+        font-size: 0.85rem;
+        color: var(--gray);
+    }
+
+    .indicator-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--success);
+        animation: pulse 2s infinite;
+    }
+
+    .last-update {
+        margin-left: auto;
+        font-family: 'Courier New', monospace;
+        font-size: 0.8rem;
+        color: var(--primary);
+    }
+
+    @keyframes pulse {
+        0% { opacity: 0.5; }
+        50% { opacity: 1; }
+        100% { opacity: 0.5; }
     }
 
     /* Key Metrics */
@@ -525,6 +529,7 @@
         background: var(--gray-light);
         border-radius: 4px;
         overflow: hidden;
+        position: relative;
     }
 
     .progress-bar.warning {
@@ -535,76 +540,14 @@
         height: 100%;
         background: linear-gradient(90deg, #4361ee, #7209b7);
         border-radius: 4px;
+        position: absolute;
+        left: 0;
+        top: 0;
+        transition: width 0.5s ease;
     }
 
     .progress-bar.warning .progress {
         background: linear-gradient(90deg, #ffc107, #f57c00);
-    }
-
-    /* Charts Section */
-    .charts-section {
-        margin: 1rem 0;
-    }
-
-    .chart-card {
-        height: 100%;
-    }
-
-    .chart-legend {
-        display: flex;
-        gap: 1rem;
-    }
-
-    .legend-item {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        font-size: 0.85rem;
-        color: var(--gray);
-    }
-
-    .legend-color {
-        width: 12px;
-        height: 12px;
-        border-radius: 50%;
-    }
-
-    .legend-color.students {
-        background: #4361ee;
-    }
-
-    .legend-color.staff {
-        background: #7209b7;
-    }
-
-    .chart-container {
-        height: 250px;
-        margin-top: 1rem;
-    }
-
-    .chart-placeholder {
-        height: 100%;
-        background: linear-gradient(135deg, #f5f7ff 0%, #e3e9ff 100%);
-        border-radius: 8px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: var(--primary);
-    }
-
-    .placeholder-content {
-        text-align: center;
-    }
-
-    .placeholder-content i {
-        font-size: 3rem;
-        margin-bottom: 1rem;
-        opacity: 0.5;
-    }
-
-    .placeholder-content p {
-        color: var(--gray);
-        font-size: 0.9rem;
     }
 
     /* Detailed Statistics */
@@ -612,10 +555,167 @@
     .storage-analysis {
         display: flex;
         flex-direction: column;
-        gap: 1rem;
+        gap: 1.5rem;
     }
 
-    .performance-item,
+    .performance-item {
+        display: flex;
+        align-items: center;
+        gap: 1.5rem;
+        padding: 0.75rem 0;
+        border-bottom: 1px solid var(--gray-light);
+    }
+
+    .performance-item:last-child {
+        border-bottom: none;
+    }
+
+    .performance-info {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex: 1;
+        min-width: 200px;
+    }
+
+    .performance-label {
+        font-weight: 500;
+        color: var(--dark);
+        font-size: 0.95rem;
+    }
+
+    .performance-value {
+        font-weight: 600;
+        color: var(--primary);
+        font-size: 1.1rem;
+    }
+
+    .performance-progress {
+        flex: 2;
+        min-width: 250px;
+    }
+
+    /* Network I/O with Dual Bars */
+    .network-stats {
+        display: flex;
+        gap: 1.5rem;
+        flex-wrap: wrap;
+    }
+
+    .network-stat {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+        min-width: 120px;
+    }
+
+    .network-stat-label {
+        font-size: 0.8rem;
+        color: var(--gray);
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+    }
+
+    .network-stat-label::before {
+        content: '';
+        display: inline-block;
+        width: 12px;
+        height: 12px;
+        border-radius: 2px;
+    }
+
+    .network-stat:first-child .network-stat-label::before {
+        background: #4361ee;
+    }
+
+    .network-stat:last-child .network-stat-label::before {
+        background: #7209b7;
+    }
+
+    .network-stat-value {
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--dark);
+        font-family: 'Courier New', monospace;
+    }
+
+    /* Dual Progress Bar */
+    .dual-progress {
+        height: 24px;
+        background: var(--gray-light);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        padding: 4px;
+        gap: 4px;
+        margin-top: 0.5rem;
+    }
+
+    .dual-progress .progress {
+        position: relative;
+        height: 16px;
+        border-radius: 8px;
+        min-width: 20px;
+        transition: width 0.5s ease;
+    }
+
+    .download-progress {
+        background: linear-gradient(90deg, #4361ee, #3a56d4);
+    }
+
+    .upload-progress {
+        background: linear-gradient(90deg, #7209b7, #5d0795);
+    }
+
+    /* Progress labels inside bars */
+    .dual-progress .progress::after {
+        content: attr(data-percentage);
+        position: absolute;
+        right: 8px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: white;
+        font-size: 0.7rem;
+        font-weight: 600;
+        text-shadow: 1px 1px 1px rgba(0,0,0,0.3);
+        opacity: 0.9;
+    }
+
+    /* Network Legend */
+    .network-legend {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 0.5rem;
+        font-size: 0.8rem;
+        color: var(--gray);
+    }
+
+    .legend-download,
+    .legend-upload {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .legend-download::before,
+    .legend-upload::before {
+        content: '';
+        width: 12px;
+        height: 12px;
+        border-radius: 3px;
+    }
+
+    .legend-download::before {
+        background: #4361ee;
+    }
+
+    .legend-upload::before {
+        background: #7209b7;
+    }
+
+    /* Storage Analysis */
     .storage-item {
         display: flex;
         align-items: center;
@@ -624,39 +724,19 @@
         border-bottom: 1px solid var(--gray-light);
     }
 
-    .performance-item:last-child,
     .storage-item:last-child {
         border-bottom: none;
     }
 
-    .performance-info {
-        display: flex;
-        justify-content: space-between;
-        flex: 1;
-        min-width: 150px;
-    }
-
-    .performance-label,
-    .storage-label {
-        font-weight: 500;
-        color: var(--dark);
-    }
-
-    .performance-value {
-        font-weight: 600;
-        color: var(--primary);
-    }
-
-    .performance-progress {
-        flex: 2;
-        min-width: 200px;
-    }
-
-    /* Storage Analysis */
     .storage-info {
         display: flex;
         justify-content: space-between;
         flex: 1;
+    }
+
+    .storage-label {
+        font-weight: 500;
+        color: var(--dark);
     }
 
     .storage-value {
@@ -841,10 +921,44 @@
         color: var(--gray-light);
     }
 
+    /* Toast Notifications */
+    .toast {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 1rem 1.5rem;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        z-index: 1000;
+        animation: slideIn 0.3s ease;
+    }
+
+    .toast-success {
+        border-left: 4px solid var(--success);
+    }
+
+    .toast-error {
+        border-left: 4px solid var(--danger);
+    }
+
+    @keyframes slideIn {
+        from {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+
     /* Responsive */
     @media (max-width: 1024px) {
         .key-metrics,
-        .charts-section,
         .detailed-stats,
         .alerts-section {
             grid-template-columns: 1fr;
@@ -853,6 +967,13 @@
         .header-actions {
             flex-direction: column;
             align-items: stretch;
+        }
+        
+        .refresh-indicator {
+            order: 3;
+            margin-top: 0.5rem;
+            width: 100%;
+            justify-content: center;
         }
     }
 
@@ -866,9 +987,25 @@
             gap: 0.5rem;
         }
         
-        .chart-legend {
-            justify-content: center;
-            margin-top: 0.5rem;
+        .performance-item {
+            flex-direction: column;
+            align-items: stretch;
+            gap: 1rem;
+        }
+        
+        .performance-info {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 0.5rem;
+        }
+        
+        .performance-progress {
+            width: 100%;
+        }
+        
+        .network-stats {
+            justify-content: space-between;
+            width: 100%;
         }
         
         .alert-item,
@@ -892,17 +1029,37 @@
             font-size: 1.75rem;
         }
         
-        .performance-item,
+        .network-stats {
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        
         .storage-item {
             flex-direction: column;
             align-items: stretch;
             text-align: center;
+            gap: 0.5rem;
         }
         
-        .performance-info,
         .storage-info {
             flex-direction: column;
             gap: 0.25rem;
+        }
+        
+        .storage-percentage {
+            width: 100%;
+            text-align: center;
+        }
+        
+        .dual-progress {
+            height: 40px;
+            flex-direction: column;
+            padding: 4px;
+        }
+        
+        .dual-progress .progress {
+            width: 100% !important;
+            height: 14px;
         }
     }
 </style>
@@ -910,14 +1067,231 @@
 
 {% block script %}
 <script>
-    // Export report
+    // Configuration
+    const REFRESH_INTERVAL = 5000; // 5 seconds
+    const API_URL = '/api/get-stats/'; // Your API endpoint
+    
+    let refreshTimer = null;
+    let isRefreshing = false;
+    let isPageVisible = true;
+
+    // Check if page is visible
+    document.addEventListener('visibilitychange', function() {
+        isPageVisible = !document.hidden;
+        if (isPageVisible) {
+            // Page became visible, refresh immediately
+            refreshAnalytics();
+            startAutoRefresh();
+        } else {
+            // Page hidden, stop auto-refresh
+            stopAutoRefresh();
+        }
+    });
+
+    // Format bytes to human readable
+    function formatBytes(bytes, decimals = 2) {
+        if (bytes === 0) return '0 B';
+        const k = 1024;
+        const dm = decimals < 0 ? 0 : decimals;
+        const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+    }
+
+    // Calculate network percentages
+    function calculateNetworkPercentages(downloadBytes, uploadBytes) {
+        // Use 100 Mbps as baseline (12.5 MB/s)
+        const MAX_NETWORK_SPEED = 12500000; // 100 Mbps in bytes/sec
+        
+        const downloadPercentage = Math.min(Math.round((downloadBytes / MAX_NETWORK_SPEED) * 100), 100);
+        const uploadPercentage = Math.min(Math.round((uploadBytes / MAX_NETWORK_SPEED) * 100), 100);
+        
+        // Show at least 2% for visualization if there's traffic
+        return {
+            download: downloadBytes > 0 ? Math.max(downloadPercentage, 2) : 0,
+            upload: uploadBytes > 0 ? Math.max(uploadPercentage, 2) : 0
+        };
+    }
+
+    // Update network display
+    function updateNetworkDisplay(downloadBytes, uploadBytes) {
+        // Format speeds
+        const downloadSpeed = formatBytes(downloadBytes) + '/s';
+        const uploadSpeed = formatBytes(uploadBytes) + '/s';
+        
+        // Update speed displays
+        document.getElementById('download-speed').textContent = downloadSpeed;
+        document.getElementById('upload-speed').textContent = uploadSpeed;
+        document.getElementById('download-legend').textContent = `Download (${downloadSpeed})`;
+        document.getElementById('upload-legend').textContent = `Upload (${uploadSpeed})`;
+        
+        // Calculate and update percentages
+        const percentages = calculateNetworkPercentages(downloadBytes, uploadBytes);
+        
+        const downloadProgress = document.querySelector('.download-progress');
+        const uploadProgress = document.querySelector('.upload-progress');
+        
+        if (downloadProgress && uploadProgress) {
+            downloadProgress.style.width = `${percentages.download}%`;
+            uploadProgress.style.width = `${percentages.upload}%`;
+            downloadProgress.setAttribute('data-percentage', `${percentages.download}%`);
+            uploadProgress.setAttribute('data-percentage', `${percentages.upload}%`);
+        }
+    }
+
+    // Update all metrics from API response
+    function updateMetrics(data) {
+        // Update key metrics
+        if (data.storage_usage !== undefined) {
+            document.getElementById('storage-usage').textContent = `${data.storage_usage}%`;
+            document.getElementById('storage-progress').style.width = `${data.storage_usage}%`;
+        }
+        
+        if (data.system_up_time !== undefined) {
+            document.getElementById('system-uptime').textContent = data.system_up_time;
+        }
+        
+        if (data.avg_response_time !== undefined) {
+            document.getElementById('avg-response-time').textContent = data.avg_response_time;
+        }
+        
+        // Update performance metrics
+        if (data.cpu_usage !== undefined) {
+            document.getElementById('cpu-usage').textContent = `${data.cpu_usage}%`;
+            document.getElementById('cpu-progress').style.width = `${data.cpu_usage}%`;
+        }
+        
+        if (data.memory_usage !== undefined) {
+            document.getElementById('memory-usage').textContent = `${data.memory_usage}%`;
+            document.getElementById('memory-progress').style.width = `${data.memory_usage}%`;
+        }
+        
+        // Update network metrics
+        if (data.net_down_bps !== undefined && data.net_up_bps !== undefined) {
+            updateNetworkDisplay(data.net_down_bps, data.net_up_bps);
+        }
+        
+        // Update sparklines with new data
+        updateSparklines();
+        
+        // Update timestamp
+        updateLastUpdateTime();
+    }
+
+    // Fetch data from API
+    async function fetchAnalyticsData() {
+        if (isRefreshing) return;
+        
+        try {
+            isRefreshing = true;
+            
+            const response = await fetch(API_URL);
+            
+            if (!response.ok) {
+                throw new Error(`API request failed: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            
+            // Update metrics with new data
+            updateMetrics(data);
+            
+            // Show success toast on manual refresh
+            return data;
+            
+        } catch (error) {
+            console.error('Failed to fetch analytics:', error);
+            showToast('Failed to update analytics data', 'error');
+        } finally {
+            isRefreshing = false;
+        }
+    }
+
+    // Manual refresh function
+    async function refreshAnalytics() {
+        // Update button state
+        const refreshBtn = document.querySelector('[onclick="refreshAnalytics()"]');
+        const originalHTML = refreshBtn.innerHTML;
+        refreshBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Refreshing';
+        refreshBtn.disabled = true;
+        
+        await fetchAnalyticsData();
+        
+        // Restore button state
+        refreshBtn.innerHTML = originalHTML;
+        refreshBtn.disabled = false;
+        
+        // Show success message
+        showToast('Analytics data refreshed', 'success');
+    }
+
+    // Start auto-refresh
+    function startAutoRefresh() {
+        stopAutoRefresh(); // Clear any existing timer
+        
+        if (!isPageVisible) return;
+        
+        refreshTimer = setInterval(() => {
+            if (isPageVisible && !isRefreshing) {
+                fetchAnalyticsData();
+            }
+        }, REFRESH_INTERVAL);
+    }
+
+    // Stop auto-refresh
+    function stopAutoRefresh() {
+        if (refreshTimer) {
+            clearInterval(refreshTimer);
+            refreshTimer = null;
+        }
+    }
+
+    // Update last update time
+    function updateLastUpdateTime() {
+        const now = new Date();
+        const timeString = now.toLocaleTimeString([], { 
+            hour: '2-digit', 
+            minute: '2-digit',
+            second: '2-digit'
+        });
+        document.getElementById('last-update-time').textContent = timeString;
+    }
+
+    // Update sparklines with random data
+    function updateSparklines() {
+        document.querySelectorAll('.sparkline').forEach(sparkline => {
+            const values = Array.from({length: 7}, () => Math.floor(Math.random() * 30) + 20);
+            sparkline.setAttribute('data-values', values.join(','));
+        });
+    }
+
+    // Show toast notification
+    function showToast(message, type = 'success') {
+        // Remove existing toasts
+        document.querySelectorAll('.toast').forEach(toast => toast.remove());
+        
+        const toast = document.createElement('div');
+        toast.className = `toast toast-${type}`;
+        toast.innerHTML = `
+            <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i>
+            <span>${message}</span>
+        `;
+        
+        document.body.appendChild(toast);
+        
+        // Auto-remove after 3 seconds
+        setTimeout(() => {
+            if (toast.parentNode) {
+                toast.remove();
+            }
+        }, 3000);
+    }
+
+    // Export report function (existing)
     function exportReport() {
         showLoading();
-        
-        // Simulate report generation
         setTimeout(() => {
             hideLoading();
-            
             showModal('Export Report', `
                 <div class="export-options">
                     <h4>Select Export Format</h4>
@@ -939,70 +1313,25 @@
             `);
         }, 500);
     }
-    
+
     function exportFormat(format) {
         showLoading();
-        
         setTimeout(() => {
             hideLoading();
             closeModal();
-            alert(`Report exported as ${format.toUpperCase()} successfully!`);
+            showToast(`Report exported as ${format.toUpperCase()}`, 'success');
         }, 1500);
     }
-    
-    // Refresh analytics
-    function refreshAnalytics() {
-        showLoading();
-        
-        // Simulate data refresh
-        setTimeout(() => {
-            hideLoading();
-            alert('Analytics data refreshed!');
-            
-            // Update sparklines with new random data
-            updateSparklines();
-        }, 1000);
-    }
-    
-    function updateSparklines() {
-        // Generate random sparkline data
-        document.querySelectorAll('.sparkline').forEach(sparkline => {
-            const values = Array.from({length: 7}, () => Math.floor(Math.random() * 30) + 20);
-            sparkline.setAttribute('data-values', values.join(','));
-        });
-    }
-    
-    // System actions
-    function manageStorage() {
-        window.location.href = '#storage-settings'; // Would link to storage settings page
-    }
-    
-    function viewActivityLogs() {
-        showModal('Activity Logs', `
-            <div class="activity-logs">
-                <p>Comprehensive activity logs would be displayed here.</p>
-                <div class="modal-actions" style="margin-top: 1.5rem;">
-                    <button class="btn btn-primary" onclick="closeModal()">Close</button>
-                </div>
-            </div>
-        `);
-    }
-    
-    function clearNotifications() {
-        if (confirm('Mark all notifications as read?')) {
-            const notifications = document.querySelectorAll('.notification-item');
-            notifications.forEach(notification => {
-                notification.style.opacity = '0.5';
-            });
-            alert('All notifications marked as read.');
-        }
-    }
-    
-    // Initialize sparklines
+
+    // Initialize on page load
     document.addEventListener('DOMContentLoaded', function() {
-        updateSparklines();
+        // Initial data load
+        fetchAnalyticsData();
         
-        // Add click handlers to notification items
+        // Start auto-refresh
+        startAutoRefresh();
+        
+        // Add click handlers to notifications
         document.querySelectorAll('.notification-item').forEach(item => {
             item.addEventListener('click', function() {
                 const title = this.querySelector('h4').textContent;
@@ -1014,25 +1343,57 @@
                         <p>${content}</p>
                         <div class="modal-actions" style="margin-top: 1.5rem;">
                             <button class="btn btn-primary" onclick="closeModal()">Close</button>
-                            <button class="btn btn-outline" onclick="markNotificationRead(this)">
-                                Mark as Read
-                            </button>
                         </div>
                     </div>
                 `);
             });
         });
     });
-    
-    function markNotificationRead(button) {
-        const modal = button.closest('.modal-overlay');
-        const notification = document.querySelector(`.notification-item:has(h4:contains("${modal.querySelector('h4').textContent}"))`);
-        
-        if (notification) {
-            notification.style.opacity = '0.5';
+
+    // System actions (existing functions)
+    function manageStorage() {
+        window.location.href = '#storage-settings';
+    }
+
+    function viewActivityLogs() {
+        showModal('Activity Logs', `
+            <div class="activity-logs">
+                <p>Comprehensive activity logs would be displayed here.</p>
+                <div class="modal-actions" style="margin-top: 1.5rem;">
+                    <button class="btn btn-primary" onclick="closeModal()">Close</button>
+                </div>
+            </div>
+        `);
+    }
+
+    function clearNotifications() {
+        if (confirm('Mark all notifications as read?')) {
+            document.querySelectorAll('.notification-item').forEach(notification => {
+                notification.style.opacity = '0.5';
+            });
+            showToast('All notifications marked as read', 'success');
         }
-        
-        closeModal();
+    }
+
+    // Modal helper functions (if not already defined)
+    function showModal(title, content) {
+        // Your existing modal implementation
+        console.log('Show modal:', title);
+    }
+
+    function closeModal() {
+        // Your existing modal implementation
+        console.log('Close modal');
+    }
+
+    function showLoading() {
+        // Your existing loading implementation
+        console.log('Show loading');
+    }
+
+    function hideLoading() {
+        // Your existing loading implementation
+        console.log('Hide loading');
     }
 </script>
 {% endblock %}

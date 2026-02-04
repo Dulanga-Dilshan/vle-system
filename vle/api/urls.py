@@ -33,6 +33,8 @@ urlpatterns = [
     path('get-all-setting/',views.get_all_settings),
     path('update-setting/',views.update_settings),
 
+    path('get-stats/',views.get_stats),
+
 
 ]
 

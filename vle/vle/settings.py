@@ -60,9 +60,11 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 
     'Users.middleware.UpdateLastActivityMiddleware',
+    'config.middleware.AvgResponseTimeMiddleware',
     'Users.middleware.AutoLogoutMiddleware',
     'config.middleware.SyncSettingsMiddleware',
     'Users.middleware.CheckMaintainModeMiddleware',
+    
 
 ]
 

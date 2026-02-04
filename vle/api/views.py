@@ -9,6 +9,8 @@ from django.shortcuts import get_object_or_404
 from Users import services as user_services
 from config.config import get_setting,update_setting,get_all_setting
 from rest_framework.exceptions import ValidationError
+from config import metrics
+from config.middleware import get_avg_response_ms
 
 
 
@@ -317,3 +319,23 @@ def update_settings(request):
             return response.Response({'detail':e.detail},status=status.HTTP_400_BAD_REQUEST)
         
     return response.Response({'detail':f"settings updated"},status=status.HTTP_200_OK)
+
+
+@api_view(['GET'])
+@permission_classes([permissions.IsAdmin])
+def get_stats(request):
+    try:
+        cpu_and_net_io = metrics.get_net_io_cpu()
+        stats = {
+            'storage_usage':metrics.get_disk_usage(),
+            'avg_response_time':round(get_avg_response_ms(),2),
+            'system_up_time':metrics.format_time(metrics.get_system_up_time()),
+            'memory_usage': metrics.memory_usage(),
+            'cpu_usage':cpu_and_net_io["cpu_percent"],
+            'net_down_bps':cpu_and_net_io["net_down_bps"],
+            'net_up_bps':cpu_and_net_io["net_up_bps"]
+        }
+    except Exception as e:
+        return response.Response({'detail':str(e)},status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+    return response.Response(stats,status=status.HTTP_200_OK)

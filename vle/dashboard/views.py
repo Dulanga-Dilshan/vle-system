@@ -5,7 +5,7 @@ from university import models as university_models
 from university import services as university_services
 from . import annosments
 from django.http import HttpResponse
-from config.services import get_disk_usage
+from config import metrics
 
 
 def get_name_avatar(request):
@@ -50,7 +50,8 @@ def admin(request):
     contex['user_presentage'] = f"{round((services.user_count() / services.max_user_count()) *100,2) }%"
     contex['user_count'] = services.user_count()
     contex['course_count'] = university_services.get_course_count()
-    contex['storage_useage'] = get_disk_usage()
+    contex['storage_useage'] = metrics.get_disk_usage()
+    contex['notification_count'] = 2
 
     
 
@@ -266,7 +267,22 @@ def manage_courses(request):
 
 
 def system_state(request):
-    return render(request,'dashboard/admin/system_stats.html')
+    contex = {}
+    contex['user_presentage'] = f"{round((services.user_count() / services.max_user_count()) *100,2) }%"
+    contex['user_count'] = services.user_count()
+    contex['storage_usage'] = metrics.get_disk_usage()
+    from config.middleware import get_avg_response_ms
+    contex["avg_response_time"]=round(get_avg_response_ms(),2)
+    contex["system_up_time"] = metrics.format_time(metrics.get_system_up_time())
+    contex["memory_usage"] = metrics.memory_usage()
+
+    cpu_and_net_io = metrics.get_net_io_cpu()
+    contex["cpu_usage"] = cpu_and_net_io["cpu_percent"]
+    contex["net_down_bps"] = cpu_and_net_io["net_down_bps"]
+    contex["net_up_bps"] = cpu_and_net_io["net_up_bps"]
+
+
+    return render(request,'dashboard/admin/system_stats.html',contex)
 
 
 
