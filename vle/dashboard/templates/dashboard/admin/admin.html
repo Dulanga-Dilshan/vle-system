@@ -20,8 +20,8 @@
             </button>
             <button class="btn btn-outline" onclick="showNotifications()">
                 <i class="fas fa-bell"></i> Announcements
-                {% if announcement_count %}
-                    <span class="notification-badge">{{announcement_count}}</span>
+                {% if new_annoucement_count %}
+                    <span class="notification-badge">{{new_annoucement_count}}</span>
                 {%endif%}
             </button>
         </div>
@@ -261,12 +261,17 @@
     </div>
 </div>
 
-
+<!-- Loading Overlay -->
+<div id="loadingOverlay" class="loading-overlay" style="display: none;">
+    <div class="loading-spinner"></div>
+    <p>Processing...</p>
+</div>
 
 {% endblock %}
 
 {% block style %}
 <style>
+    /* KEEP ALL EXISTING STYLES AS THEY ARE */
     .dashboard {
         display: flex;
         flex-direction: column;
@@ -539,42 +544,42 @@
     }
 
     /* Management Cards Grid */
-.management-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 1.5rem;
-    margin-bottom: 2rem;
-}
+    .management-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
 
-.management-card {
-    text-align: center;
-    padding: 2rem;
-    border-radius: 12px;
-    transition: all 0.3s ease;
-    border: 1px solid #eee;
-    background: white;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-}
+    .management-card {
+        text-align: center;
+        padding: 2rem;
+        border-radius: 12px;
+        transition: all 0.3s ease;
+        border: 1px solid #eee;
+        background: white;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
 
-.management-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
-    border-color: #4361ee;
-}
+    .management-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+        border-color: #4361ee;
+    }
 
-.management-icon {
-    width: 80px;
-    height: 80px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-bottom: 1.5rem;
-    font-size: 2rem;
-    color: white;
-}
+    .management-icon {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 1.5rem;
+        font-size: 2rem;
+        color: white;
+    }
 
     .management-icon.pink {
         background: linear-gradient(135deg, #f72585, #b5179e);
@@ -649,6 +654,257 @@
             text-align: center;
         }
     }
+
+    /* ANNOUNCEMENT MODAL SPECIFIC STYLES */
+    .notifications-list {
+        max-height: 60vh;
+        overflow-y: auto;
+        padding-right: 10px;
+    }
+
+    .notification-item {
+        position: relative;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        border-radius: 10px;
+        background: #f8f9fa;
+        transition: all 0.3s ease;
+        border-left: 4px solid #4361ee;
+    }
+
+    .notification-item.unread {
+        background: linear-gradient(135deg, rgba(67, 97, 238, 0.05), rgba(114, 9, 183, 0.05));
+        border-left: 4px solid #4361ee;
+    }
+
+    .notification-item.read {
+        background: #f8f9fa;
+        border-left: 4px solid #adb5bd;
+        opacity: 0.9;
+    }
+
+    .notification-item:hover {
+        transform: translateX(4px);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    }
+
+    .notification-content {
+        flex: 1;
+        padding-right: 2.5rem;
+    }
+
+    .notification-content h4 {
+        font-size: 1.1rem;
+        color: #2c3e50;
+        margin-bottom: 0.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .notification-content h4 i {
+        color: #4361ee;
+        font-size: 0.9rem;
+    }
+
+    .notification-content p {
+        color: #6c757d;
+        font-size: 0.95rem;
+        line-height: 1.5;
+        margin-bottom: 0.5rem;
+    }
+
+    .notification-time {
+        font-size: 0.85rem;
+        color: #6c757d;
+        display: block;
+        margin-top: 0.5rem;
+    }
+
+    .notification-actions {
+        position: absolute;
+        top: 0.5rem;
+        right: 0.5rem;
+    }
+
+    .notification-dropdown {
+        position: relative;
+        display: inline-block;
+    }
+
+    .notification-dropdown-btn {
+        background: none;
+        border: none;
+        color: #6c757d;
+        cursor: pointer;
+        padding: 0.25rem;
+        border-radius: 4px;
+        transition: all 0.2s ease;
+    }
+
+    .notification-dropdown-btn:hover {
+        background: rgba(0, 0, 0, 0.05);
+        color: #2c3e50;
+    }
+
+    .notification-dropdown-content {
+        display: none;
+        position: absolute;
+        right: 0;
+        top: 100%;
+        background: white;
+        min-width: 150px;
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        border-radius: 8px;
+        z-index: 1000;
+        overflow: hidden;
+    }
+
+    .notification-dropdown-content.show {
+        display: block;
+    }
+
+    .notification-dropdown-content button {
+        width: 100%;
+        text-align: left;
+        padding: 0.75rem 1rem;
+        border: none;
+        background: none;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: #2c3e50;
+    }
+
+    .notification-dropdown-content button:hover {
+        background: rgba(67, 97, 238, 0.1);
+        color: #4361ee;
+    }
+
+    .notification-dropdown-content button.danger:hover {
+        background: rgba(220, 53, 69, 0.1);
+        color: #dc3545;
+    }
+
+    .notification-dropdown-content button i {
+        font-size: 0.9rem;
+        width: 20px;
+    }
+
+    .notification-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid #eee;
+    }
+
+    .notification-header h4 {
+        margin: 0;
+        color: #2c3e50;
+    }
+
+    .notification-filters {
+        display: flex;
+        gap: 0.5rem;
+        margin-bottom: 1rem;
+    }
+
+    .notification-filter-btn {
+        padding: 0.5rem 1rem;
+        border: 1px solid #dee2e6;
+        background: white;
+        border-radius: 20px;
+        cursor: pointer;
+        font-size: 0.85rem;
+        transition: all 0.2s ease;
+    }
+
+    .notification-filter-btn.active {
+        background: #4361ee;
+        color: white;
+        border-color: #4361ee;
+    }
+
+    .notification-filter-btn:hover:not(.active) {
+        background: #f8f9fa;
+    }
+
+    .empty-notifications {
+        text-align: center;
+        padding: 3rem 1rem;
+        color: #6c757d;
+    }
+
+    .empty-notifications i {
+        font-size: 3rem;
+        color: #dee2e6;
+        margin-bottom: 1rem;
+    }
+
+    /* Loading Overlay */
+    .loading-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(255, 255, 255, 0.9);
+        z-index: 9999;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .loading-spinner {
+        width: 50px;
+        height: 50px;
+        border: 5px solid #f3f3f3;
+        border-top: 5px solid #4361ee;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    .toast {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        padding: 1rem 1.5rem;
+        border-radius: 8px;
+        color: white;
+        z-index: 10000;
+        animation: slideIn 0.3s ease;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    }
+
+    .toast.success {
+        background: linear-gradient(135deg, #28a745, #20c997);
+    }
+
+    .toast.error {
+        background: linear-gradient(135deg, #dc3545, #e83e8c);
+    }
+
+    @keyframes slideIn {
+        from {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
 </style>
 {% endblock %}
 
@@ -681,9 +937,237 @@
             animateValue(document.getElementById('activeCourses'), 10, `{{ course_count }}`, 1500);
             animateValue(document.getElementById('pendingRequests'), 0, `{{ request_count }}`, 1500);
         }, 500);
-        
-
     });
+    
+    // Toast notification function
+    function showToast(message, type = 'success') {
+        const toast = document.createElement('div');
+        toast.className = `toast ${type}`;
+        toast.textContent = message;
+        document.body.appendChild(toast);
+        
+        setTimeout(() => {
+            toast.style.animation = 'slideIn 0.3s ease reverse';
+            setTimeout(() => toast.remove(), 300);
+        }, 3000);
+    }
+    
+    // Loading overlay functions
+    function showLoading() {
+        document.getElementById('loadingOverlay').style.display = 'flex';
+    }
+    
+    function hideLoading() {
+        document.getElementById('loadingOverlay').style.display = 'none';
+    }
+    
+    // Toggle dropdown
+    function toggleDropdown(button) {
+        const dropdown = button.nextElementSibling;
+        dropdown.classList.toggle('show');
+        
+        // Close other dropdowns
+        document.querySelectorAll('.notification-dropdown-content').forEach(d => {
+            if (d !== dropdown) d.classList.remove('show');
+        });
+    }
+    
+    // Close dropdowns when clicking outside
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('.notification-dropdown')) {
+            document.querySelectorAll('.notification-dropdown-content').forEach(d => {
+                d.classList.remove('show');
+            });
+        }
+    });
+    
+    // Get CSRF token
+    function getCSRFToken() {
+        return `{{ csrf_token }}`;
+    }
+    
+    // Mark announcement as read
+    async function markAsRead(announcementId) {
+        try {
+            showLoading();
+            const response = await fetch('/api/mark_annoucments/', {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCSRFToken()
+                },
+                body: JSON.stringify({
+                    announcement_ids: [announcementId]
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (response.ok && data.success) {
+                // Update UI
+                const notificationItem = document.querySelector(`[data-id="${announcementId}"]`);
+                if (notificationItem) {
+                    notificationItem.classList.remove('unread');
+                    notificationItem.classList.add('read');
+                    notificationItem.querySelector('.notification-content h4 i').className = 'fas fa-check-circle';
+                    showToast('Announcement marked as read!', 'success');
+                }
+                
+                // Update notification badge
+                updateNotificationBadge();
+            } else {
+                throw new Error('Failed to mark announcement as read');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            showToast('Failed to mark announcement as read', 'error');
+        } finally {
+            hideLoading();
+        }
+    }
+    
+    // Remove announcement
+    async function removeAnnouncement(announcementId) {
+        if (!confirm('Are you sure you want to remove this announcement?')) return;
+        
+        try {
+            showLoading();
+            const response = await fetch('/api/remove_annoucments/', {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCSRFToken()
+                },
+                body: JSON.stringify({
+                    announcement_ids: [announcementId]
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (response.ok && data.success) {
+                // Remove from UI
+                const notificationItem = document.querySelector(`[data-id="${announcementId}"]`);
+                if (notificationItem) {
+                    notificationItem.style.animation = 'slideIn 0.3s ease reverse';
+                    setTimeout(() => notificationItem.remove(), 300);
+                    showToast('Announcement removed!', 'success');
+                }
+                
+                // Update notification badge
+                updateNotificationBadge();
+                
+                // Check if any announcements left
+                const remainingItems = document.querySelectorAll('.notification-item');
+                if (remainingItems.length === 0) {
+                    document.querySelector('.notifications-list').innerHTML = `
+                        <div class="empty-notifications">
+                            <i class="fas fa-bell-slash"></i>
+                            <h4>No announcements yet</h4>
+                            <p>When announcements are posted, they'll appear here</p>
+                        </div>
+                    `;
+                }
+            } else {
+                throw new Error('Failed to remove announcement');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            showToast('Failed to remove announcement', 'error');
+        } finally {
+            hideLoading();
+        }
+    }
+    
+    // Mark all as read
+    async function markAllAsRead() {
+        const unreadItems = document.querySelectorAll('.notification-item.unread');
+        if (unreadItems.length === 0) {
+            showToast('No unread announcements!', 'info');
+            return;
+        }
+        
+        const announcementIds = Array.from(unreadItems).map(item => item.dataset.id);
+        
+        try {
+            showLoading();
+            const response = await fetch('/api/mark_annoucments/', {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCSRFToken()
+                },
+                body: JSON.stringify({
+                    announcement_ids: announcementIds
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (response.ok && data.success) {
+                // Update all unread items
+                unreadItems.forEach(item => {
+                    item.classList.remove('unread');
+                    item.classList.add('read');
+                    item.querySelector('.notification-content h4 i').className = 'fas fa-check-circle';
+                });
+                
+                showToast(`Marked ${announcementIds.length} announcements as read!`, 'success');
+                updateNotificationBadge();
+            } else {
+                throw new Error('Failed to mark all as read');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            showToast('Failed to mark all as read', 'error');
+        } finally {
+            hideLoading();
+        }
+    }
+    
+    // Update notification badge
+    function updateNotificationBadge() {
+        const badge = document.querySelector('.notification-badge');
+        const unreadCount = document.querySelectorAll('.notification-item.unread').length;
+        
+        if (badge) {
+            if (unreadCount > 0) {
+                badge.textContent = unreadCount;
+                badge.style.display = 'inline-block';
+            } else {
+                badge.style.display = 'none';
+            }
+        }
+    }
+    
+    // Filter announcements
+    function filterAnnouncements(filter) {
+        const items = document.querySelectorAll('.notification-item');
+        const filterBtns = document.querySelectorAll('.notification-filter-btn');
+        
+        // Update active filter button
+        filterBtns.forEach(btn => {
+            btn.classList.remove('active');
+            if (btn.dataset.filter === filter) {
+                btn.classList.add('active');
+            }
+        });
+        
+        // Show/hide items based on filter
+        items.forEach(item => {
+            switch (filter) {
+                case 'all':
+                    item.style.display = 'block';
+                    break;
+                case 'unread':
+                    item.style.display = item.classList.contains('unread') ? 'block' : 'none';
+                    break;
+                case 'read':
+                    item.style.display = item.classList.contains('read') ? 'block' : 'none';
+                    break;
+            }
+        });
+    }
     
     // Modal functions
     function showQuickTour() {
@@ -705,49 +1189,109 @@
     }
     
     function showNotifications() {
-        showModal('Notifications', `
+        const unreadCount = {% if annoucements_unread %}{{ annoucements_unread|length }}{% else %}0{% endif %};
+        const readCount = {% if annoucements_read %}{{ annoucements_read|length }}{% else %}0{% endif %};
+        
+        let notificationsHTML = `
+            <div class="notification-header">
+                <h4>Announcements (${unreadCount + readCount})</h4>
+                ${unreadCount > 0 ? `<button class="btn btn-sm btn-outline" onclick="markAllAsRead()">Mark All as Read</button>` : ''}
+            </div>
+            
+            <div class="notification-filters">
+                <button class="notification-filter-btn active" data-filter="all" onclick="filterAnnouncements('all')">All</button>
+                <button class="notification-filter-btn" data-filter="unread" onclick="filterAnnouncements('unread')">Unread (${unreadCount})</button>
+                <button class="notification-filter-btn" data-filter="read" onclick="filterAnnouncements('read')">Read (${readCount})</button>
+            </div>
+            
             <div class="notifications-list">
-                <div class="notification-item unread">
-                    <div class="notification-icon">
-                        <i class="fas fa-user-plus"></i>
+        `;
+        
+        // Add unread announcements
+        {% if annoucements_unread %}
+            {% for annoucement in annoucements_unread %}
+                notificationsHTML += `
+                    <div class="notification-item unread" data-id="{{ annoucement.id }}">
+                        <div class="notification-content">
+                            <h4>
+                                <i class="fas fa-envelope"></i>
+                                {{ annoucement.title }}
+                            </h4>
+                            <p>{{ annoucement.announcement }}</p>
+                            <span class="notification-time">at - {{ annoucement.created_at }} by {{ annoucement.created_by }}</span>
+                        </div>
+                        <div class="notification-actions">
+                            <div class="notification-dropdown">
+                                <button class="notification-dropdown-btn" onclick="toggleDropdown(this)">
+                                    <i class="fas fa-ellipsis-v"></i>
+                                </button>
+                                <div class="notification-dropdown-content">
+                                    <button onclick="markAsRead('{{ annoucement.id }}')">
+                                        <i class="fas fa-check"></i> Mark as Read
+                                    </button>
+                                    <button onclick="removeAnnouncement('{{ annoucement.id }}')" class="danger">
+                                        <i class="fas fa-trash"></i> Remove
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <div class="notification-content">
-                        <h4>New Registration Request</h4>
-                        <p>John Doe has requested account registration</p>
-                        <span class="notification-time">5 minutes ago</span>
+                `;
+            {% endfor %}
+        {% endif %}
+        
+        // Add read announcements
+        {% if annoucements_read %}
+            {% for annoucement in annoucements_read %}
+                notificationsHTML += `
+                    <div class="notification-item read" data-id="{{ annoucement.id }}">
+                        <div class="notification-content">
+                            <h4>
+                                <i class="fas fa-check-circle"></i>
+                                {{ annoucement.title }}
+                            </h4>
+                            <p>{{ annoucement.announcement }}</p>
+                            <span class="notification-time">at - {{ annoucement.created_at }} by {{ annoucement.created_by }}</span>
+                        </div>
+                        <div class="notification-actions">
+                            <div class="notification-dropdown">
+                                <button class="notification-dropdown-btn" onclick="toggleDropdown(this)">
+                                    <i class="fas fa-ellipsis-v"></i>
+                                </button>
+                                <div class="notification-dropdown-content">
+                                    <button onclick="removeAnnouncement('{{ annoucement.id }}')" class="danger">
+                                        <i class="fas fa-trash"></i> Remove
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
                     </div>
+                `;
+            {% endfor %}
+        {% endif %}
+        
+        // Check if there are no announcements
+        {% if not annoucements_unread and not annoucements_read %}
+            notificationsHTML += `
+                <div class="empty-notifications">
+                    <i class="fas fa-bell-slash"></i>
+                    <h4>No announcements yet</h4>
+                    <p>When announcements are posted, they'll appear here</p>
                 </div>
-                <div class="notification-item">
-                    <div class="notification-icon">
-                        <i class="fas fa-exclamation-triangle"></i>
-                    </div>
-                    <div class="notification-content">
-                        <h4>System Warning</h4>
-                        <p>Storage usage is above 75%</p>
-                        <span class="notification-time">2 hours ago</span>
-                    </div>
-                </div>
-                <div class="notification-item">
-                    <div class="notification-icon">
-                        <i class="fas fa-check-circle"></i>
-                    </div>
-                    <div class="notification-content">
-                        <h4>Backup Complete</h4>
-                        <p>Daily system backup completed successfully</p>
-                        <span class="notification-time">Yesterday</span>
-                    </div>
-                </div>
+            `;
+        {% endif %}
+        
+        notificationsHTML += `
             </div>
             <div class="modal-actions" style="margin-top: 1.5rem;">
                 <button class="btn btn-primary" onclick="closeModal()">Close</button>
-                <button class="btn btn-outline" onclick="markAllAsRead()">Mark All as Read</button>
             </div>
-        `);
-    }
-    
-    function markAllAsRead() {
-        alert('All notifications marked as read!');
-        closeModal();
+        `;
+        
+        showModal('Announcements', notificationsHTML);
+        
+        // Initialize filter
+        setTimeout(() => filterAnnouncements('all'), 100);
     }
 </script>
 {% endblock %}

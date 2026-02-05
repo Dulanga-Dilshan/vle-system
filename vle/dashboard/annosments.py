@@ -1,10 +1,12 @@
 from django.contrib.auth.decorators import login_required
-from django.http import HttpResponse
+from django.http import HttpResponse,Http404
 from django.shortcuts import render,redirect,get_object_or_404
 from university.models import Faculty
 from Users.models import Staff
-from  .models import Announcement
-import json
+from  .models import Announcement,UserAnnouncement
+from Users.models import User
+from django.core.exceptions import PermissionDenied
+
 
 
 
@@ -24,34 +26,35 @@ def post_annousment(request):
     context['user'] = request.user
     
     if request.method=='POST':
-        target_audience_rule = {}
-        audience_type = request.POST.get('audience_type')
-        if audience_type == 'all':
-            target_audience_rule['audience_type']='all'
-        else:
-            group = request.POST.get('group')
-            target_audience_rule['audience_type']=group
-            if group == 'students':
-                target_audience_rule['group'] = { 'year':request.POST.get('student_year'),'faculty':request.POST.get('student_faculty') }
-    
-            elif group == 'staff':
-                target_audience_rule['group'] = { 'type':request.POST.get('staff_type'),'faculty':request.POST.get('staff_faculty') }
-            
-            elif group == 'faculty':
-                target_audience_rule['group'] = { 'faculty':request.POST.get('faculty') }
+        if Announcement.objects.filter().first().title != request.POST.get('title'):
+            target_audience_rule = {}
+            audience_type = request.POST.get('audience_type')
+            if audience_type == 'all':
+                target_audience_rule['audience_type']='all'
+            else:
+                group = request.POST.get('group')
+                target_audience_rule['audience_type']=group
+                if group == 'students':
+                    target_audience_rule['group'] = { 'year':request.POST.get('student_year'),'faculty':request.POST.get('student_faculty') }
+        
+                elif group == 'staff':
+                    target_audience_rule['group'] = { 'type':request.POST.get('staff_type'),'faculty':request.POST.get('staff_faculty') }
+                
+                elif group == 'faculty':
+                    target_audience_rule['group'] = { 'faculty':request.POST.get('faculty') }
 
 
-        new_annousment=Announcement(
-            title = request.POST.get('title'),
-            announcement = request.POST.get('message'),
-            target_audience_rule = target_audience_rule,
-            created_by = request.user
-        )
+            new_annousment=Announcement(
+                title = request.POST.get('title'),
+                announcement = request.POST.get('message'),
+                target_audience_rule = target_audience_rule,
+                created_by = request.user
+            )
 
-        try:
-            new_annousment.save()
-        except Exception as e:
-            print(e)
+            try:
+                new_annousment.save()
+            except Exception as e:
+                print(e)
         
     return render(request,'dashboard/admin/anousment.html',context)
 
@@ -71,5 +74,51 @@ def delete_announcement(request,id:int)->HttpResponse:
 
     return HttpResponse('announcement deleted',status=200)
 
+
+def get_announcements(user:User)->dict:
+    announcements = Announcement.objects.all()
+    user_annousments = UserAnnouncement.objects.filter(user=user)
+    _announcements = {
+        'annoucements_unread':[],
+        'annoucements_read':[],
+    }
+
+    isread =  False
+
+    for annousment in announcements:
+        if annousment.is_targeted(user=user):
+            if user_annousments:
+                for user_annousment in user_annousments:
+                    isread = False
+                    if annousment.id == user_annousment.announcement.id:
+                        if not user_annousment.removed:
+                            _announcements['annoucements_read'].append(annousment)
+
+                        isread = True
+            
+                if not isread:
+                    _announcements['annoucements_unread'].append(annousment)
+
+            else:
+                _announcements['annoucements_unread'].append(annousment)
+
+    
+    return _announcements
+
+
+def mark_annoucements(user:User,annousment_id:int,as_delete:bool=False):
+    announcement = Announcement.objects.filter(id=annousment_id).first()
+    if not announcement:
+        raise Http404('no annousment')
+    if not announcement.is_targeted(user):
+        raise PermissionDenied('no permissions')
+    
+    recode,created=UserAnnouncement.objects.get_or_create(user=user,announcement=announcement,removed=as_delete)
+
+    if created:
+        return
+    
+    if as_delete:
+        recode.removed=True
 
 

@@ -1,24 +1,545 @@
-{% extends 'main.html' %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>University VLE - Staff Dashboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
 
-{% block title %} 
-    University VLE - Staff Dashboard
-{% endblock %}
+        body {
+            background-color: #f5f7fa;
+            color: #333;
+            min-height: 100vh;
+        }
 
-{% block navigation %}
-    {% include 'base_navigation.html' %}
-{% endblock %}
+        /* Navigation Styles */
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 2rem;
+            background: linear-gradient(135deg, #2c3e50 0%, #4a6491 100%);
+            color: white;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
 
-{% block body%}
-<div class="page-container">
-    <!-- Main Content -->
-    <main class="main-content">
-        <div class="dashboard-header">
-            <h2 class="dashboard-title">Staff Dashboard</h2>
-            <button id="change-password-btn" class="profile-link">
-                <i class="fas fa-key"></i> <a style="text-decoration:'none';" href="reset_passwd.php" >Change Password</a>
-            </button>
+        .logo-container {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .logo {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #fff;
+            text-decoration: none;
+        }
+
+        .logo span {
+            color: #4dabf7;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+            list-style: none;
+        }
+
+        .nav-links a {
+            color: white;
+            text-decoration: none;
+            font-weight: 500;
+            padding: 0.5rem 0.8rem;
+            border-radius: 4px;
+            transition: all 0.3s ease;
+        }
+
+        .nav-links a:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .nav-links a.active {
+            background-color: #4dabf7;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: #4dabf7;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+        }
+
+        /* Main Content */
+        .page-container {
+            padding: 2rem;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .dashboard-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .dashboard-title {
+            font-size: 2.2rem;
+            font-weight: 700;
+            color: #2c3e50;
+            position: relative;
+            padding-bottom: 0.5rem;
+        }
+
+        .dashboard-title::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 80px;
+            height: 4px;
+            background: linear-gradient(to right, #4dabf7, #339af0);
+            border-radius: 2px;
+        }
+
+        .profile-link {
+            background-color: #fff;
+            border: none;
+            padding: 0.8rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: #495057;
+        }
+
+        .profile-link:hover {
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+            transform: translateY(-2px);
+            color: #339af0;
+        }
+
+        .profile-link i {
+            font-size: 1.1rem;
+        }
+
+        /* Dashboard Grid */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 1.8rem;
+            margin-top: 1.5rem;
+        }
+
+        .dashboard-card {
+            background-color: white;
+            border-radius: 12px;
+            padding: 1.8rem;
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.07);
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            border: 1px solid #f1f3f4;
+        }
+
+        .dashboard-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 1.2rem;
+        }
+
+        .card-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 1.2rem;
+            font-size: 1.6rem;
+            color: white;
+        }
+
+        .blue-icon {
+            background: linear-gradient(135deg, #4dabf7 0%, #339af0 100%);
+        }
+
+        .purple-icon {
+            background: linear-gradient(135deg, #9c36b5 0%, #862e9c 100%);
+        }
+
+        .red-icon {
+            background: linear-gradient(135deg, #ff6b6b 0%, #fa5252 100%);
+        }
+
+        .indigo-icon {
+            background: linear-gradient(135deg, #5c7cfa 0%, #4263eb 100%);
+        }
+
+        .yellow-icon {
+            background: linear-gradient(135deg, #ffd43b 0%, #fcc419 100%);
+        }
+
+        .green-icon {
+            background: linear-gradient(135deg, #51cf66 0%, #40c057 100%);
+        }
+
+        .card-title {
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .card-description {
+            color: #6c757d;
+            line-height: 1.6;
+            margin-bottom: 1.8rem;
+            flex-grow: 1;
+        }
+
+        .card-actions {
+            display: flex;
+            gap: 0.8rem;
+            margin-top: auto;
+        }
+
+        .action-btn {
+            padding: 0.7rem 1.2rem;
+            border-radius: 8px;
+            border: none;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            transition: all 0.3s ease;
+            font-size: 0.95rem;
+            flex: 1;
+        }
+
+        .action-btn i {
+            font-size: 0.9rem;
+        }
+
+        .blue-btn {
+            background-color: #4dabf7;
+            color: white;
+        }
+
+        .blue-btn:hover {
+            background-color: #339af0;
+        }
+
+        .green-btn {
+            background-color: #51cf66;
+            color: white;
+        }
+
+        .green-btn:hover {
+            background-color: #40c057;
+        }
+
+        .yellow-btn {
+            background-color: #ffd43b;
+            color: #333;
+        }
+
+        .yellow-btn:hover {
+            background-color: #fcc419;
+        }
+
+        /* Quick Stats Section */
+        .quick-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2.5rem;
+        }
+
+        .stat-card {
+            background-color: white;
+            border-radius: 10px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+            display: flex;
+            align-items: center;
+            transition: all 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.08);
+        }
+
+        .stat-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 1.2rem;
+            font-size: 1.3rem;
+            color: white;
+        }
+
+        .stat-info h3 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #2c3e50;
+        }
+
+        .stat-info p {
+            color: #6c757d;
+            font-size: 0.9rem;
+        }
+
+        /* Recent Activity Section */
+        .recent-activity {
+            background-color: white;
+            border-radius: 12px;
+            padding: 1.8rem;
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.07);
+            margin-top: 2.5rem;
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+        }
+
+        .section-title i {
+            color: #4dabf7;
+        }
+
+        .activity-list {
+            list-style: none;
+        }
+
+        .activity-item {
+            display: flex;
+            align-items: center;
+            padding: 1rem 0;
+            border-bottom: 1px solid #f1f3f4;
+        }
+
+        .activity-item:last-child {
+            border-bottom: none;
+        }
+
+        .activity-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 1rem;
+            color: white;
+        }
+
+        .activity-details h4 {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 0.2rem;
+        }
+
+        .activity-details p {
+            color: #6c757d;
+            font-size: 0.9rem;
+        }
+
+        .activity-time {
+            margin-left: auto;
+            color: #868e96;
+            font-size: 0.85rem;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 1100px) {
+            .dashboard-grid {
+                grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            }
+        }
+
+        @media (max-width: 768px) {
+            .navbar {
+                flex-direction: column;
+                padding: 1rem;
+            }
+
+            .nav-links {
+                margin: 1rem 0;
+                flex-wrap: wrap;
+                justify-content: center;
+                gap: 1rem;
+            }
+
+            .user-info {
+                margin-top: 0.5rem;
+            }
+
+            .dashboard-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 1rem;
+            }
+
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .card-actions {
+                flex-direction: column;
+            }
+
+            .quick-stats {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .page-container {
+                padding: 1rem;
+            }
+
+            .quick-stats {
+                grid-template-columns: 1fr;
+            }
+
+            .dashboard-title {
+                font-size: 1.8rem;
+            }
+        }
+
+        /* Footer */
+        .footer {
+            text-align: center;
+            padding: 1.5rem;
+            margin-top: 3rem;
+            color: #6c757d;
+            font-size: 0.9rem;
+            border-top: 1px solid #e9ecef;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="logo-container">
+            <a href="#" class="logo"><span>Uni</span>VLE</a>
+            <div class="nav-title">Staff Dashboard</div>
         </div>
         
+        <ul class="nav-links">
+            <li><a href="#" class="active"><i class="fas fa-home"></i> Dashboard</a></li>
+            <li><a href="#"><i class="fas fa-calendar-alt"></i> Schedule</a></li>
+            <li><a href="#"><i class="fas fa-envelope"></i> Messages</a></li>
+            <li><a href="#"><i class="fas fa-cog"></i> Settings</a></li>
+        </ul>
+        
+        <div class="user-info">
+            <div class="user-avatar">JD</div>
+            <div>
+                <div class="user-name">Dr. Jane Doe</div>
+                <div class="user-role">Faculty Member</div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="page-container">
+        <!-- Dashboard Header -->
+        <div class="dashboard-header">
+            <h1 class="dashboard-title">Staff Dashboard</h1>
+            <button id="change-password-btn" class="profile-link">
+                <i class="fas fa-key"></i> Change Password
+            </button>
+        </div>
+
+        <!-- Quick Stats -->
+        <div class="quick-stats">
+            <div class="stat-card">
+                <div class="stat-icon blue-icon">
+                    <i class="fas fa-chalkboard-teacher"></i>
+                </div>
+                <div class="stat-info">
+                    <h3>5</h3>
+                    <p>Active Courses</p>
+                </div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon purple-icon">
+                    <i class="fas fa-user-graduate"></i>
+                </div>
+                <div class="stat-info">
+                    <h3>142</h3>
+                    <p>Total Students</p>
+                </div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon red-icon">
+                    <i class="fas fa-tasks"></i>
+                </div>
+                <div class="stat-info">
+                    <h3>23</h3>
+                    <p>Pending Grading</p>
+                </div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon green-icon">
+                    <i class="fas fa-bullhorn"></i>
+                </div>
+                <div class="stat-info">
+                    <h3>7</h3>
+                    <p>Active Notices</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Dashboard Grid -->
         <div class="dashboard-grid">
             <!-- Course Management Card -->
             <div class="dashboard-card">
@@ -28,10 +549,11 @@
                     </div>
                     <h3 class="card-title">Course Management</h3>
                 </div>
-                <p class="card-description">Manage your courses, schedule lectures, and upload materials.</p>
+                <p class="card-description">Manage your courses, schedule lectures, upload materials, and organize course content for your students.</p>
                 <div class="card-actions">
                     <button class="action-btn blue-btn">
-                        <a href="course_management.php" style="text-decoration:none; color:white;"> Manage Courses</a> <i class="fas fa-arrow-right"></i>
+                        <a href="course_management.php" style="text-decoration:none; color:white;">Manage Courses</a>
+                        <i class="fas fa-arrow-right"></i>
                     </button>
                     <button class="action-btn green-btn">
                         <i class="fas fa-video"></i> Host Class
@@ -47,13 +569,13 @@
                     </div>
                     <h3 class="card-title">Student Tracking</h3>
                 </div>
-                <p class="card-description">Track student progress, grade assignments, and answer questions.</p>
+                <p class="card-description">Track student progress, attendance, grade assignments, and answer student questions.</p>
                 <div class="card-actions">
                     <button class="action-btn blue-btn">
                         View Students <i class="fas fa-arrow-right"></i>
                     </button>
                     <button class="action-btn yellow-btn">
-                        <i class="fas fa-comments"></i> Q&A
+                        <i class="fas fa-comments"></i> Q&A Forum
                     </button>
                 </div>
             </div>
@@ -66,10 +588,15 @@
                     </div>
                     <h3 class="card-title">Assignment Monitoring</h3>
                 </div>
-                <p class="card-description">Monitor student submissions and grade assignments.</p>
-                <button class="action-btn blue-btn">
-                    Monitor Assignments <i class="fas fa-arrow-right"></i>
-                </button>
+                <p class="card-description">Monitor student submissions, check for plagiarism, grade assignments, and provide feedback.</p>
+                <div class="card-actions">
+                    <button class="action-btn blue-btn">
+                        Monitor Assignments <i class="fas fa-arrow-right"></i>
+                    </button>
+                    <button class="action-btn yellow-btn">
+                        <i class="fas fa-chart-bar"></i> Analytics
+                    </button>
+                </div>
             </div>
 
             <!-- Results Management Card -->
@@ -80,7 +607,7 @@
                     </div>
                     <h3 class="card-title">Results Management</h3>
                 </div>
-                <p class="card-description">Enter and release student examination results.</p>
+                <p class="card-description">Enter, analyze, and release student examination results with comprehensive reporting tools.</p>
                 <button class="action-btn blue-btn">
                     Manage Results <i class="fas fa-arrow-right"></i>
                 </button>
@@ -94,10 +621,15 @@
                     </div>
                     <h3 class="card-title">Notice Board</h3>
                 </div>
-                <p class="card-description">Post and manage important announcements for students.</p>
-                <button class="action-btn blue-btn">
-                    Manage Notices <i class="fas fa-arrow-right"></i>
-                </button>
+                <p class="card-description">Post and manage important announcements, deadlines, and updates for students.</p>
+                <div class="card-actions">
+                    <button class="action-btn blue-btn">
+                        Manage Notices <i class="fas fa-arrow-right"></i>
+                    </button>
+                    <button class="action-btn green-btn">
+                        <i class="fas fa-plus"></i> New Notice
+                    </button>
+                </div>
             </div>
 
             <!-- Add Past Papers Card -->
@@ -108,12 +640,99 @@
                     </div>
                     <h3 class="card-title">Add Past Papers</h3>
                 </div>
-                <p class="card-description">Upload previous exam papers for student reference.</p>
-                <button class="action-btn blue-btn">
-                    Upload Papers <i class="fas fa-arrow-right"></i>
-                </button>
+                <p class="card-description">Upload previous exam papers, solutions, and study materials for student reference and practice.</p>
+                <div class="card-actions">
+                    <button class="action-btn blue-btn">
+                        Upload Papers <i class="fas fa-arrow-right"></i>
+                    </button>
+                    <button class="action-btn yellow-btn">
+                        <i class="fas fa-archive"></i> Archive
+                    </button>
+                </div>
             </div>
         </div>
-    </main>
-</div>
-{% endblock %}
+
+        <!-- Recent Activity Section -->
+        <div class="recent-activity">
+            <h2 class="section-title"><i class="fas fa-history"></i> Recent Activity</h2>
+            <ul class="activity-list">
+                <li class="activity-item">
+                    <div class="activity-icon blue-icon">
+                        <i class="fas fa-upload"></i>
+                    </div>
+                    <div class="activity-details">
+                        <h4>New Material Uploaded</h4>
+                        <p>Lecture slides for "Advanced Algorithms" uploaded</p>
+                    </div>
+                    <div class="activity-time">2 hours ago</div>
+                </li>
+                <li class="activity-item">
+                    <div class="activity-icon green-icon">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <div class="activity-details">
+                        <h4>Assignment Graded</h4>
+                        <p>Graded "Data Structures Assignment 3" for 42 students</p>
+                    </div>
+                    <div class="activity-time">Yesterday</div>
+                </li>
+                <li class="activity-item">
+                    <div class="activity-icon yellow-icon">
+                        <i class="fas fa-bullhorn"></i>
+                    </div>
+                    <div class="activity-details">
+                        <h4>New Announcement Posted</h4>
+                        <p>Posted "Midterm Exam Schedule" to all courses</p>
+                    </div>
+                    <div class="activity-time">2 days ago</div>
+                </li>
+                <li class="activity-item">
+                    <div class="activity-icon purple-icon">
+                        <i class="fas fa-question-circle"></i>
+                    </div>
+                    <div class="activity-details">
+                        <h4>Student Question Answered</h4>
+                        <p>Answered query about "Dynamic Programming" in Q&A</p>
+                    </div>
+                    <div class="activity-time">3 days ago</div>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+        <p>University Virtual Learning Environment &copy; 2023 | Staff Dashboard v2.1</p>
+        <p>For technical support, contact: <a href="mailto:support@univle.edu" style="color:#4dabf7;">support@univle.edu</a></p>
+    </div>
+
+    <script>
+        // Simple interactivity for buttons
+        document.addEventListener('DOMContentLoaded', function() {
+            const buttons = document.querySelectorAll('.action-btn');
+            
+            buttons.forEach(button => {
+                button.addEventListener('click', function() {
+                    // Add a temporary "clicked" effect
+                    this.style.transform = 'scale(0.98)';
+                    setTimeout(() => {
+                        this.style.transform = '';
+                    }, 150);
+                    
+                    // For demo purposes, show an alert for buttons without links
+                    if (!this.querySelector('a') && !this.getAttribute('href')) {
+                        const cardTitle = this.closest('.dashboard-card').querySelector('.card-title').textContent;
+                        const btnText = this.textContent.trim();
+                        alert(`You clicked: ${btnText}\nFrom: ${cardTitle}\n\nThis is a demo. In the actual system, this would navigate to the appropriate page.`);
+                    }
+                });
+            });
+            
+            // Change password button
+            document.getElementById('change-password-btn').addEventListener('click', function() {
+                window.location.href = 'reset_passwd.php';
+            });
+        });
+    </script>
+</body>
+</html>

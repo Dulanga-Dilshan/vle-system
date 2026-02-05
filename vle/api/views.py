@@ -2,7 +2,6 @@ from rest_framework import response,status
 from rest_framework.decorators import api_view,permission_classes
 from . import serializer
 from university import models as university_models
-from django.http import HttpResponse
 from Users import models as user_models
 from . import permissions
 from django.shortcuts import get_object_or_404
@@ -11,6 +10,9 @@ from config.config import get_setting,update_setting,get_all_setting
 from rest_framework.exceptions import ValidationError
 from config import metrics
 from config.middleware import get_avg_response_ms
+from dashboard.annosments import mark_annoucements
+from django.core.exceptions import PermissionDenied
+from django.http import Http404
 
 
 
@@ -339,3 +341,44 @@ def get_stats(request):
         return response.Response({'detail':str(e)},status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     
     return response.Response(stats,status=status.HTTP_200_OK)
+
+
+@api_view(['PUT'])
+@permission_classes([permissions.IsAuthenticated])
+def mark_annoucments(request):
+    if 'announcement_ids' not in request.data:
+        return response.Response({'detail':"request not in correct format!"},status=status.HTTP_400_BAD_REQUEST)
+    
+    ids = request.data['announcement_ids']
+    for id in ids:
+        try:
+            mark_annoucements(request.user,int(id))
+        
+        except PermissionDenied:
+            return response.Response({'detail':'no permission'},status=status.HTTP_403_FORBIDDEN)
+        
+        except Http404:
+            return response.Response({'detail':'no permission'},status=status.HTTP_404_NOT_FOUND)
+
+    return response.Response({'success': True},status=status.HTTP_200_OK)
+
+
+
+@api_view(['PUT'])
+@permission_classes([permissions.IsAuthenticated])
+def remove_annoucments(request):
+    if 'announcement_ids' not in request.data:
+        return response.Response({'detail':"request not in correct format!"},status=status.HTTP_400_BAD_REQUEST)
+    
+    ids = request.data['announcement_ids']
+    for id in ids:
+        try:
+            mark_annoucements(user=request.user,annousment_id=int(id),as_delete=True)
+        
+        except PermissionDenied:
+            return response.Response({'detail':'no permission'},status=status.HTTP_403_FORBIDDEN)
+        
+        except Http404:
+            return response.Response({'detail':'no permission'},status=status.HTTP_404_NOT_FOUND)
+
+    return response.Response({'success': True},status=status.HTTP_200_OK)

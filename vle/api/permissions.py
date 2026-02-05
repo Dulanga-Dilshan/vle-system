@@ -144,3 +144,12 @@ class IsFacultyAdminUserState(BasePermission):
             return request.user.is_staff
         
         return False
+
+class IsAuthenticated(BasePermission):
+    message = 'login requered'
+
+    def has_permission(self, request, view):
+        if request.user:
+            return request.user.is_authenticated
+        
+        return False

@@ -35,6 +35,10 @@ urlpatterns = [
 
     path('get-stats/',views.get_stats),
 
+    path('mark_annoucments/',views.mark_annoucments),
+    path('remove_annoucments/',views.remove_annoucments),
+
+
 
 ]
 

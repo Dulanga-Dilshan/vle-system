@@ -3,7 +3,7 @@ from django.contrib.auth.decorators import login_required
 from Users import models,services
 from university import models as university_models
 from university import services as university_services
-from . import annosments
+from dashboard.annosments import get_announcements
 from django.http import HttpResponse
 from config import metrics
 
@@ -51,7 +51,14 @@ def admin(request):
     contex['user_count'] = services.user_count()
     contex['course_count'] = university_services.get_course_count()
     contex['storage_useage'] = metrics.get_disk_usage()
-    contex['notification_count'] = 2
+
+    announcements=get_announcements(request.user)
+    if 'annoucements_read' in announcements:
+        contex['annoucements_read'] = announcements['annoucements_read']
+    
+    if 'annoucements_unread' in announcements:
+        contex['annoucements_unread'] = announcements['annoucements_unread']
+        contex['new_annoucement_count'] = len(announcements['annoucements_unread'])
 
     
 

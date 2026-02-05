@@ -13,3 +13,6 @@ use POST, PUT, DELETE in api for admin. later
 add bulk usercreations
 
 check user email,username in user.services
+
+
+in annousment check befor posting.
