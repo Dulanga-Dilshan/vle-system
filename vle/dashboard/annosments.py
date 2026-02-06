@@ -6,6 +6,7 @@ from Users.models import Staff
 from  .models import Announcement,UserAnnouncement
 from Users.models import User
 from django.core.exceptions import PermissionDenied
+from dashboard.recent_activity import log_activity
 
 
 
@@ -69,9 +70,10 @@ def delete_announcement(request,id:int)->HttpResponse:
     if request.user.role == 'staff':
         if request.user != announcement.created_by:
             return HttpResponse('bad request(no permissions)',status=400)
-        
-    announcement.delete()
+    
 
+    log_activity(actor=request.user,action=f"Annousment '{announcement.title}' Deleted.")
+    announcement.delete()
     return HttpResponse('announcement deleted',status=200)
 
 

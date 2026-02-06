@@ -8,6 +8,7 @@ from django.core.validators import validate_email,validate_image_file_extension
 from django.core.exceptions import ValidationError
 from PIL import Image
 from config.config import get_setting
+from dashboard.recent_activity import log_activity
 
 
 
@@ -51,7 +52,8 @@ def login_user(request):
         user = authenticate(request,username=username,password=password)
 
         if user is not None:
-            login(request,user) 
+            login(request,user)
+            log_activity(actor=request.user,action='Logged in')
 
             if request.POST.get('remember_me')=='1':
                 request.session.set_expiry(get_setting("SESSION_EXPIRE"))

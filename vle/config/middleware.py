@@ -31,7 +31,8 @@ class AvgResponseTimeMiddleware:
 
     def __call__(self, request):
         if request.path.startswith("/static/") or request.path.startswith("/media/"):
-            return response
+            return self.get_response(request)
+            
         global _count, _total_ms
         start = time.perf_counter()
         response = self.get_response(request)

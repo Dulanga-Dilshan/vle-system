@@ -29,6 +29,8 @@ def add_course(POST:QueryDict)-> bool:
         print(e)
         return False
     
+    return True
+    
 def get_course_count()->int:
     return models.Course.objects.count()
 

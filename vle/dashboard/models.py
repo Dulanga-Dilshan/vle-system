@@ -111,7 +111,7 @@ class RecentActivity(models.Model):
     actor = models.ForeignKey(User, on_delete=models.SET_NULL,null=True)
     action = models.CharField(max_length=100)
     at = models.DateTimeField(auto_now_add=True,db_index=True)
-    target_content_info = models.JSONField(null=True)
+    target_content_info = models.JSONField(null=True,default={},blank=True)
 
     class Meta:
         ordering = ['-at']

@@ -182,13 +182,9 @@
             <div class="activity-list">
                 {% for activity in recent_activities %}
                 <div class="activity-item">
-                    <div class="activity-icon {{ activity.type }}">
-                        <i class="fas fa-{{ activity.icon }}"></i>
-                    </div>
                     <div class="activity-content">
-                        <h4>{{ activity.title }}</h4>
-                        <p>{{ activity.description }}</p>
-                        <span class="activity-time">{{ activity.time }}</span>
+                        <h5>{{ activity.action }}</h5>
+                        <p>User: {{ activity.actor }} | at. {{ activity.at }}</p>
                     </div>
                 </div>
                 {% empty %}
@@ -211,7 +207,6 @@
                 <h3 class="card-title">
                     <i class="fas fa-heartbeat"></i> System Status
                 </h3>
-                <span class="badge badge-success">All Systems Operational</span>
             </div>
             <div class="status-list">
                 <div class="status-item">

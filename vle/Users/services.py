@@ -2,11 +2,13 @@ from .models import User, Student, Staff,StudentRegistretionRequest, StaffRegist
 from university import models as univercity_models
 from django.shortcuts import get_object_or_404
 from django.conf import settings
-from django.core.handlers.wsgi import WSGIRequest
 from rest_framework.exceptions import ValidationError, NotFound
 from django.db import transaction
 from django.core.validators import validate_email
 
+
+
+@transaction.atomic
 def approve_register_request(ids,role):
     if role == 'student':
         for id in ids:
@@ -37,6 +39,7 @@ def approve_register_request(ids,role):
                 std_request.delete()
             except Exception as e:
                 return False
+
         else:
             return True
     

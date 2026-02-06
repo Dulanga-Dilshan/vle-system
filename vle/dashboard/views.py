@@ -6,6 +6,8 @@ from university import services as university_services
 from dashboard.annosments import get_announcements
 from dashboard.models import RecentActivity
 from config import metrics
+from dashboard.recent_activity import log_activity
+
 
 
 def get_name_avatar(request):
@@ -53,7 +55,6 @@ def admin(request):
     contex['storage_useage'] = metrics.get_disk_usage()
 
     announcements=get_announcements(request.user)
-    print(announcements)
     if 'annoucements_read' in announcements:
         contex['annoucements_read'] = announcements['annoucements_read']
     
@@ -61,12 +62,7 @@ def admin(request):
         contex['annoucements_unread'] = announcements['annoucements_unread']
         contex['new_annoucement_count'] = len(announcements['annoucements_unread'])
 
-    contex['recent_activities'] = RecentActivity.objects.all()
-
-
-
-    
-
+    contex['recent_activities'] = RecentActivity.objects.all()[:4]
     
     return render(request,"dashboard/admin/admin.html",contex)
 
@@ -132,13 +128,19 @@ def manage_student_register_requests(request):
         approved = []
         denied = []
         action = ''
+        sucsess = True
+
+        approved_users =  []
+        denied_users =  []
 
         for student in students:
             action = request.POST.get(str(student.id))
             if action == 'approved':
                 approved.append(student.id)
+                approved_users.append(student.username)
             elif action == 'denied':
                 denied.append(student.id)
+                denied_users.append(student.username)
         
         try:
             services.approve_register_request(approved,'student')
@@ -146,7 +148,25 @@ def manage_student_register_requests(request):
         
         except Exception as e:
             print(e)
+            sucsess = False
 
+        if sucsess:
+            if len(approved)>0:
+                usernames = ""
+                for user_name in approved_users:
+                    usernames += user_name
+                    user_name += ' , '
+                
+                log_activity(actor=request.user,action=f"approved ({usernames}) Student Registration Requests.")
+
+            if len(denied)>0:
+                usernames = ""
+                for user_name in denied_users:
+                    usernames += user_name
+                    user_name += ' , '
+                
+                log_activity(actor=request.user,action=f"denied ({denied}) Student Registration Requests.")
+            
     return redirect('dashboard:manage_requests')
 
 @login_required(login_url='Users:login')
@@ -164,13 +184,20 @@ def manage_staff_register_requests(request):
         approved = []
         denied = []
         action = ''
+        sucsess = True
+
+        approved_users =  []
+        denied_users =  []
 
         for stf in staff:
             action = request.POST.get(str(stf.id))
             if action == 'approved':
                 approved.append(stf.id)
+                approved_users.append(stf.username)
+
             elif action == 'denied':
                 denied.append(stf.id)
+                denied_users.append(stf.username)
 
         try:
             services.approve_register_request(approved,'staff')
@@ -178,6 +205,25 @@ def manage_staff_register_requests(request):
         
         except Exception as e:
             print(e)
+            sucsess = False
+
+        if sucsess:
+            if len(approved)>0:
+                usernames = ""
+                for user_name in approved_users:
+                    usernames += user_name
+                    user_name += ' , '
+                
+                log_activity(actor=request.user,action=f"approved ({usernames}) Staff Registration Requests.")
+
+            if len(denied)>0:
+                usernames = ""
+                for user_name in denied_users:
+                    usernames += user_name
+                    user_name += ' , '
+                
+                log_activity(actor=request.user,action=f"denied ({denied}) Staff Registration Requests.")
+            
 
     return redirect('dashboard:manage_requests')
 
@@ -247,32 +293,46 @@ def manage_courses(request):
 
     if request.method == 'POST':
         action = request.POST.get('action')
+        
         if action == 'update':
+            success = True
+            filds = ''
             for course in context['courses']:
                 if course.id == int(request.POST.get('id')):
                     if course.name != request.POST.get('course_name') or course.duration_years != request.POST.get('durationyears'):
                         course.name = request.POST.get('course_name')
+                        filds += 'name,'
 
                         if course.description !=  request.POST.get('description'):
                             course.description=request.POST.get('description')
+                            filds += 'description,'
 
                         if 10 > int(request.POST.get('durationyears')) > 0:
                             course.duration_years = request.POST.get('durationyears')
+                            filds += 'duration years,'
                         
                         try:
                             course.save()
                         except Exception as e:
                             print(e)
+                            success = False
+                        
+                        if success:
+                            log_activity(actor=request.user,action=f"cource updateed {course.name} ({filds})")
+                        
 
         if action == 'delete':
             for course in context['courses']:
                 if course.id == int(request.POST.get('id')):
+                    log_activity(actor=request.user,action=f"deleted course {course.name}")
                     course.delete()
                     context['courses']=university_models.Course.objects.all()
         
         if action == 'add':
             if not university_services.add_course(request.POST):
                 errors.append('couldnt able to add new course')
+            else:
+                log_activity(actor=request.user,action=f"added new course {request.POST.get('course_name')}",content_info={'course_code':request.POST.get('course_code')})
             
     context['error']=errors
     return render(request,'dashboard/admin/manage_courses.html',context)
