@@ -107,4 +107,18 @@ class UserAnnouncement(models.Model):
         return f'{self.announcement.title} - {self.read_at}'
 
 
+class RecentActivity(models.Model):
+    actor = models.ForeignKey(User, on_delete=models.SET_NULL,null=True)
+    action = models.CharField(max_length=100)
+    at = models.DateTimeField(auto_now_add=True,db_index=True)
+    target_content_info = models.JSONField(null=True)
+
+    class Meta:
+        ordering = ['-at']
+
+    def __str__(self):
+        return f"{self.actor} - {self.action} - {self.at }"
+    
+    
+
 

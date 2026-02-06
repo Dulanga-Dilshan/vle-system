@@ -78,26 +78,33 @@ def delete_announcement(request,id:int)->HttpResponse:
 def get_announcements(user:User)->dict:
     announcements = Announcement.objects.all()
     user_annousments = UserAnnouncement.objects.filter(user=user)
+    
     _announcements = {
         'annoucements_unread':[],
         'annoucements_read':[],
     }
 
-    isread =  False
+    isread = False
+    isremoved = False
 
     for annousment in announcements:
         if annousment.is_targeted(user=user):
             if user_annousments:
                 for user_annousment in user_annousments:
-                    isread = False
                     if annousment.id == user_annousment.announcement.id:
-                        if not user_annousment.removed:
-                            _announcements['annoucements_read'].append(annousment)
-
                         isread = True
-            
-                if not isread:
+                        if user_annousment.removed:
+                            isremoved = True
+
+                        break
+                
+                if isread and not isremoved:
+                    _announcements['annoucements_read'].append(annousment)
+                
+                if not isread and not isremoved:
                     _announcements['annoucements_unread'].append(annousment)
+                
+                isremoved = isread = False
 
             else:
                 _announcements['annoucements_unread'].append(annousment)
@@ -113,12 +120,16 @@ def mark_annoucements(user:User,annousment_id:int,as_delete:bool=False):
     if not announcement.is_targeted(user):
         raise PermissionDenied('no permissions')
     
-    recode,created=UserAnnouncement.objects.get_or_create(user=user,announcement=announcement,removed=as_delete)
+    if UserAnnouncement.objects.filter(user=user,announcement=announcement).exists():
+        if as_delete:
+            user_annousement = UserAnnouncement.objects.filter(user=user,announcement=announcement).first()
+            user_annousement.removed = True
+            user_annousement.save()
+            return
+    
+    recode,created=UserAnnouncement.objects.get_or_create(user=user,announcement=announcement)
 
     if created:
-        return
-    
-    if as_delete:
-        recode.removed=True
-
-
+        if as_delete:
+            recode.removed=True
+            recode.save()

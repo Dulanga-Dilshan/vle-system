@@ -4,7 +4,7 @@ from Users import models,services
 from university import models as university_models
 from university import services as university_services
 from dashboard.annosments import get_announcements
-from django.http import HttpResponse
+from dashboard.models import RecentActivity
 from config import metrics
 
 
@@ -53,12 +53,17 @@ def admin(request):
     contex['storage_useage'] = metrics.get_disk_usage()
 
     announcements=get_announcements(request.user)
+    print(announcements)
     if 'annoucements_read' in announcements:
         contex['annoucements_read'] = announcements['annoucements_read']
     
     if 'annoucements_unread' in announcements:
         contex['annoucements_unread'] = announcements['annoucements_unread']
         contex['new_annoucement_count'] = len(announcements['annoucements_unread'])
+
+    contex['recent_activities'] = RecentActivity.objects.all()
+
+
 
     
 
