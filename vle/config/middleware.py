@@ -1,6 +1,7 @@
 from config.config import sync_setting
 import time
 import threading
+from config.metrics import get_system_up_time
 
 
 class SyncSettingsMiddleware:
@@ -9,6 +10,14 @@ class SyncSettingsMiddleware:
     
     def __call__(self, request):
         sync_setting()
+        return self.get_responce(request)
+    
+class SystemUptimeMiddleware:
+    def __init__(self,get_responce):
+        self.get_responce = get_responce
+    
+    def __call__(self, request):
+        get_system_up_time()
         return self.get_responce(request)
     
         

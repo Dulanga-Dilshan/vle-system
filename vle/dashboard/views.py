@@ -341,8 +341,12 @@ def manage_courses(request):
 def system_state(request):
     contex = {}
     contex['user_presentage'] = f"{round((services.user_count() / services.max_user_count()) *100,2) }%"
+
     contex['user_count'] = services.user_count()
     contex['storage_usage'] = metrics.get_disk_usage()
+    contex['storage_size'] = metrics.get_disk_size()
+    contex['strage_used'] = metrics.get_disk_used()
+
     from config.middleware import get_avg_response_ms
     contex["avg_response_time"]=round(get_avg_response_ms(),2)
     contex["system_up_time"] = metrics.format_time(metrics.get_system_up_time())
@@ -352,6 +356,9 @@ def system_state(request):
     contex["cpu_usage"] = cpu_and_net_io["cpu_percent"]
     contex["net_down_bps"] = cpu_and_net_io["net_down_bps"]
     contex["net_up_bps"] = cpu_and_net_io["net_up_bps"]
+
+    contex['logs'] = RecentActivity.objects.all()
+
 
 
     return render(request,'dashboard/admin/system_stats.html',contex)

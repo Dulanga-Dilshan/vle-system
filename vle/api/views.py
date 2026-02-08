@@ -7,12 +7,13 @@ from . import permissions
 from django.shortcuts import get_object_or_404
 from Users import services as user_services
 from config.config import get_setting,update_setting,get_all_setting
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import ValidationError,NotFound
 from config import metrics
 from config.middleware import get_avg_response_ms
 from dashboard.annosments import mark_annoucements
 from django.core.exceptions import PermissionDenied
 from django.http import Http404
+from dashboard.recent_activity import log_activity
 
 
 
@@ -29,6 +30,7 @@ def create_faculty(request):
     new_faculty = serializer.FacultySerializer(data=request.data)
     new_faculty.is_valid(raise_exception=True)
     new_faculty.save()
+    log_activity(actor=request.user,action=f"created new faculty '{new_faculty.data['name']}'")
     return response.Response(new_faculty.data,status=status.HTTP_201_CREATED)
 
 
@@ -37,7 +39,9 @@ def create_faculty(request):
 @permission_classes([permissions.IsSuperUser])
 def delete_faculty(request,id):
     faculty = get_object_or_404(university_models.Faculty,id=id)
+    name = faculty.name
     faculty.delete()
+    log_activity(actor=request.user,action=f"deleted faculty {name}")
     return response.Response(status=status.HTTP_204_NO_CONTENT)
 
 
@@ -49,6 +53,7 @@ def update_faculty(request,id:int):
     faculty_data = serializer.FacultySerializer(faculty,data=request.data,partial=True)
     faculty_data.is_valid(raise_exception=True)
     faculty_data.save()
+    log_activity(actor=request.user,action=f"faculty {faculty.name} data updated ")
     return response.Response(faculty_data.data,status=status.HTTP_200_OK)
 
 
@@ -58,6 +63,7 @@ def create_department(request):
     new_department = serializer.DepartmentSerializer(data=request.data)
     new_department.is_valid(raise_exception=True)
     new_department.save()
+    log_activity(actor=request.user,action=f"new department {new_department.data['name']} created.")
     return response.Response(new_department.data,status=status.HTTP_201_CREATED)
 
 
@@ -68,6 +74,7 @@ def update_department(request,id):
     department_data = serializer.DepartmentSerializer(department,data=request.data,partial=True)
     department_data.is_valid(raise_exception=True)
     department_data.save()
+    log_activity(actor=request.user,action=f"department {department.name} data updated ")
     return response.Response(department_data.data,status=status.HTTP_200_OK)
 
 
@@ -75,7 +82,9 @@ def update_department(request,id):
 @permission_classes([permissions.IsFacultyAdminstrator])
 def delete_department(request,id):
     department = get_object_or_404(university_models.Department,id=id)
+    department_name = department.name
     department.delete()
+    log_activity(actor=request.user,action=f"department {department.name} deleted")
     return response.Response(status=status.HTTP_204_NO_CONTENT)
 
 
@@ -85,6 +94,7 @@ def create_batch(request):
     new_batch = serializer.BatchSerializer(data=request.data)
     new_batch.is_valid(raise_exception=True)
     new_batch.save()
+    log_activity(actor=request.user,action=f"new batch {new_batch.name} added")
     return response.Response(new_batch.data,status=status.HTTP_201_CREATED)
 
 
@@ -95,6 +105,7 @@ def update_batch(request,id:int):
     update = serializer.BatchSerializer(batch,data=request.data,partial=True)
     update.is_valid(raise_exception=True)
     update.save()
+    log_activity(actor=request.user,action=f"batch info updated")
     return response.Response(update.data,status=status.HTTP_200_OK)
 
 
@@ -102,7 +113,9 @@ def update_batch(request,id:int):
 @permission_classes([permissions.IsBatchAdminstrator])
 def delete_batch(request,id:int):
     batch = get_object_or_404(university_models.Batch,id=id)
+    batch_name = batch.name
     batch.delete()
+    log_activity(actor=request.user,action=f"batch {batch_name} removed")
     return response.Response(status=status.HTTP_204_NO_CONTENT)
 
 
@@ -167,8 +180,9 @@ def register_new_students(request,id):
         
         if user_services.create_user_student(user_data,student_data) != True:
             return  response.Response({'message': 'incorrect data'},status=status.HTTP_400_BAD_REQUEST)
+        
+        log_activity(actor=request.user,action=f"registered new student {user_data['username']} to batch {batch.name}")
     
-
     return response.Response({'success': True,'added': len(students),'message': f'removed {len(students)} students from batch {batch.name}'},status=status.HTTP_201_CREATED)
 
 @api_view(['POST'])
@@ -193,6 +207,8 @@ def create_user_student(request):
         if user_services.create_user_student(user_data,student_data) != True:
             return  response.Response({'message': f"added {count}. unable to add {len(request.data['users'])-count}."},status=status.HTTP_400_BAD_REQUEST)
         
+        log_activity(actor=request.user,action=f"registered new student {user_data['username']}")
+
         count += 1
 
     return response.Response({},status=status.HTTP_201_CREATED)
@@ -220,6 +236,8 @@ def create_user_staff(request):
         if user_services.create_user_staff(user_data,staff_data) != True: 
             return  response.Response({'message': f"added {count}. unable to add {len(request.data['users'])-count}."},status=status.HTTP_400_BAD_REQUEST)
 
+        log_activity(actor=request.user,action=f"registered new staff member {user_data['username']}")
+
     return response.Response({},status=status.HTTP_201_CREATED)
 
 @api_view(['POST'])
@@ -227,6 +245,14 @@ def create_user_staff(request):
 def set_user_state(request):
     if not user_services.set_user_state(request.data['user_id'],request.data['action']):
         return response.Response({'message':'invalid ids'},status=status.HTTP_400_BAD_REQUEST)
+    
+    user = user_models.User.objects.filter(id=request.data['user_id']).first()
+    if user:
+        if request.data['action'] == 'suspend':
+            request.data['action'] = 'suspended'
+        else:
+            request.data['action'] = 'activated'
+        log_activity(actor=request.user,action=f"user account '{user.username}' is {request.data['action']}")
     
     return response.Response({},status=status.HTTP_200_OK)
 
@@ -240,19 +266,32 @@ def bulk_user_status(request):
         if not user_services.set_user_state(id,request.data['action']):
             return response.Response({'message':'invalid id'},status=status.HTTP_400_BAD_REQUEST)
     
+        user = user_models.User.objects.filter(id=request.data['user_id']).first()
+        action = request.data['action']
+        if action=='suspend':
+            action += 'ed'
+        else:
+            action += 'd'
+        log_activity(actor=request.user,action=f"user account '{user.username}' is {request.data['action']}")
+
     return response.Response({},status=status.HTTP_201_CREATED)
 
 @api_view(['POST'])
 @permission_classes([permissions.IsFacultyAdminUserState])
 def rest_user_psswd(request):
     if user_services.rest_passwd(request.data['user_id']):
+        user = user_models.User.objects.filter(id=request.data['user_id']).first()
+        log_activity(actor=request.user,action=f"password reseted user account {user.username}")
         return response.Response({},status=status.HTTP_201_CREATED)
     return response.Response({'message':'invalid id'},status=status.HTTP_400_BAD_REQUEST)
+
 
 @api_view(['DELETE'])
 @permission_classes([permissions.IsFacultyAdminUserState])
 def delete_user(request):
+    username = user_models.User.objects.filter(id=request.data['user_id']).first().username
     if user_services.delete_user(request.data['user_id']):
+        log_activity(actor=request.user,action=f"{username} account deleted")
         return response.Response({},status=status.HTTP_204_NO_CONTENT)
     return response.Response({'message':'invalid id'},status=status.HTTP_400_BAD_REQUEST)
 
@@ -263,13 +302,25 @@ def bulk_delete_users(request):
     for id in user_ids:
         if not user_services.delete_user(id):
             return response.Response({'message':'invalid id'},status=status.HTTP_400_BAD_REQUEST)
+        
+        username = user_models.User.objects.filter(id=id).first().username
+        log_activity(actor=request.user,action=f"{username} account deleted")
 
     return response.Response({},status=status.HTTP_204_NO_CONTENT)
 
 @api_view(['POST'])
 @permission_classes([permissions.IsFacultyAdminUserState])
 def update_user(request):
-    user_services.update_user(request.data)
+    try:
+        user_services.update_user(request.data)
+    except ValidationError:
+        return response.Response({'message':'invalid data'},status=status.HTTP_400_BAD_REQUEST)
+    except NotFound:
+        return response.Response({'message':'user not found'},status=status.HTTP_404_NOT_FOUND)
+    
+    user =user_models.User.objects.filter(id=request.data['user_id']).first()
+    log_activity(actor=request.user,action=f"{user.username} account updated")
+
     return response.Response({},status=status.HTTP_201_CREATED)
 
 @api_view(['POST'])
@@ -285,7 +336,16 @@ def update_user_field(request):
         data['faculty_id']=request.data['faculty_id']
         data['department_id']=request.data['department_id']
     
-    user_services.update_user(data)
+    try:
+        user_services.update_user(data)
+    except ValidationError:
+        return response.Response({'message':'invalid data'},status=status.HTTP_400_BAD_REQUEST)
+    except NotFound:
+        return response.Response({'message':'user not found'},status=status.HTTP_404_NOT_FOUND)
+    
+    user =user_models.User.objects.filter(id=request.data['user_id']).first()
+    log_activity(actor=request.user,action=f"{user.username} account updated")
+
     return response.Response({},status=status.HTTP_201_CREATED)
 
 
@@ -311,15 +371,18 @@ def update_settings(request):
     try:
         settings = request.data['settings']
     except KeyError:
-        return response.Response({'detail':"request is not i corroct format. expects {'settings':'[key:value]'}"},status=status.HTTP_400_BAD_REQUEST)
+        return response.Response({'detail':"request is not in corroct format. expects {'settings':'[key:value]'}"},status=status.HTTP_400_BAD_REQUEST)
     
     for setting in settings:
         (key,value), = setting.items()
+        old_value = get_setting(key)
         try:
             update_setting(key=key,value=value)
         except ValidationError as e:
             return response.Response({'detail':e.detail},status=status.HTTP_400_BAD_REQUEST)
         
+        log_activity(actor=request.user,action=f"setting {key}  updated",content_info={key:old_value})
+                
     return response.Response({'detail':f"settings updated"},status=status.HTTP_200_OK)
 
 

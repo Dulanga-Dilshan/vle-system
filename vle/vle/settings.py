@@ -64,6 +64,7 @@ MIDDLEWARE = [
     'Users.middleware.AutoLogoutMiddleware',
     'config.middleware.SyncSettingsMiddleware',
     'Users.middleware.CheckMaintainModeMiddleware',
+    'config.middleware.SystemUptimeMiddleware'
     
 
 ]

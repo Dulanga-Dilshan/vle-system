@@ -18,3 +18,4 @@ def log_activity(actor:User,action:str,content_info:dict=None):
     new_activity.save()
 
 
+

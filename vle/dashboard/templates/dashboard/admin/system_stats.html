@@ -194,8 +194,8 @@
                 </div>
                 
                 <div class="storage-total">
-                    <span>Total: 100 GB</span>
-                    <span>Used: 78.2 GB</span>
+                    <span>Total: {{ storage_size }} GB</span>
+                    <span>Used: {{ strage_used }} GB</span>
                 </div>
             </div>
         </div>
@@ -205,97 +205,40 @@
     <div class="card">
         <div class="card-header">
             <h3 class="card-title">
-                <i class="fas fa-user-clock"></i> User Activity (Last 24 Hours)
+                <i class="fas fa-user-clock"></i> User Activity
             </h3>
-            <button class="btn btn-outline btn-sm" onclick="viewActivityLogs()">
-                <i class="fas fa-external-link-alt"></i> View All Logs
-            </button>
         </div>
         <div class="activity-table">
             <div class="table-container">
+                {% if logs %}
                 <table class="table">
                     <thead>
                         <tr>
                             <th>Time</th>
                             <th>User</th>
                             <th>Activity</th>
-                            <th>Duration</th>
-                            <th>Status</th>
                         </tr>
                     </thead>
                     <tbody>
+                        {% for log in logs %}
                         <tr>
-                            <td>14:30</td>
+                            <td>{{ log.at }}</td>
                             <td>
                                 <div class="user-info">
                                     <div class="user-avatar small">
-                                        JD
+                                        {{ log.actor.username|first|upper }}
                                     </div>
-                                    <span>John Doe</span>
+                                    <span>{{ log.actor }}</span>
                                 </div>
                             </td>
-                            <td>Course: CS101 - Assignment Submission</td>
-                            <td>25m</td>
-                            <td><span class="badge badge-success">Completed</span></td>
+                            <td>{{ log.action }}</td>
                         </tr>
-                        <tr>
-                            <td>13:45</td>
-                            <td>
-                                <div class="user-info">
-                                    <div class="user-avatar small">
-                                        JS
-                                    </div>
-                                    <span>Jane Smith</span>
-                                </div>
-                            </td>
-                            <td>Forum: Discussion Participation</td>
-                            <td>42m</td>
-                            <td><span class="badge badge-success">Active</span></td>
-                        </tr>
-                        <tr>
-                            <td>12:20</td>
-                            <td>
-                                <div class="user-info">
-                                    <div class="user-avatar small">
-                                        RJ
-                                    </div>
-                                    <span>Robert Johnson</span>
-                                </div>
-                            </td>
-                            <td>Resource: Video Lecture Viewing</td>
-                            <td>1h 15m</td>
-                            <td><span class="badge badge-success">Completed</span></td>
-                        </tr>
-                        <tr>
-                            <td>11:05</td>
-                            <td>
-                                <div class="user-info">
-                                    <div class="user-avatar small">
-                                        MW
-                                    </div>
-                                    <span>Maria Williams</span>
-                                </div>
-                            </td>
-                            <td>Quiz: Attempt and Submission</td>
-                            <td>38m</td>
-                            <td><span class="badge badge-warning">Incomplete</span></td>
-                        </tr>
-                        <tr>
-                            <td>10:30</td>
-                            <td>
-                                <div class="user-info">
-                                    <div class="user-avatar small">
-                                        TB
-                                    </div>
-                                    <span>Thomas Brown</span>
-                                </div>
-                            </td>
-                            <td>Course: CS102 - Material Download</td>
-                            <td>12m</td>
-                            <td><span class="badge badge-success">Completed</span></td>
-                        </tr>
+                        {%  endfor %}
                     </tbody>
                 </table>
+            {% else %}
+                No activities yet
+            {% endif %}
             </div>
         </div>
     </div>

@@ -335,7 +335,6 @@ def update_user(data:dict):
             sub_user.department_name = univercity_models.Department.objects.get(id=data['department_id'])
         
         if data['user_type'] == 'student':
-            print('batch')
             sub_user.batch = None
 
     if 'staff_type' in data:

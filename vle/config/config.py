@@ -92,7 +92,6 @@ def update_setting(key: str, value):
 
     with _lock:
         _settings_cache[key] = value
-        print(_settings_cache)
         update_db()
 
 def get_all_setting():

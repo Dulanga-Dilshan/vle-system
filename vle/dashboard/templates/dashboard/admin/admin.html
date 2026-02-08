@@ -177,7 +177,7 @@
                 <h3 class="card-title">
                     <i class="fas fa-history"></i> Recent Activity
                 </h3>
-                <a href="#" class="btn btn-sm btn-outline">View All</a>
+                <a href="{% url 'dashboard:system_state' %}" class="btn btn-sm btn-outline">View All</a>
             </div>
             <div class="activity-list">
                 {% for activity in recent_activities %}

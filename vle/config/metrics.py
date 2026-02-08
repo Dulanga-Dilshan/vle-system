@@ -86,3 +86,15 @@ def get_disk_usage()->int:
     disk = shutil.disk_usage("/")
     usage = (disk.used / disk.total) * 100
     return round(usage,2)
+
+#in gigs
+def get_disk_size()->int:
+    disk = shutil.disk_usage("/")
+    size = disk.total / (1024*1024*1024)
+    return round(size)
+
+#in gigs
+def get_disk_used()->int:
+    disk = shutil.disk_usage("/")
+    size = disk.used / (1024*1024*1024)
+    return round(size)
