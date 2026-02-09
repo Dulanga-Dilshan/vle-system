@@ -90,6 +90,29 @@
             </a>
         </div>
 
+
+        <div class="management-card card">
+            <div class="management-icon blue">
+                <i class="fas fa-user-check"></i>
+            </div>
+            <h3>Approve Registrations</h3>
+            <p>Review and approve pending user registration requests</p>
+            <a href="{% url 'dashboard:manage_requests' %}" class="btn btn-primary">
+                Review Requests <i class="fas fa-arrow-right"></i>
+            </a>
+        </div>
+
+        <div class="management-card card">
+            <div class="management-icon pink">
+                <i class="fas fa-bullhorn"></i>
+            </div>
+            <h3>Announcements</h3>
+            <p>Post and manage important announcements for users</p>
+            <a href="{% url 'dashboard:post_annousment' %}" class="btn btn-primary">
+                Go to Announcements <i class="fas fa-arrow-right"></i>
+            </a>
+        </div>
+
         <div class="management-card card">
             <div class="management-icon blue-gradient">
                 <i class="fas fa-school"></i>
@@ -112,17 +135,6 @@
             </a>
         </div>
         
-        <div class="management-card card">
-            <div class="management-icon blue">
-                <i class="fas fa-user-check"></i>
-            </div>
-            <h3>Approve Registrations</h3>
-            <p>Review and approve pending user registration requests</p>
-            <a href="{% url 'dashboard:manage_requests' %}" class="btn btn-primary">
-                Review Requests <i class="fas fa-arrow-right"></i>
-            </a>
-        </div>
-
 
         <div class="management-card card">
             <div class="management-icon" style="background: linear-gradient(135deg, #4cc9f0 0%, #4895ef 100%);">
@@ -134,28 +146,19 @@
                 Manage Batches<i class="fas fa-arrow-right"></i>    
             </a>
         </div>
-        
+
         <div class="management-card card">
-            <div class="management-icon pink">
-                <i class="fas fa-bullhorn"></i>
+            <div class="management-icon" style="background: linear-gradient(135deg, #1a7438 0%, #38f9d7 100%);">
+                <i class="fas fa-calendar-alt"></i>
             </div>
-            <h3>Announcements</h3>
-            <p>Post and manage important announcements for users</p>
-            <a href="{% url 'dashboard:post_annousment' %}" class="btn btn-primary">
-                Go to Announcements <i class="fas fa-arrow-right"></i>
+            <h3>Schedule Management</h3>
+            <p>Create and manage class schedules, assign teachers, and organize weekly timetables</p>
+            <a href="{% url 'dashboard:manage_shedules' %}" class="btn btn-primary">
+                Manage Schedules<i class="fas fa-arrow-right"></i>    
             </a>
         </div>
         
-        <div class="management-card card">
-            <div class="management-icon teal">
-                <i class="fas fa-chart-pie"></i>
-            </div>
-            <h3>System Analytics</h3>
-            <p>View detailed analytics and performance metrics</p>
-            <a href="{% url 'dashboard:system_state' %}" class="btn btn-primary">
-                View Analytics <i class="fas fa-arrow-right"></i>
-            </a>
-        </div>
+        
         {% if request.user.is_superuser %}
             <div class="management-card card">
                 <div class="management-icon orange">
@@ -168,6 +171,18 @@
                 </a>
             </div>
         {% endif %}
+
+        <div class="management-card card">
+            <div class="management-icon teal">
+                <i class="fas fa-chart-pie"></i>
+            </div>
+            <h3>System Analytics</h3>
+            <p>View detailed analytics and performance metrics</p>
+            <a href="{% url 'dashboard:system_state' %}" class="btn btn-primary">
+                View Analytics <i class="fas fa-arrow-right"></i>
+            </a>
+        </div>
+
     </div>
 
     <!-- Recent Activity -->

@@ -373,3 +373,24 @@ def system_settings(request):
     return render(request,'dashboard/admin/system_settings.html',{})
 
 
+def manage_shedules(request):
+    batches = university_models.Batch.objects.all()
+    return render(request,'dashboard/admin/manage_shedules.html',{'batches':batches})
+
+def manage_shedule(request,batch_id):
+    shedules = [
+        {'subject': 'test subject',
+         'code':'sub-1',
+         'lecture':'bob',
+         'time':'08.00 am',
+         'day':'sunday'
+        },
+        {'subject': 'test subject2',
+         'code':'sub-2',
+         'lecture':'bob 2',
+         'time':'10.05 am',
+         'day':'monday'
+        }
+    ]
+    return render(request,'dashboard/admin/manage_shedule.html',{'id':batch_id , 'shedules':shedules})
+

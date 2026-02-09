@@ -94,3 +94,4 @@ class BatchSubject(models.Model):
 
     def __str__(self):
         return f"{self.batch} - {self.subject}"
+    
