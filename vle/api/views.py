@@ -303,8 +303,9 @@ def bulk_delete_users(request):
         if not user_services.delete_user(id):
             return response.Response({'message':'invalid id'},status=status.HTTP_400_BAD_REQUEST)
         
-        username = user_models.User.objects.filter(id=id).first().username
-        log_activity(actor=request.user,action=f"{username} account deleted")
+        user = user_models.User.objects.filter(id=id).first()
+        if user is not None:
+            log_activity(actor=request.user,action=f"{user.username} account deleted")
 
     return response.Response({},status=status.HTTP_204_NO_CONTENT)
 
