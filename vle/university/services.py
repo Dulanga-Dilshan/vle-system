@@ -1,6 +1,7 @@
 from . import models
 from django.http.request import QueryDict
 from django.shortcuts import get_object_or_404
+from rest_framework.exceptions import NotFound
 
 def add_course(POST:QueryDict)-> bool:
     name = POST.get('course_name')
@@ -41,8 +42,17 @@ def department_count(faculty_id:int=None)->int:
     
     return models.Department.objects.all().count()
 
-
+def populate_batch_subject(batch_id:int):
+    batch = models.Batch.objects.filter(id=batch_id).first()
+    if batch is None:
+        raise NotFound('invalid batch id')
     
+    subjects = models.Subject.objects.filter(course=batch.course).order_by('semester')
+    if subjects is None:
+        raise NotFound(f'no subjects at the moment for the course {batch.course.name}')
+    
+    for subject in subject:
+        pass
 
 
 

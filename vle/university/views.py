@@ -215,7 +215,7 @@ def manage_batch(request,id:int):
     context = {}
     context['batch'] = get_object_or_404(university_models.Batch,id=id)
     context['students'] = user_models.Student.objects.filter(batch=id)
-    
     context['all_students'] = user_models.Student.objects.filter(department_name=context['batch'].course.department).exclude(batch=context['batch'])
+    context['subjects'] = 'aa'
     
     return render(request,'dashboard/admin/manage_batch.html',context)

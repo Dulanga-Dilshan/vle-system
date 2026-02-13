@@ -48,8 +48,7 @@ urlpatterns = [
     path('admin/manage_shedule/<int:batch_id>/',views.manage_shedule,name='manage_shedule'),
 
 
-    
-    
+
 ]
 
 

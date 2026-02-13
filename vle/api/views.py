@@ -14,6 +14,8 @@ from dashboard.annosments import mark_annoucements
 from django.core.exceptions import PermissionDenied
 from django.http import Http404
 from dashboard.recent_activity import log_activity
+from university import services as univercity_services
+
 
 
 
@@ -446,3 +448,156 @@ def remove_annoucments(request):
             return response.Response({'detail':'no permission'},status=status.HTTP_404_NOT_FOUND)
 
     return response.Response({'success': True},status=status.HTTP_200_OK)
+
+
+@api_view(['GET'])
+def get_batch_subjects(request,batch_id):
+    batch_subjects = university_models.BatchSubject.objects.all()
+    if batch_subjects is None:
+        univercity_services.add_course()
+    pass
+
+
+
+
+
+
+
+
+
+
+
+
+
+'''
+api/<int:batch_id>/batch-subject
+#"completed", "current", "upcoming"
+{
+    "batch_progress": "2.1",
+    "semesters": {
+        "1.1": {
+            "semester_code": "1.1",
+            "display_name": "Year 1 - Semester 1",
+            "status": "completed",
+            "subjects": [
+                {
+                    "id": 123,
+                    "name": "Mathematics I",
+                    "code": "MATH101",
+                    "assigned_teacher": {
+                        "id": 45,
+                        "name": "Dr. Smith",
+                        "email": "smith@example.com"
+                    },
+                }
+            ]
+        },
+        "semesters": {
+        "1.2": {
+            "semester_code": "1.1",
+            "display_name": "Year 1 - Semester 1",
+            "status": "completed",
+            "subjects": []
+        },
+        }
+    },
+
+    "teachers": [
+        {"id": 45, "name": "Dr. Smith", "email": "smith@example.com", "department": "Mathematics"},
+        {"id": 46, "name": "Prof. Johnson", "email": "johnson@example.com", "department": "Physics"},
+        {"id": 47, "name": "Dr. Williams", "email": "williams@example.com", "department": "Chemistry"}
+    ],
+}
+
+
+
+{
+    "batch_progress": "2.1", 
+    "semesters": {
+        "1.1": {
+            "semester_code": "1.1",
+            "display_name": "Year 1 - Semester 1",
+            "status": "completed",  
+            "has_marks": true,  
+            "subjects": [
+                {
+                    "id": 123,
+                    "name": "Mathematics I",
+                    "code": "MATH101",
+                    "assigned_teacher": {
+                        "id": 45,
+                        "name": "Dr. Smith",
+                        "email": "smith@example.com"
+                    },
+                    "has_marks": true,
+                    "marks_url": "/api/batches/1/subjects/123/marks/"
+                }
+            ]
+        },
+        "1.2": {
+            "semester_code": "1.2",
+            "display_name": "Year 1 - Semester 2",
+            "status": "completed",
+            "has_marks": true,
+            "subjects": []
+        },
+        "2.1": {
+            "semester_code": "2.1",
+            "display_name": "Year 2 - Semester 1",
+            "status": "current",  // This matches batch_progress
+            "has_marks": false,
+            "subjects": [
+                {
+                    "id": 124,
+                    "name": "Mathematics II",
+                    "code": "MATH201",
+                    "assigned_teacher": null,
+                    "has_marks": false
+                }
+            ]
+        },
+        "2.2": {
+            "semester_code": "2.2",
+            "display_name": "Year 2 - Semester 2",
+            "status": "upcoming",
+            "has_marks": false,
+            "subjects": []  // Empty but still shown as a placeholder
+        },
+        "3.1": {
+            "semester_code": "3.1",
+            "display_name": "Year 3 - Semester 1",
+            "status": "upcoming",
+            "has_marks": false,
+            "subjects": []
+        },
+        "3.2": {
+            "semester_code": "3.2",
+            "display_name": "Year 3 - Semester 2",
+            "status": "upcoming",
+            "has_marks": false,
+            "subjects": []
+        },
+        "4.1": {
+            "semester_code": "4.1",
+            "display_name": "Year 4 - Semester 1",
+            "status": "upcoming",
+            "has_marks": false,
+            "subjects": []
+        },
+        "4.2": {
+            "semester_code": "4.2",
+            "display_name": "Year 4 - Semester 2",
+            "status": "upcoming",
+            "has_marks": false,
+            "subjects": []
+        }
+    },
+    "teachers": [
+        {"id": 45, "name": "Dr. Smith", "email": "smith@example.com", "department": "Mathematics"},
+        {"id": 46, "name": "Prof. Johnson", "email": "johnson@example.com", "department": "Physics"},
+        {"id": 47, "name": "Dr. Williams", "email": "williams@example.com", "department": "Chemistry"}
+    ],
+    "can_advance": true,  
+    "next_semester": "2.2" 
+}
+'''

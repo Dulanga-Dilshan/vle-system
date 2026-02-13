@@ -9,7 +9,6 @@ from config import metrics
 from dashboard.recent_activity import log_activity
 
 
-
 def get_name_avatar(request):
     if request.user.first_name=="" or request.user.last_name=="":
         name = request.user.username
@@ -238,7 +237,7 @@ def manage_users(request):
     elif request.user.role == 'staff':
         user = models.Staff.objects.get(username=request.user)
         students = models.Student.objects.select_related('username').filter(faculty_name=user.faculty_name)
-        staff = models.Staff.objects.select_related('username').filter(faculty_name=user.faculty_name)
+        staff = models.Staff.objects.select_related('username').filter(faculty_name=user.faculty_name).exclude(username=request.user)
 
     contex={}
     contex['students']=students
@@ -393,4 +392,3 @@ def manage_shedule(request,batch_id):
         }
     ]
     return render(request,'dashboard/admin/manage_shedule.html',{'id':batch_id , 'shedules':shedules})
-

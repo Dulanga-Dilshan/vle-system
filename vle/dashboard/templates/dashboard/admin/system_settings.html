@@ -79,7 +79,7 @@
                                {% if settings.ALLOW_REGISTRATION %}checked{% endif %}>
                         <span>Allow User Registration</span>
                     </label>
-                    <div class="form-help">Allow new users to register accounts on the platform now {{settings.ALLOW_REGISTRATION}}</div>
+                    <div class="form-help">Allow new users to register accounts on the platform </div>
                 </div>
 
                 <!-- USERS_PER_PAGE -->
@@ -90,6 +90,17 @@
                            value="{{ settings.USERS_PER_PAGE|default:50 }}"
                            min="10" max="200">
                     <div class="form-help">Number of users displayed per page in lists</div>
+                </div>
+
+                <!-- demo mode -->
+                <div class="form-group setting-item" data-key="DEMO_MODE" data-type="bool">
+                    <label class="checkbox">
+                        <input type="checkbox" 
+                               class="setting-input"
+                               {% if settings.DEMO_MODE %}checked{% endif %}>
+                        <span>Demo Mode</span>
+                    </label>
+                    <div class="form-help">Expose demo credentials for gest users</div>
                 </div>
             </div>
         </div>

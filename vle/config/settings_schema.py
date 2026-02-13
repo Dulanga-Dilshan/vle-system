@@ -197,8 +197,11 @@ SETTINGS_SCHEMA = {
         },
     },
 
-
-    
+    "DEMO_MODE": {
+        "default": False,
+        "type": "bool",
+        "rules": {},
+    },
 }
 
 TYPE_MAP = {
