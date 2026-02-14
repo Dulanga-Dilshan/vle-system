@@ -4,7 +4,7 @@ A web-based Virtual Learning Environment (VLE) built with Django for managing co
 
 ## Project Overview
 
-This project aims to provide a robust platform for universities to manage courses, students, faculty, and announcements through a role-based web interface. The system is built using Django, leveraging its built-in authentication and admin features for rapid development and secure management.
+This project aims to provide a robust platform for universities to manage courses, students, faculty, and announcements through a role-based web interface. The system is built using Django, leveraging its built-in authentication and admin features for rapid development and secure management(Work in Progress).
 
 ⚠️ **Project Status: Work in Progress**
 
