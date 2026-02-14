@@ -2,7 +2,10 @@ from . import models
 from django.http.request import QueryDict
 from django.shortcuts import get_object_or_404
 from rest_framework.exceptions import NotFound
+from django.db import transaction
 
+
+@transaction.atomic
 def add_course(POST:QueryDict)-> bool:
     name = POST.get('course_name')
     code = POST.get('course_code')
@@ -42,6 +45,7 @@ def department_count(faculty_id:int=None)->int:
     
     return models.Department.objects.all().count()
 
+@transaction.atomic
 def populate_batch_subject(batch_id:int):
     batch = models.Batch.objects.filter(id=batch_id).first()
     if batch is None:
@@ -51,9 +55,41 @@ def populate_batch_subject(batch_id:int):
     if subjects is None:
         raise NotFound(f'no subjects at the moment for the course {batch.course.name}')
     
-    for subject in subject:
-        pass
+    for subject in subjects:
+        obj , created = models.BatchSubject.objects.get_or_create(
+            batch = batch,
+            subject = subject
+        )
 
+def get_semester_status(semester_number:float,current_semester:float) -> str:
+    if current_semester == semester_number:
+        return "current"
+    
+    elif current_semester > semester_number:
+        return "completed"
+    
+    return "upcoming"
 
+def get_subjects(semester_subjects)->list:
+    subjects = []
+
+    for semester_subject in semester_subjects:
+        subject = {}
+        subject['id'] = semester_subject.subject.id
+        subject['name'] = semester_subject.subject.name
+        subject['code'] = semester_subject.subject.code
+
+        #print(subject['id'],subject['name'],subject['code'])
+        if semester_subject.staff == None:
+            subject['assigned_teacher'] = None
+        else:
+            subject['assigned_teacher'] = {
+                "id": semester_subject.staff.id,
+                "name": semester_subject.staff.name,
+                "email": semester_subject.staff.username.email,
+            }
+        subjects.append(subject)
+        
+    return subjects
 
     

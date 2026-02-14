@@ -1,8 +1,17 @@
 from django.urls import path
 from . import views
 
+app_name= 'api'
+
+from rest_framework import response,status
+from rest_framework.decorators import api_view
+
+@api_view(['GET'])
+def test(request):
+    return response.Response({str(urlpatterns)},status=status.HTTP_200_OK)
+
 urlpatterns = [
-    path('',views.test_api),
+    path('',test),
     path('faculties/create/',views.create_faculty),          
     path('faculties/<int:id>/delete/',views.delete_faculty), 
     path('faculties/<int:id>/update/',views.update_faculty), 
@@ -17,6 +26,10 @@ urlpatterns = [
     path('batches/<int:id>/add_students/',views.add_students_to_batch),
     path('batches/<int:id>/remove_student/',views.remove_student_from_batch),
     path('batches/<int:id>/register-new-students/',views.register_new_students),
+    path('<int:batch_id>/batch-subjects/',views.get_batch_subjects),
+    path('assign-lecture/',views.assign_lecture),
+    path('batches/<int:batch_id>/advance-batch/',views.advance_batch),
+
 
     path('create_user/student/',views.create_user_student),
     path('create_user/staff/',views.create_user_staff),

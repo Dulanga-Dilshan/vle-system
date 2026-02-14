@@ -9,6 +9,10 @@ from Users import services as user_services
 
 @login_required(login_url='Users:login')
 def manage_course(request,id):
+    course = university_models.Course.objects.filter(id=id).first()
+    if course is None:
+        return render(request,'dashboard/admin/manage_course.html')
+    
     user = request.user
     if user.is_staff == 0:
         return redirect('dashboard:route')
@@ -20,13 +24,16 @@ def manage_course(request,id):
 
     context = {}
 
+    for semester in university_models.semesters:
+        university_models.Semester.objects.get_or_create(
+            course = course,
+            number = semester
+        )
+    
+
     course = university_models.Course.objects.prefetch_related(
         Prefetch('semesters',queryset=university_models.Semester.objects.prefetch_related('subjects'))
     ).get(id=id)
-
-
-    if len(course.semesters.all())<4:
-        context['footer'] = True
 
     context['course']=course
 
@@ -95,8 +102,10 @@ def add_semester(request:QueryDict):
     if request.POST.get('number') == "":
         return redirect('dashboard:manage_course',id=cource.id)
     
-    number =int(request.POST.get('number'))
-    
+    try:
+        number = float(request.POST.get('number'))
+    except(TypeError,ValueError):
+        return redirect('dashboard:manage_course',id=cource.id)
     
     if request.user.is_staff == 0:
         return redirect('dashboard:manage_course',id=cource.id)
@@ -216,6 +225,8 @@ def manage_batch(request,id:int):
     context['batch'] = get_object_or_404(university_models.Batch,id=id)
     context['students'] = user_models.Student.objects.filter(batch=id)
     context['all_students'] = user_models.Student.objects.filter(department_name=context['batch'].course.department).exclude(batch=context['batch'])
-    context['subjects'] = 'aa'
+
+    if float(context['batch'].progression_year) != 4.2:
+        context['can_advance'] = True
     
     return render(request,'dashboard/admin/manage_batch.html',context)

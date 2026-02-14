@@ -175,11 +175,15 @@
                 <h2>
                     <i class="fas fa-layer-group"></i> Semester Progression
                 </h2>
-                <div class="progress-actions">
-                    <button class="btn btn-primary" onclick="advanceBatch()" id="advanceBatchBtn">
-                        <i class="fas fa-forward"></i> Advance to Next Semester
-                    </button>
-                </div>
+                {% if can_advance %}
+                    <div class="progress-actions">
+                        <button class="btn btn-primary" onclick="advanceBatch()" id="advanceBatchBtn">
+                            <i class="fas fa-forward"></i> Advance to Next Semester
+                        </button>
+                    </div>
+                {% endif %}
+
+
             </div>
 
             <!-- Loading State -->
@@ -523,11 +527,11 @@
     </div>
 </div>
 
-<!-- Assign Lecturer Modal -->
+<!-- Assign/Revoke Lecturer Modal -->
 <div class="modal-overlay" id="assignLecturerModal" style="display: none;">
     <div class="modal">
         <div class="modal-header">
-            <h3 class="modal-title">Assign Lecturer</h3>
+            <h3 class="modal-title">Manage Lecturer Assignment</h3>
             <button class="modal-close" onclick="closeAssignModal()">&times;</button>
         </div>
         <div class="modal-content">
@@ -542,30 +546,56 @@
                 </div>
             </div>
             
+            <!-- Current Assignment Status Card -->
+            <div class="current-assignment-card" id="currentAssignmentCard" style="display: none;">
+                <div class="assignment-header">
+                    <i class="fas fa-user-tie"></i>
+                    <span>Current Assignment</span>
+                </div>
+                <div class="assignment-details">
+                    <div class="teacher-avatar">
+                        <i class="fas fa-chalkboard-teacher"></i>
+                    </div>
+                    <div class="teacher-info">
+                        <strong id="currentTeacherName">Dr. Smith</strong>
+                        <small id="currentTeacherEmail">smith@example.com</small>
+                        <small id="currentTeacherDepartment">Mathematics</small>
+                    </div>
+                    <button type="button" class="btn btn-danger btn-sm" onclick="revokeAssignment()" id="revokeBtn">
+                        <i class="fas fa-user-minus"></i> Revoke
+                    </button>
+                </div>
+            </div>
+            
             <form id="assignLecturerForm">
                 <input type="hidden" id="modalBatchId" value="">
                 <input type="hidden" id="modalSubjectId" value="">
+                <input type="hidden" id="modalCurrentTeacherId" value="">
                 
                 <div class="form-group">
-                    <label for="teacherSelect">Select Lecturer</label>
+                    <label for="teacherSelect">
+                        <i class="fas fa-user-graduate"></i>
+                        Select Lecturer
+                    </label>
                     <div class="select-wrapper">
-                        <select id="teacherSelect" class="form-control" required>
-                            <option value="">-- Choose a lecturer --</option>
+                        <select id="teacherSelect" class="form-control">
+                            <option value="">-- Choose a lecturer (or leave empty to unassign) --</option>
                             <!-- Populated dynamically -->
                         </select>
                         <i class="fas fa-chevron-down select-arrow"></i>
                     </div>
-                </div>
-                
-                <div class="current-assignment" id="currentAssignment" style="display: none;">
-                    <i class="fas fa-info-circle"></i>
-                    <span>Currently assigned to: <strong id="currentTeacherName">Dr. Smith</strong></span>
+                    <small class="form-text text-muted">
+                        <i class="fas fa-info-circle"></i>
+                        Select a lecturer to assign/update, or leave empty to remove assignment
+                    </small>
                 </div>
                 
                 <div class="modal-actions">
-                    <button type="button" class="btn btn-outline" onclick="closeAssignModal()">Cancel</button>
+                    <button type="button" class="btn btn-outline" onclick="closeAssignModal()">
+                        <i class="fas fa-times"></i> Cancel
+                    </button>
                     <button type="submit" class="btn btn-primary" id="assignBtn">
-                        <i class="fas fa-save"></i> Assign Lecturer
+                        <i class="fas fa-save"></i> Save Assignment
                     </button>
                 </div>
             </form>
@@ -1591,15 +1621,33 @@
         align-items: center;
         padding: 1rem;
         border-bottom: 1px solid #e9ecef;
-        transition: background 0.3s ease;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        border-radius: 8px;
+        margin-bottom: 0.5rem;
+        background: white;
     }
 
     .subject-item:last-child {
-        border-bottom: none;
+        margin-bottom: 0;
     }
 
     .subject-item:hover {
-        background: #f8f9fa;
+        background: linear-gradient(135deg, #f8f9ff, #e8ecff);
+        transform: translateX(5px);
+        box-shadow: 0 4px 12px rgba(67, 97, 238, 0.1);
+    }
+
+    .subject-item[data-status="current"]:hover {
+        border-left: 3px solid #4361ee;
+    }
+
+    .subject-item[data-status="completed"]:hover {
+        border-left: 3px solid #10b981;
+    }
+
+    .subject-item[data-status="upcoming"]:hover {
+        border-left: 3px solid #f59e0b;
     }
 
     .subject-info {
@@ -1619,6 +1667,13 @@
         align-items: center;
         justify-content: center;
         font-size: 1.1rem;
+        transition: all 0.3s ease;
+    }
+
+    .subject-item:hover .subject-icon-small {
+        transform: scale(1.1);
+        background: linear-gradient(135deg, #4361ee, #3a56d4);
+        color: white;
     }
 
     .subject-details {
@@ -1636,6 +1691,7 @@
     .subject-name {
         font-size: 1rem;
         color: #2c3e50;
+        font-weight: 500;
     }
 
     .subject-code {
@@ -1668,6 +1724,27 @@
         font-style: italic;
     }
 
+    .assignment-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+        font-size: 0.7rem;
+        font-weight: 500;
+        margin-left: 0.5rem;
+    }
+
+    .assignment-badge.assigned {
+        background: #e0e7ff;
+        color: #4338ca;
+    }
+
+    .assignment-badge.unassigned {
+        background: #fee2e2;
+        color: #dc2626;
+    }
+
     .marks-link {
         display: inline-flex;
         align-items: center;
@@ -1679,16 +1756,136 @@
         font-size: 0.8rem;
         text-decoration: none;
         transition: all 0.3s ease;
+        margin-right: 0.5rem;
     }
 
     .marks-link:hover {
         background: #4338ca;
         color: white;
+        transform: translateY(-2px);
     }
 
     .assign-btn {
-        margin-left: 1rem;
+        margin-left: 0.5rem;
         flex-shrink: 0;
+    }
+
+    /* Click hint */
+    .click-hint {
+        font-size: 0.7rem;
+        color: #a0aec0;
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+        margin-left: 0.5rem;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+
+    .subject-item:hover .click-hint {
+        opacity: 1;
+    }
+
+    /* Enhanced Modal Styles */
+    .current-assignment-card {
+        background: linear-gradient(135deg, #f8f9ff, #e8ecff);
+        border: 2px solid #4361ee;
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .current-assignment-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 100px;
+        height: 100px;
+        background: linear-gradient(135deg, rgba(67, 97, 238, 0.1), rgba(67, 97, 238, 0.05));
+        border-radius: 50%;
+        transform: translate(30px, -30px);
+    }
+
+    .assignment-header {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        margin-bottom: 1rem;
+        color: #4338ca;
+        font-weight: 600;
+    }
+
+    .assignment-header i {
+        font-size: 1.25rem;
+    }
+
+    .assignment-details {
+        display: flex;
+        align-items: center;
+        gap: 1.5rem;
+        flex-wrap: wrap;
+    }
+
+    .teacher-avatar {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #4361ee, #3a56d4);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        box-shadow: 0 4px 12px rgba(67, 97, 238, 0.3);
+    }
+
+    .teacher-info {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+
+    .teacher-info strong {
+        font-size: 1.1rem;
+        color: #1e293b;
+    }
+
+    .teacher-info small {
+        color: #64748b;
+        font-size: 0.85rem;
+    }
+
+    #revokeBtn {
+        background: #fee2e2;
+        color: #dc2626;
+        border: 1px solid #fecaca;
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        transition: all 0.3s ease;
+    }
+
+    #revokeBtn:hover {
+        background: #dc2626;
+        color: white;
+        border-color: #dc2626;
+    }
+
+    .form-text.text-muted {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-top: 0.5rem;
+        font-size: 0.85rem;
+        color: #64748b;
+    }
+
+    .form-text.text-muted i {
+        color: #4361ee;
     }
 
     /* Modal Styles */
@@ -1710,7 +1907,7 @@
         background: white;
         border-radius: 12px;
         width: 90%;
-        max-width: 800px;
+        max-width: 600px;
         max-height: 90vh;
         overflow-y: auto;
         animation: modalSlideIn 0.3s ease;
@@ -1802,6 +1999,12 @@
         cursor: pointer;
     }
 
+    .select-wrapper select:focus {
+        outline: none;
+        border-color: #4361ee;
+        box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.1);
+    }
+
     .select-arrow {
         position: absolute;
         right: 1rem;
@@ -1809,17 +2012,6 @@
         transform: translateY(-50%);
         color: #6c757d;
         pointer-events: none;
-    }
-
-    .current-assignment {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        padding: 0.75rem;
-        background: #e0e7ff;
-        border-radius: 6px;
-        margin-top: 0.5rem;
-        color: #4338ca;
     }
 
     /* Modal Subheader */
@@ -2411,8 +2603,36 @@
             gap: 1rem;
         }
 
+        .subject-item:hover {
+            transform: none;
+        }
+
+        .click-hint {
+            display: none;
+        }
+
         .assign-btn {
             margin-left: 0;
+            width: 100%;
+            justify-content: center;
+        }
+
+        .marks-link {
+            width: 100%;
+            justify-content: center;
+            margin-right: 0;
+        }
+
+        .assignment-details {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .teacher-avatar {
+            align-self: center;
+        }
+
+        #revokeBtn {
             width: 100%;
             justify-content: center;
         }
@@ -2509,6 +2729,7 @@
         }
     }
 
+    // Render semesters with clickable subjects
     function renderSemesters(semesters) {
         const container = document.getElementById('semestersContainer');
         
@@ -2578,9 +2799,10 @@
                     const assignedTeacher = subject.assigned_teacher;
                     const teacherName = assignedTeacher ? assignedTeacher.name : 'Not assigned';
                     const teacherClass = assignedTeacher ? 'assigned' : 'unassigned';
+                    const assignmentStatus = assignedTeacher ? 'assigned' : 'unassigned';
                     
                     html += `
-                        <div class="subject-item" data-subject-id="${subject.id}">
+                        <div class="subject-item" data-subject-id="${subject.id}" data-status="${status}" data-semester="${semesterCode}">
                             <div class="subject-info">
                                 <div class="subject-icon-small">
                                     <i class="fas fa-book"></i>
@@ -2589,6 +2811,10 @@
                                     <div class="subject-name-row">
                                         <strong class="subject-name">${subject.name}</strong>
                                         <span class="subject-code">${subject.code || ''}</span>
+                                        <span class="assignment-badge ${assignmentStatus}">
+                                            <i class="fas ${assignedTeacher ? 'fa-check-circle' : 'fa-exclamation-circle'}"></i>
+                                            ${assignedTeacher ? 'Assigned' : 'Unassigned'}
+                                        </span>
                                     </div>
                                     <div class="teacher-info ${teacherClass}">
                                         <i class="fas fa-user"></i>
@@ -2602,7 +2828,7 @@
                     // Show marks link for completed semesters
                     if (status === 'completed') {
                         html += `
-                            <a href="/subjects/marks/${getBatchId()}/${subject.id}/" class="marks-link" target="_blank">
+                            <a href="/subjects/marks/${getBatchId()}/${subject.id}/" class="marks-link" target="_blank" onclick="event.stopPropagation()">
                                 <i class="fas fa-chart-bar"></i> View Marks
                             </a>
                         `;
@@ -2612,13 +2838,16 @@
                     if (status === 'current') {
                         html += `
                             <button class="btn btn-sm btn-outline assign-btn" 
-                                    onclick="openAssignModal('${semesterCode}', ${subject.id}, '${subject.name.replace(/'/g, "\\'")}', '${subject.code || ''}', ${JSON.stringify(assignedTeacher).replace(/'/g, "\\'")})">
-                                <i class="fas fa-user-tie"></i> Assign
+                                    onclick="event.stopPropagation(); openAssignModal('${semesterCode}', ${subject.id}, '${subject.name.replace(/'/g, "\\'")}', '${subject.code || ''}', ${JSON.stringify(assignedTeacher).replace(/'/g, "\\'")})">
+                                <i class="fas fa-user-tie"></i> ${assignedTeacher ? 'Reassign' : 'Assign'}
                             </button>
                         `;
                     }
                     
                     html += `
+                                <span class="click-hint">
+                                    <i class="fas fa-mouse-pointer"></i> Click to manage
+                                </span>
                             </div>
                         </div>
                     `;
@@ -2632,9 +2861,45 @@
         });
         
         container.innerHTML = html;
+        
+        // Add click event listeners to all subject items
+        document.querySelectorAll('.subject-item').forEach(item => {
+            item.addEventListener('click', handleSubjectClick);
+        });
     }
 
-    // Assign Lecturer Modal Functions
+    // Handle subject click
+    function handleSubjectClick(event) {
+        // Don't trigger if clicking on a button or link
+        if (event.target.closest('button') || event.target.closest('a')) {
+            return;
+        }
+        
+        const subjectItem = event.currentTarget;
+        const subjectId = subjectItem.getAttribute('data-subject-id');
+        const status = subjectItem.getAttribute('data-status');
+        const semesterCode = subjectItem.getAttribute('data-semester');
+        
+        // Find the subject data
+        const semester = semesterData[semesterCode];
+        if (!semester) return;
+        
+        const subject = semester.subjects.find(s => s.id == subjectId);
+        if (!subject) return;
+        
+        const assignedTeacher = subject.assigned_teacher;
+        
+        // Handle based on status
+        if (status === 'current') {
+            openAssignModal(semesterCode, parseInt(subjectId), subject.name, subject.code || '', assignedTeacher);
+        } else if (status === 'completed') {
+            showNotification('info', 'This subject is from a completed semester. You can view marks using the "View Marks" button.');
+        } else if (status === 'upcoming') {
+            showNotification('info', 'This subject is from an upcoming semester. Assignment will be available when the semester becomes current.');
+        }
+    }
+
+    // Open assign modal
     function openAssignModal(semesterCode, subjectId, subjectName, subjectCode, assignedTeacher) {
         document.getElementById('modalBatchId').value = getBatchId();
         document.getElementById('modalSubjectId').value = subjectId;
@@ -2642,9 +2907,21 @@
         document.getElementById('modalSubjectCode').textContent = subjectCode || '';
         document.getElementById('modalSemesterInfo').textContent = `Semester ${semesterCode}`;
         
+        // Store current teacher info
+        if (assignedTeacher && assignedTeacher.id) {
+            document.getElementById('modalCurrentTeacherId').value = assignedTeacher.id;
+            document.getElementById('currentTeacherName').textContent = assignedTeacher.name;
+            document.getElementById('currentTeacherEmail').textContent = assignedTeacher.email || 'No email';
+            document.getElementById('currentTeacherDepartment').textContent = assignedTeacher.department || 'No department';
+            document.getElementById('currentAssignmentCard').style.display = 'block';
+        } else {
+            document.getElementById('modalCurrentTeacherId').value = '';
+            document.getElementById('currentAssignmentCard').style.display = 'none';
+        }
+        
         // Populate teacher dropdown
         const teacherSelect = document.getElementById('teacherSelect');
-        teacherSelect.innerHTML = '<option value="">-- Choose a lecturer --</option>';
+        teacherSelect.innerHTML = '<option value="">-- Choose a lecturer (or leave empty to unassign) --</option>';
         
         teachers.forEach(teacher => {
             const option = document.createElement('option');
@@ -2656,23 +2933,73 @@
             teacherSelect.appendChild(option);
         });
         
-        // Show current assignment if exists
-        const currentAssignment = document.getElementById('currentAssignment');
-        if (assignedTeacher && assignedTeacher.id) {
-            document.getElementById('currentTeacherName').textContent = assignedTeacher.name;
-            currentAssignment.style.display = 'flex';
-        } else {
-            currentAssignment.style.display = 'none';
-        }
-        
         document.getElementById('assignLecturerModal').style.display = 'flex';
     }
 
     function closeAssignModal() {
         document.getElementById('assignLecturerModal').style.display = 'none';
+        document.getElementById('assignLecturerForm').reset();
     }
 
-    // Assign Lecturer Form Submission
+    // Revoke Assignment
+    async function revokeAssignment() {
+        const batchId = document.getElementById('modalBatchId').value;
+        const subjectId = document.getElementById('modalSubjectId').value;
+        
+        if (!confirm('Are you sure you want to revoke this lecturer assignment?')) {
+            return;
+        }
+        
+        const assignBtn = document.getElementById('assignBtn');
+        const revokeBtn = document.getElementById('revokeBtn');
+        const originalAssignText = assignBtn.innerHTML;
+        const originalRevokeText = revokeBtn.innerHTML;
+        
+        assignBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Revoking...';
+        assignBtn.disabled = true;
+        revokeBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Revoking...';
+        revokeBtn.disabled = true;
+        
+        try {
+            // Send empty teacher_id to revoke assignment
+            const response = await fetch('/api/assign-lecture/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCSRFToken()
+                },
+                body: JSON.stringify({
+                    batch_id: parseInt(batchId),
+                    subject_id: parseInt(subjectId),
+                    teacher_id: null
+                })
+            });
+            
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.message || 'Failed to revoke assignment');
+            }
+            
+            showNotification('success', 'Lecturer assignment revoked successfully!');
+            closeAssignModal();
+            
+            // Reload semester data
+            setTimeout(() => {
+                loadSemesterData();
+            }, 1000);
+            
+        } catch (error) {
+            console.error('Error revoking assignment:', error);
+            showNotification('error', error.message || 'Failed to revoke assignment');
+        } finally {
+            assignBtn.innerHTML = originalAssignText;
+            assignBtn.disabled = false;
+            revokeBtn.innerHTML = originalRevokeText;
+            revokeBtn.disabled = false;
+        }
+    }
+
+    // Assign/Update Lecturer Form Submission
     document.getElementById('assignLecturerForm').addEventListener('submit', async function(e) {
         e.preventDefault();
         
@@ -2680,15 +3007,10 @@
         const subjectId = document.getElementById('modalSubjectId').value;
         const teacherId = document.getElementById('teacherSelect').value;
         
-        if (!teacherId) {
-            showNotification('error', 'Please select a lecturer');
-            return;
-        }
-        
-        // Disable button to prevent double submission
+        // Disable button
         const assignBtn = document.getElementById('assignBtn');
         const originalText = assignBtn.innerHTML;
-        assignBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Assigning...';
+        assignBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
         assignBtn.disabled = true;
         
         try {
@@ -2701,26 +3023,27 @@
                 body: JSON.stringify({
                     batch_id: parseInt(batchId),
                     subject_id: parseInt(subjectId),
-                    teacher_id: parseInt(teacherId)
+                    teacher_id: teacherId ? parseInt(teacherId) : null
                 })
             });
             
             if (!response.ok) {
                 const error = await response.json();
-                throw new Error(error.message || 'Failed to assign lecturer');
+                throw new Error(error.message || 'Failed to save assignment');
             }
             
-            showNotification('success', 'Lecturer assigned successfully!');
+            const action = teacherId ? 'assigned' : 'unassigned';
+            showNotification('success', `Lecturer ${action} successfully!`);
             closeAssignModal();
             
-            // Reload semester data to show updated assignment
+            // Reload semester data
             setTimeout(() => {
                 loadSemesterData();
             }, 1000);
             
         } catch (error) {
-            console.error('Error assigning lecturer:', error);
-            showNotification('error', error.message || 'Failed to assign lecturer');
+            console.error('Error saving assignment:', error);
+            showNotification('error', error.message || 'Failed to save assignment');
         } finally {
             assignBtn.innerHTML = originalText;
             assignBtn.disabled = false;

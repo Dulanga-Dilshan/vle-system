@@ -16,9 +16,6 @@ from django.http import Http404
 from dashboard.recent_activity import log_activity
 from university import services as univercity_services
 
-
-
-
 @api_view(['GET'])
 def test_api(request):
     facultySerialize=serializer.FacultySerializer(university_models.Faculty.objects.all(),many=True)
@@ -36,7 +33,6 @@ def create_faculty(request):
     return response.Response(new_faculty.data,status=status.HTTP_201_CREATED)
 
 
-
 @api_view(['DELETE'])
 @permission_classes([permissions.IsSuperUser])
 def delete_faculty(request,id):
@@ -45,7 +41,6 @@ def delete_faculty(request,id):
     faculty.delete()
     log_activity(actor=request.user,action=f"deleted faculty {name}")
     return response.Response(status=status.HTTP_204_NO_CONTENT)
-
 
 
 @api_view(['PUT','PATCH'])
@@ -445,159 +440,84 @@ def remove_annoucments(request):
             return response.Response({'detail':'no permission'},status=status.HTTP_403_FORBIDDEN)
         
         except Http404:
-            return response.Response({'detail':'no permission'},status=status.HTTP_404_NOT_FOUND)
+            return response.Response({'detail':'no annousement'},status=status.HTTP_404_NOT_FOUND)
 
     return response.Response({'success': True},status=status.HTTP_200_OK)
 
 
 @api_view(['GET'])
+@permission_classes([permissions.IsAuthenticated])
 def get_batch_subjects(request,batch_id):
-    batch_subjects = university_models.BatchSubject.objects.all()
-    if batch_subjects is None:
-        univercity_services.add_course()
-    pass
+    try:
+        univercity_services.populate_batch_subject(batch_id)
+    except Http404 as e:
+        return response.Response({'detail':str(e)},status=status.HTTP_404_NOT_FOUND)
+    
+    batch = university_models.Batch.objects.filter(id=batch_id).first()
 
+    batch_subjects = university_models.BatchSubject.objects.filter(batch=batch)
 
+    if batch_subjects is None or batch is None:
+        return response.Response({},status=status.HTTP_404_NOT_FOUND)
+    
 
+    semesters = university_models.Semester.objects.filter(course=batch.course)
+    semester_data = {}
+    semester_data['batch_progress'] = str(batch.progression_year)
+    semester_data['semesters'] = {}
+    semester_data["teachers"]= []
 
-
-
-
-
-
-
-
-
-
-'''
-api/<int:batch_id>/batch-subject
-#"completed", "current", "upcoming"
-{
-    "batch_progress": "2.1",
-    "semesters": {
-        "1.1": {
-            "semester_code": "1.1",
-            "display_name": "Year 1 - Semester 1",
-            "status": "completed",
-            "subjects": [
-                {
-                    "id": 123,
-                    "name": "Mathematics I",
-                    "code": "MATH101",
-                    "assigned_teacher": {
-                        "id": 45,
-                        "name": "Dr. Smith",
-                        "email": "smith@example.com"
-                    },
-                }
-            ]
-        },
-        "semesters": {
-        "1.2": {
-            "semester_code": "1.1",
-            "display_name": "Year 1 - Semester 1",
-            "status": "completed",
-            "subjects": []
-        },
+    for semester in semesters:
+        semester_subjects = university_models.BatchSubject.objects.filter(subject__semester=semester)
+        semester_data['semesters'][str(semester.number)] = {
+            "semester_code": str(semester.number),
+            "display_name": f"Year {str(semester.number).split('.')[0]} - Semester {str(semester.number).split('.')[1]}",
+            "status": univercity_services.get_semester_status(semester.number,batch.progression_year),
+            "subjects" : univercity_services.get_subjects(semester_subjects),    
         }
-    },
+    availble_teachers = user_models.Staff.objects.filter().exclude(staff_type='support')
 
-    "teachers": [
-        {"id": 45, "name": "Dr. Smith", "email": "smith@example.com", "department": "Mathematics"},
-        {"id": 46, "name": "Prof. Johnson", "email": "johnson@example.com", "department": "Physics"},
-        {"id": 47, "name": "Dr. Williams", "email": "williams@example.com", "department": "Chemistry"}
-    ],
-}
+    for availble_teacher in availble_teachers:
+        semester_data["teachers"].append(
+            {
+                'id':availble_teacher.id,
+                'name': availble_teacher.name,
+                'email': availble_teacher.username.email,
+                'department': availble_teacher.department_name.name
+            }
+        )
 
+    return response.Response(semester_data,status=status.HTTP_200_OK)
 
+@api_view(['POST'])
+@permission_classes([permissions.IsValiedAssignment])
+def assign_lecture(request):
 
-{
-    "batch_progress": "2.1", 
-    "semesters": {
-        "1.1": {
-            "semester_code": "1.1",
-            "display_name": "Year 1 - Semester 1",
-            "status": "completed",  
-            "has_marks": true,  
-            "subjects": [
-                {
-                    "id": 123,
-                    "name": "Mathematics I",
-                    "code": "MATH101",
-                    "assigned_teacher": {
-                        "id": 45,
-                        "name": "Dr. Smith",
-                        "email": "smith@example.com"
-                    },
-                    "has_marks": true,
-                    "marks_url": "/api/batches/1/subjects/123/marks/"
-                }
-            ]
-        },
-        "1.2": {
-            "semester_code": "1.2",
-            "display_name": "Year 1 - Semester 2",
-            "status": "completed",
-            "has_marks": true,
-            "subjects": []
-        },
-        "2.1": {
-            "semester_code": "2.1",
-            "display_name": "Year 2 - Semester 1",
-            "status": "current",  // This matches batch_progress
-            "has_marks": false,
-            "subjects": [
-                {
-                    "id": 124,
-                    "name": "Mathematics II",
-                    "code": "MATH201",
-                    "assigned_teacher": null,
-                    "has_marks": false
-                }
-            ]
-        },
-        "2.2": {
-            "semester_code": "2.2",
-            "display_name": "Year 2 - Semester 2",
-            "status": "upcoming",
-            "has_marks": false,
-            "subjects": []  // Empty but still shown as a placeholder
-        },
-        "3.1": {
-            "semester_code": "3.1",
-            "display_name": "Year 3 - Semester 1",
-            "status": "upcoming",
-            "has_marks": false,
-            "subjects": []
-        },
-        "3.2": {
-            "semester_code": "3.2",
-            "display_name": "Year 3 - Semester 2",
-            "status": "upcoming",
-            "has_marks": false,
-            "subjects": []
-        },
-        "4.1": {
-            "semester_code": "4.1",
-            "display_name": "Year 4 - Semester 1",
-            "status": "upcoming",
-            "has_marks": false,
-            "subjects": []
-        },
-        "4.2": {
-            "semester_code": "4.2",
-            "display_name": "Year 4 - Semester 2",
-            "status": "upcoming",
-            "has_marks": false,
-            "subjects": []
-        }
-    },
-    "teachers": [
-        {"id": 45, "name": "Dr. Smith", "email": "smith@example.com", "department": "Mathematics"},
-        {"id": 46, "name": "Prof. Johnson", "email": "johnson@example.com", "department": "Physics"},
-        {"id": 47, "name": "Dr. Williams", "email": "williams@example.com", "department": "Chemistry"}
-    ],
-    "can_advance": true,  
-    "next_semester": "2.2" 
-}
-'''
+    batch_subject = university_models.BatchSubject.objects.filter(batch__id=request.data['batch_id'],subject__id=request.data['subject_id']).first()
+    if not batch_subject:
+        return response.Response({'detail':"invalid assignment"},status=status.HTTP_400_BAD_REQUEST)
+    
+    staff = user_models.Staff.objects.filter(id=request.data['teacher_id']).exclude(staff_type='support').first()
+    batch_subject.staff = staff
+    batch_subject.save()
+    return response.Response({},status=status.HTTP_200_OK)
+
+@api_view(['POST'])
+@permission_classes([permissions.IsFacultyAdminAdvanceBatch])
+def advance_batch(request,batch_id):
+    batch = university_models.Batch.objects.filter(id=batch_id).first()
+    if batch is None:
+        return response.Response({'detail':"invalid batch"},status=status.HTTP_400_BAD_REQUEST)
+    
+    if float(batch.progression_year) == 4.2:
+        return response.Response({},status=status.HTTP_200_OK)
+    
+    from university.models import semesters
+
+    if float(batch.progression_year) not in semesters:
+        return response.Response({'detail':"invalid semester"},status=status.HTTP_400_BAD_REQUEST)
+    
+    batch.progression_year = semesters[ semesters.index(float(batch.progression_year)) +1 ]
+    batch.save()
+
+    return response.Response({},status=status.HTTP_200_OK)

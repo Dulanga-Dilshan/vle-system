@@ -1,6 +1,8 @@
 from django.db import models
 
 
+semesters = [1.1,1.2,2.1,2.2,3.1,3.2,4.1,4.2]
+
 # Create your models here.
 class University(models.Model):
     name = models.CharField(max_length=50,unique=True)
@@ -59,7 +61,7 @@ class Batch(models.Model):
 
 class Semester(models.Model):
     course = models.ForeignKey(Course,on_delete=models.CASCADE,related_name='semesters')
-    number = models.PositiveSmallIntegerField()
+    number = models.DecimalField(max_digits=2,decimal_places=1,default=1.1)
     
     class Meta:
         unique_together = ('course' , 'number')

@@ -99,7 +99,6 @@ class IsFacultyAdminUserState(BasePermission):
             if user_id != None:
                 user = User.objects.filter(id=user_id).first()
                 if user is None:
-                    print('1')
                     return False
                 
                 if user.role == 'student':
@@ -107,15 +106,12 @@ class IsFacultyAdminUserState(BasePermission):
                 elif user.role == 'staff':
                     user = getattr(user,'staff',None)
                 else:
-                    print('2')
                     return False
                 
                 if user is None:
-                    print('3')
                     return False
                 
                 if staff_admin.faculty_name != user.faculty_name:
-                    print('4')
                     return False
             
             else:
@@ -153,3 +149,53 @@ class IsAuthenticated(BasePermission):
             return request.user.is_authenticated
         
         return False
+    
+class IsValiedAssignment(BasePermission):
+    message = 'Invalied Assignment'
+
+    def has_permission(self, request, view):
+        batch = university_models.Batch.objects.filter(id=request.data['batch_id']).first()
+        subject = university_models.Subject.objects.filter(id=request.data['subject_id']).first()
+        staff = Staff.objects.filter(id=request.data['teacher_id']).exclude(staff_type='support').first()
+
+        if batch is None or subject is None:
+            return False
+
+        if batch.course.department != subject.department:
+            return False
+        
+        if request.user and request.user.is_superuser:
+            return True
+        
+        if request.user.is_staff == 0:
+            return False
+        
+        if staff is not None:
+            faculty_member = getattr(request.user,'staff',None)
+            if faculty_member.faculty_name != subject.department.faculty:
+                return False
+        
+        return True
+
+
+class IsFacultyAdminAdvanceBatch(BasePermission):
+    message = 'unouthorized'
+
+    def has_permission(self, request, view):
+        if request.user and request.user.is_superuser:
+            return True
+        
+        try:
+            batch_id = int(view.kwargs.get('batch_id',0))
+        except Exception:
+            return False
+        
+        batch = university_models.Batch.objects.filter(id=batch_id).first()
+        
+        if request.user.is_staff == 1:
+            faculty_member = getattr(request.user,'staff',None)
+            if faculty_member.faculty_name == batch.course.department.faculty:
+                return True
+        
+        return False
+        
