@@ -2,6 +2,7 @@ from . import models
 from django.http.request import QueryDict
 from django.shortcuts import get_object_or_404
 from rest_framework.exceptions import NotFound
+from rest_framework.exceptions import ValidationError
 from django.db import transaction
 
 
@@ -92,4 +93,35 @@ def get_subjects(semester_subjects)->list:
         
     return subjects
 
+@transaction.atomic
+def update_resource(resource_id:int,faculty_id:int,data:dict)->None:
+    resource = models.LectureHall.objects.filter(id=resource_id,faculty__id=faculty_id).first()
+    if resource is None:
+        raise NotFound('invalide resource')
     
+
+    data['name'] = data['name'].strip()
+    if len(data['name']) < 1:
+        raise ValidationError('name cant be empty')
+    if len(data['name']) > 50:
+        raise ValidationError('name cant more than 50 chars')
+    
+    for key,_ in models.LectureHall.HALL_TYPE:
+        if key==data['hall_type']:
+            break
+    else:
+        raise ValidationError(f'not a valid hall type.{models.LectureHall.HALL_TYPE}')
+        
+    if data['capacity'] < 1 or  data['capacity'] >1000:
+        raise ValidationError(f'capacity must be in 1-1000. got {data['capacity']}')
+    
+    if resource.name != data['name']:
+        resource.name = data['name']
+
+    if resource.hall_type != data['hall_type']:
+        resource.hall_type = data['hall_type']
+
+    if resource.capacity != data['capacity']:
+        resource.capacity = data['capacity']
+    
+    resource.save()

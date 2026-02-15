@@ -21,15 +21,20 @@
                 <span class="course-tag">{{ batch.course.name|default:"No Course" }}</span>
             </div>
             {% endif %}
+            
+            <!-- Faculty Selection -->
+            <div class="faculty-selector">
+                <select id="facultySelect" class="form-control" onchange="changeFaculty(this.value)">
+                    <option value="">Select Faculty</option>
+                    {% for fac in faculties %}
+                    <option value="{{ fac.id }}" {% if faculty.id == fac.id %}selected{% endif %}>
+                        {{ fac.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
         </div>
-        <div class="header-buttons">
-            <button class="btn btn-primary" onclick="saveTimetable()">
-                <i class="fas fa-save"></i> Save Timetable
-            </button>
-            <button class="btn btn-outline" onclick="clearTimetable()">
-                <i class="fas fa-trash"></i> Clear All
-            </button>
-        </div>
+        <!-- Save Timetable button removed as per request -->
     </div>
 
     <!-- Timetable Controls -->
@@ -37,15 +42,15 @@
         <div class="time-settings">
             <div class="form-group">
                 <label>Start Time:</label>
-                <input type="time" id="startTime" value="08:00" onchange="updateTimetable()">
+                <input type="time" id="startTime" value="08:00" onchange="rebuildTimetable()">
             </div>
             <div class="form-group">
                 <label>End Time:</label>
-                <input type="time" id="endTime" value="18:00" onchange="updateTimetable()">
+                <input type="time" id="endTime" value="18:00" onchange="rebuildTimetable()">
             </div>
             <div class="form-group">
                 <label>Interval:</label>
-                <select id="timeInterval" onchange="updateTimetable()">
+                <select id="timeInterval" onchange="rebuildTimetable()">
                     <option value="60">1 hour</option>
                     <option value="30">30 minutes</option>
                     <option value="15">15 minutes</option>
@@ -66,6 +71,31 @@
         </div>
     </div>
 
+    <!-- Hall Type Filter -->
+    <div class="filter-bar">
+        <div class="filter-label">
+            <i class="fas fa-filter"></i> Filter by Hall Type:
+        </div>
+        <div class="filter-options">
+            <button class="filter-btn active" data-type="all" onclick="filterByHallType('all')">All</button>
+            <button class="filter-btn" data-type="LH" onclick="filterByHallType('LH')">
+                <span class="type-dot" style="background: #3b82f6;"></span> Lecture Halls
+            </button>
+            <button class="filter-btn" data-type="LAB" onclick="filterByHallType('LAB')">
+                <span class="type-dot" style="background: #f97316;"></span> Labs
+            </button>
+            <button class="filter-btn" data-type="SEMINAR" onclick="filterByHallType('SEMINAR')">
+                <span class="type-dot" style="background: #8b5cf6;"></span> Seminar Rooms
+            </button>
+            <button class="filter-btn" data-type="AUD" onclick="filterByHallType('AUD')">
+                <span class="type-dot" style="background: #ec4899;"></span> Auditoriums
+            </button>
+            <button class="filter-btn" data-type="CONF" onclick="filterByHallType('CONF')">
+                <span class="type-dot" style="background: #14b8a6;"></span> Conference Halls
+            </button>
+        </div>
+    </div>
+
     <!-- Main Timetable -->
     <div class="timetable-container">
         <div class="timetable-wrapper">
@@ -73,13 +103,13 @@
                 <thead>
                     <tr>
                         <th class="time-header">Time</th>
-                        <th class="day-header">Sunday</th>
                         <th class="day-header">Monday</th>
                         <th class="day-header">Tuesday</th>
                         <th class="day-header">Wednesday</th>
                         <th class="day-header">Thursday</th>
                         <th class="day-header">Friday</th>
                         <th class="day-header">Saturday</th>
+                        <th class="day-header">Sunday</th>
                     </tr>
                 </thead>
                 <tbody id="timetableBody">
@@ -90,23 +120,27 @@
         
         <!-- Legend -->
         <div class="timetable-legend">
-            <div class="legend-title">Color Legend:</div>
+            <div class="legend-title">Hall Type Legend:</div>
             <div class="legend-items">
                 <div class="legend-item">
-                    <div class="color-box" style="background: #e3f2fd; border-left: 4px solid #1976d2;"></div>
-                    <span>Lecture</span>
+                    <div class="color-box" style="background: #e3f2fd; border-left: 4px solid #3b82f6;"></div>
+                    <span>Lecture Hall (LH)</span>
                 </div>
                 <div class="legend-item">
-                    <div class="color-box" style="background: #f3e5f5; border-left: 4px solid #7b1fa2;"></div>
-                    <span>Lab</span>
+                    <div class="color-box" style="background: #fff3e0; border-left: 4px solid #f97316;"></div>
+                    <span>Laboratory (LAB)</span>
                 </div>
                 <div class="legend-item">
-                    <div class="color-box" style="background: #e8f5e8; border-left: 4px solid #388e3c;"></div>
-                    <span>Tutorial</span>
+                    <div class="color-box" style="background: #f3e5f5; border-left: 4px solid #8b5cf6;"></div>
+                    <span>Seminar Room</span>
                 </div>
                 <div class="legend-item">
-                    <div class="color-box" style="background: #fff3e0; border-left: 4px solid #f57c00;"></div>
-                    <span>Workshop</span>
+                    <div class="color-box" style="background: #fce4ec; border-left: 4px solid #ec4899;"></div>
+                    <span>Auditorium (AUD)</span>
+                </div>
+                <div class="legend-item">
+                    <div class="color-box" style="background: #e0f2f1; border-left: 4px solid #14b8a6;"></div>
+                    <span>Conference Hall</span>
                 </div>
             </div>
         </div>
@@ -114,101 +148,106 @@
 </div>
 
 <!-- Cell Editor Modal -->
-<div class="modal-overlay" id="cellEditorModal" style="display: none;">
-    <div class="modal">
+<div class="modal-overlay" id="cellEditorModal" style="display: none;" onclick="handleModalClick(event)">
+    <div class="modal" onclick="event.stopPropagation()">
         <div class="modal-header">
-            <h3 class="modal-title">Edit Schedule</h3>
+            <h3 class="modal-title" id="modalTitle">Add Schedule</h3>
             <button class="modal-close" onclick="closeCellEditor()">&times;</button>
         </div>
         <div class="modal-content">
             <form id="cellEditorForm">
                 <input type="hidden" id="editScheduleId" value="">
                 <input type="hidden" id="editCellId" value="">
+                <input type="hidden" id="editFacultyId" value="{% if faculty %}{{ faculty.id }}{% endif %}">
                 
-                <div class="form-group">
-                    <label for="editDay">Day</label>
-                    <input type="text" id="editDay" class="form-control" readonly>
+                <!-- Time Section -->
+                <div class="form-section">
+                    <div class="section-title">
+                        <i class="fas fa-clock"></i> Time Settings
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="editDay">Day</label>
+                            <input type="text" id="editDay" class="form-control" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label for="editStartTime">Start Time *</label>
+                            <input type="time" id="editStartTime" class="form-control" required onchange="fetchAvailableHalls()">
+                        </div>
+                        <div class="form-group">
+                            <label for="editEndTime">End Time *</label>
+                            <input type="time" id="editEndTime" class="form-control" required onchange="fetchAvailableHalls()">
+                        </div>
+                    </div>
                 </div>
-                
-                <div class="form-row">
+
+                <!-- Subject Section -->
+                <div class="form-section">
+                    <div class="section-title">
+                        <i class="fas fa-book"></i> Subject Details
+                    </div>
                     <div class="form-group">
-                        <label for="editStartTime">Start Time *</label>
-                        <input type="time" id="editStartTime" class="form-control" required>
+                        <label for="editSubject">Subject *</label>
+                        <select id="editSubject" class="form-control" required>
+                            <option value="">Select Subject</option>
+                            {% for subject in subjects %}
+                            <option value="{{ subject.id }}" 
+                                    data-code="{{ subject.subject.code|default:'' }}"
+                                    data-teacher-id="{{ subject.staff.id|default:'' }}"
+                                    data-teacher-name="{{ subject.staff.name|default:'' }}">
+                                {{ subject.subject.name }} ({{ subject.subject.code|default:"No Code" }})
+                                {% if subject.staff %} - {{ subject.staff.name }}{% endif %}
+                            </option>
+                            {% endfor %}
+                        </select>
                     </div>
                     
                     <div class="form-group">
-                        <label for="editEndTime">End Time *</label>
-                        <input type="time" id="editEndTime" class="form-control" required>
-                    </div>
-                </div>
-                
-                <div class="form-group">
-                    <label for="editSubject">Subject *</label>
-                    <select id="editSubject" class="form-control" required>
-                        <option value="">Select Subject</option>
-                        {% for subject in subjects %}
-                        <option value="{{ subject.id }}" data-code="{{ subject.code|default:'' }}">
-                            {{ subject.name }} ({{ subject.code|default:"No Code" }})
-                        </option>
-                        {% endfor %}
-                    </select>
-                </div>
-                
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="editTeacher">Teacher</label>
-                        <select id="editTeacher" class="form-control">
-                            <option value="">Select Teacher</option>
+                        <label for="editSubstituteTeacher">Substitute Teacher</label>
+                        <select id="editSubstituteTeacher" class="form-control">
+                            <option value="">No Substitute</option>
                             {% for teacher in teachers %}
                             <option value="{{ teacher.id }}">{{ teacher.name }}</option>
                             {% endfor %}
                         </select>
+                        <small class="help-text">Select if regular teacher is unavailable</small>
                     </div>
-                    
+                </div>
+
+                <!-- Hall Section -->
+                <div class="form-section">
+                    <div class="section-title">
+                        <i class="fas fa-door-open"></i> Hall Assignment
+                    </div>
                     <div class="form-group">
-                        <label for="editRoom">Room *</label>
-                        <select id="editRoom" class="form-control" required>
-                            <option value="">Select Room</option>
-                            {% for room in rooms %}
-                            <option value="{{ room.id }}">{{ room.name }} ({{ room.code|default:"" }})</option>
-                            {% endfor %}
+                        <label for="editHall">Hall *</label>
+                        <select id="editHall" class="form-control" required>
+                            <option value="">Select day and time first</option>
                         </select>
+                        <div id="hallError" class="error-message" style="display: none;"></div>
                     </div>
                 </div>
-                
-                <div class="form-group">
-                    <label for="editType">Class Type</label>
-                    <select id="editType" class="form-control">
-                        <option value="lecture">Lecture</option>
-                        <option value="lab">Lab</option>
-                        <option value="tutorial">Tutorial</option>
-                        <option value="workshop">Workshop</option>
-                        <option value="seminar">Seminar</option>
-                    </select>
-                </div>
-                
-                <div class="form-group">
-                    <label for="editNotes">Notes</label>
-                    <textarea id="editNotes" class="form-control" rows="2" placeholder="Additional notes..."></textarea>
-                </div>
-                
-                <div class="form-group">
-                    <label class="checkbox-label">
-                        <input type="checkbox" id="editRecurring" checked>
-                        <span class="checkmark"></span>
-                        Recurring Weekly
-                    </label>
+
+                <!-- Additional Options -->
+                <div class="form-section">
+                    <div class="section-title">
+                        <i class="fas fa-cog"></i> Additional Options
+                    </div>
+                    <div class="form-group">
+                        <label for="editNotes">Notes</label>
+                        <textarea id="editNotes" class="form-control" rows="2" placeholder="Additional notes..."></textarea>
+                    </div>
                 </div>
                 
                 <div class="form-actions">
-                    <button type="button" class="btn btn-danger" onclick="deleteCellSchedule()">
+                    <button type="button" class="btn btn-danger" onclick="deleteCellSchedule()" id="deleteBtn" style="display: none;">
                         <i class="fas fa-trash"></i> Delete
                     </button>
                     <button type="button" class="btn btn-outline" onclick="closeCellEditor()">
                         Cancel
                     </button>
                     <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-save"></i> Save
+                        <i class="fas fa-save"></i> Save Schedule
                     </button>
                 </div>
             </form>
@@ -216,16 +255,8 @@
     </div>
 </div>
 
-<!-- Success/Error Messages (hidden initially) -->
+<!-- Success/Error Messages -->
 <div id="messageContainer" style="position: fixed; top: 20px; right: 20px; z-index: 9999;"></div>
-
-<!-- Loading Overlay -->
-<div id="loadingOverlay" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 9998; display: flex; align-items: center; justify-content: center;">
-    <div class="loading-spinner" style="text-align: center; color: white;">
-        <i class="fas fa-spinner fa-spin" style="font-size: 3rem;"></i>
-        <p style="margin-top: 1rem;">Processing...</p>
-    </div>
-</div>
 {% endblock %}
 
 {% block style %}
@@ -262,6 +293,7 @@
         gap: 1.5rem;
         flex: 1;
         margin-left: 2rem;
+        flex-wrap: wrap;
     }
 
     .batch-info {
@@ -292,6 +324,13 @@
         padding: 0.25rem 0.75rem;
         border-radius: 12px;
         font-size: 0.9rem;
+    }
+
+    .faculty-selector select {
+        padding: 0.5rem 1rem;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        min-width: 200px;
     }
 
     .header-buttons {
@@ -358,7 +397,7 @@
         background: white;
         border-radius: 12px;
         padding: 1.5rem;
-        margin-bottom: 2rem;
+        margin-bottom: 1rem;
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
         border: 1px solid #eee;
         display: flex;
@@ -401,6 +440,66 @@
         display: flex;
         gap: 0.5rem;
         align-items: center;
+    }
+
+    /* Filter Bar */
+    .filter-bar {
+        background: white;
+        border-radius: 12px;
+        padding: 1rem 1.5rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        border: 1px solid #eee;
+        display: flex;
+        align-items: center;
+        gap: 1.5rem;
+        flex-wrap: wrap;
+    }
+
+    .filter-label {
+        font-weight: 600;
+        color: #2c3e50;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .filter-options {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+
+    .filter-btn {
+        padding: 0.5rem 1rem;
+        border: 1px solid #ddd;
+        border-radius: 20px;
+        background: white;
+        color: #2c3e50;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.9rem;
+    }
+
+    .filter-btn:hover {
+        background: #f8f9fa;
+        border-color: #4361ee;
+    }
+
+    .filter-btn.active {
+        background: #4361ee;
+        color: white;
+        border-color: #4361ee;
+    }
+
+    .type-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        display: inline-block;
     }
 
     /* Timetable Container */
@@ -450,7 +549,7 @@
     .timetable td {
         padding: 0.5rem;
         border: 1px solid #eee;
-        height: 80px;
+        height: 100px;
         vertical-align: top;
         position: relative;
     }
@@ -477,7 +576,7 @@
         transition: all 0.3s ease;
         background: white;
         position: relative;
-        min-height: 80px;
+        min-height: 100px;
     }
 
     .schedule-cell:hover {
@@ -542,8 +641,7 @@
 
     .subject-code {
         font-weight: 600;
-        color: #1976d2;
-        font-size: 0.9rem;
+        font-size: 0.85rem;
         background: rgba(255, 255, 255, 0.8);
         padding: 0.125rem 0.375rem;
         border-radius: 4px;
@@ -560,15 +658,9 @@
     .subject-name {
         font-weight: 600;
         color: #2c3e50;
-        font-size: 0.85rem;
+        font-size: 0.9rem;
         margin-bottom: 0.25rem;
         line-height: 1.2;
-    }
-
-    .teacher-name {
-        font-size: 0.8rem;
-        color: #7209b7;
-        margin-bottom: 0.25rem;
     }
 
     .cell-footer {
@@ -576,50 +668,66 @@
         justify-content: space-between;
         align-items: center;
         font-size: 0.75rem;
+        margin-top: 0.5rem;
     }
 
-    .room-info {
+    .hall-info {
+        display: flex;
+        align-items: center;
+        gap: 4px;
         background: rgba(255, 255, 255, 0.8);
         padding: 0.125rem 0.375rem;
         border-radius: 4px;
         color: #2c3e50;
     }
 
-    .type-info {
-        background: rgba(255, 255, 255, 0.8);
-        padding: 0.125rem 0.375rem;
-        border-radius: 4px;
-        color: #7b1fa2;
-        text-transform: uppercase;
-        font-weight: 600;
+    .hall-type-badge {
         font-size: 0.7rem;
+        background: rgba(0, 0, 0, 0.1);
+        padding: 2px 4px;
+        border-radius: 4px;
+        font-weight: 600;
     }
 
-    /* Class Type Colors */
-    .filled-cell[data-type="lecture"] {
+    .substitute-badge {
+        background: #ffd700;
+        color: #000;
+        font-size: 0.7rem;
+        padding: 2px 4px;
+        border-radius: 4px;
+        margin-left: 4px;
+    }
+
+    /* Hall Type Colors */
+    .filled-cell[data-hall-type="LH"] {
         background: #e3f2fd;
-        border-left-color: #1976d2;
+        border-left-color: #3b82f6;
     }
+    .filled-cell[data-hall-type="LH"] .subject-code { color: #3b82f6; }
 
-    .filled-cell[data-type="lab"] {
-        background: #f3e5f5;
-        border-left-color: #7b1fa2;
-    }
-
-    .filled-cell[data-type="tutorial"] {
-        background: #e8f5e8;
-        border-left-color: #388e3c;
-    }
-
-    .filled-cell[data-type="workshop"] {
+    .filled-cell[data-hall-type="LAB"] {
         background: #fff3e0;
-        border-left-color: #f57c00;
+        border-left-color: #f97316;
     }
+    .filled-cell[data-hall-type="LAB"] .subject-code { color: #f97316; }
 
-    .filled-cell[data-type="seminar"] {
-        background: #ffebee;
-        border-left-color: #d32f2f;
+    .filled-cell[data-hall-type="SEMINAR"] {
+        background: #f3e5f5;
+        border-left-color: #8b5cf6;
     }
+    .filled-cell[data-hall-type="SEMINAR"] .subject-code { color: #8b5cf6; }
+
+    .filled-cell[data-hall-type="AUD"] {
+        background: #fce4ec;
+        border-left-color: #ec4899;
+    }
+    .filled-cell[data-hall-type="AUD"] .subject-code { color: #ec4899; }
+
+    .filled-cell[data-hall-type="CONF"] {
+        background: #e0f2f1;
+        border-left-color: #14b8a6;
+    }
+    .filled-cell[data-hall-type="CONF"] .subject-code { color: #14b8a6; }
 
     /* Timetable Legend */
     .timetable-legend {
@@ -669,16 +777,18 @@
         justify-content: center;
         z-index: 1000;
         padding: 1rem;
+        backdrop-filter: blur(4px);
     }
 
     .modal {
         background: white;
-        border-radius: 12px;
+        border-radius: 16px;
         width: 90%;
-        max-width: 500px;
+        max-width: 700px;
         max-height: 90vh;
         overflow-y: auto;
         animation: modalSlideIn 0.3s ease;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
     }
 
     .modal-header {
@@ -687,67 +797,112 @@
         align-items: center;
         padding: 1.5rem;
         border-bottom: 1px solid #eee;
+        background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+        border-radius: 16px 16px 0 0;
+        position: sticky;
+        top: 0;
+        z-index: 10;
     }
 
     .modal-title {
         margin: 0;
         font-size: 1.5rem;
         color: #2c3e50;
+        font-weight: 600;
     }
 
     .modal-close {
-        background: none;
+        background: rgba(0, 0, 0, 0.05);
         border: none;
         font-size: 1.5rem;
-        color: #95a5a6;
+        color: #6c757d;
         cursor: pointer;
         padding: 0.5rem;
-        border-radius: 4px;
+        width: 40px;
+        height: 40px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
         transition: all 0.3s ease;
     }
 
     .modal-close:hover {
-        background: #f8f9fa;
+        background: rgba(0, 0, 0, 0.1);
         color: #2c3e50;
+        transform: rotate(90deg);
     }
 
     .modal-content {
         padding: 1.5rem;
     }
 
+    /* Form Sections */
+    .form-section {
+        background: #f8f9fa;
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        border: 1px solid #eee;
+    }
+
+    .section-title {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #2c3e50;
+        margin-bottom: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px solid #4361ee;
+    }
+
+    .section-title i {
+        color: #4361ee;
+    }
+
     /* Form Styles */
     .form-group {
-        margin-bottom: 1rem;
+        margin-bottom: 1.5rem;
     }
 
     .form-row {
         display: grid;
-        grid-template-columns: 1fr 1fr;
+        grid-template-columns: repeat(3, 1fr);
         gap: 1rem;
-        margin-bottom: 1rem;
+        margin-bottom: 0;
     }
 
     .form-group label {
         display: block;
         margin-bottom: 0.5rem;
-        font-weight: 500;
-        color: #2c3e50;
+        font-weight: 600;
+        color: #495057;
+        font-size: 0.95rem;
     }
 
     .form-control {
         width: 100%;
         padding: 0.75rem 1rem;
-        border: 1px solid #ddd;
+        border: 1px solid #dee2e6;
         border-radius: 8px;
         font-size: 0.95rem;
-        background: white;
         transition: all 0.3s ease;
+        background: white;
+        font-family: inherit;
     }
 
     .form-control:focus {
         outline: none;
         border-color: #4361ee;
-        box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.1);
+        box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.15);
+        background: #f8f9ff;
+    }
+
+    .form-control[readonly] {
+        background: #e9ecef;
+        cursor: not-allowed;
     }
 
     textarea.form-control {
@@ -755,56 +910,22 @@
         min-height: 60px;
     }
 
-    .checkbox-label {
-        display: flex;
-        align-items: center;
-        cursor: pointer;
-        position: relative;
-        padding-left: 2rem;
-        margin-bottom: 0.5rem;
-    }
-
-    .checkbox-label input {
-        position: absolute;
-        opacity: 0;
-        cursor: pointer;
-        height: 0;
-        width: 0;
-    }
-
-    .checkmark {
-        position: absolute;
-        left: 0;
-        height: 20px;
-        width: 20px;
-        background-color: #eee;
-        border-radius: 4px;
-        transition: all 0.3s ease;
-    }
-
-    .checkbox-label:hover input ~ .checkmark {
-        background-color: #ccc;
-    }
-
-    .checkbox-label input:checked ~ .checkmark {
-        background-color: #4361ee;
-    }
-
-    .checkmark:after {
-        content: "";
-        position: absolute;
-        display: none;
-        left: 7px;
-        top: 3px;
-        width: 6px;
-        height: 12px;
-        border: solid white;
-        border-width: 0 2px 2px 0;
-        transform: rotate(45deg);
-    }
-
-    .checkbox-label input:checked ~ .checkmark:after {
+    .help-text {
+        font-size: 0.85rem;
+        color: #6c757d;
+        margin-top: 0.25rem;
         display: block;
+        font-style: italic;
+    }
+
+    .error-message {
+        font-size: 0.85rem;
+        margin-top: 0.5rem;
+        color: #dc3545;
+        background: #f8d7da;
+        padding: 0.5rem;
+        border-radius: 4px;
+        border: 1px solid #f5c6cb;
     }
 
     .form-actions {
@@ -813,19 +934,7 @@
         gap: 1rem;
         margin-top: 2rem;
         padding-top: 1.5rem;
-        border-top: 1px solid #eee;
-    }
-
-    /* Animation */
-    @keyframes modalSlideIn {
-        from {
-            opacity: 0;
-            transform: translateY(-20px);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
+        border-top: 1px solid #e9ecef;
     }
 
     /* Message Styles */
@@ -839,6 +948,8 @@
         align-items: center;
         min-width: 300px;
         max-width: 400px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        backdrop-filter: blur(10px);
     }
 
     .message.success {
@@ -856,6 +967,11 @@
         color: white;
     }
 
+    .message.info {
+        background: linear-gradient(135deg, #4cc9f0, #4895ef);
+        color: white;
+    }
+
     .message button {
         background: none;
         border: none;
@@ -864,8 +980,15 @@
         cursor: pointer;
         padding: 0 0.5rem;
         margin-left: 1rem;
+        opacity: 0.8;
+        transition: opacity 0.3s ease;
     }
 
+    .message button:hover {
+        opacity: 1;
+    }
+
+    /* Animations */
     @keyframes slideIn {
         from {
             transform: translateX(100%);
@@ -874,6 +997,17 @@
         to {
             transform: translateX(0);
             opacity: 1;
+        }
+    }
+
+    @keyframes modalSlideIn {
+        from {
+            opacity: 0;
+            transform: translateY(-30px) scale(0.95);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0) scale(1);
         }
     }
 
@@ -913,6 +1047,16 @@
             justify-content: center;
         }
         
+        .filter-bar {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        
+        .filter-options {
+            width: 100%;
+            justify-content: center;
+        }
+        
         .legend-items {
             justify-content: center;
         }
@@ -921,8 +1065,17 @@
             grid-template-columns: 1fr;
         }
         
-        .time-cell, .schedule-cell {
-            height: 70px;
+        .modal {
+            width: 95%;
+            max-height: 85vh;
+        }
+        
+        .form-actions {
+            flex-direction: column;
+        }
+        
+        .form-actions .btn {
+            width: 100%;
         }
     }
 
@@ -942,24 +1095,13 @@
         }
         
         .time-cell, .schedule-cell {
-            height: 60px;
+            height: 80px;
             font-size: 0.8rem;
         }
         
-        .empty-cell i {
-            font-size: 1rem;
-        }
-        
-        .empty-cell span {
-            font-size: 0.7rem;
-        }
-        
-        .subject-code, .cell-time {
-            font-size: 0.7rem;
-        }
-        
-        .subject-name {
-            font-size: 0.75rem;
+        .filter-btn {
+            padding: 0.35rem 0.75rem;
+            font-size: 0.8rem;
         }
     }
 </style>
@@ -971,22 +1113,25 @@
     let timetableData = {};
     let currentCell = null;
     let timeFormat = '12';
-    let editedSchedules = new Set();
-    let deletedSchedules = new Set();
+    let currentHallFilter = 'all';
     
-    // Convert Django data to JavaScript object
-    const djangoSchedules = JSON.parse('{{ schedules_json|escapejs }}' || '[]');
     const batchId = '{{ batch.id|default:"" }}';
+    const facultyId = '{% if faculty %}{{ faculty.id }}{% endif %}';
 
     // DOM Ready
     document.addEventListener('DOMContentLoaded', function() {
+        console.log('Page loaded, batchId:', batchId, 'facultyId:', facultyId);
         setupEventListeners();
-        initializeTimetable();
-        populateExistingSchedules();
+        buildTimetableGrid();
+        
+        if (batchId) {
+            fetchTimetable();
+        } else {
+            showMessage('Please select a batch to view timetable', 'warning');
+        }
     });
 
     function setupEventListeners() {
-        // Cell editor form submission
         const cellEditorForm = document.getElementById('cellEditorForm');
         if (cellEditorForm) {
             cellEditorForm.addEventListener('submit', function(e) {
@@ -994,9 +1139,81 @@
                 saveCellSchedule();
             });
         }
+        
+        document.getElementById('editStartTime').addEventListener('change', function() {
+            if (document.getElementById('cellEditorModal').style.display === 'flex') {
+                fetchAvailableHalls();
+            }
+        });
+        
+        document.getElementById('editEndTime').addEventListener('change', function() {
+            if (document.getElementById('cellEditorModal').style.display === 'flex') {
+                fetchAvailableHalls();
+            }
+        });
     }
 
-    function initializeTimetable() {
+    function handleModalClick(event) {
+        if (event.target.classList.contains('modal-overlay')) {
+            closeCellEditor();
+        }
+    }
+
+    async function fetchTimetable() {
+        if (!batchId) return;
+        
+        showMessage('Loading timetable...', 'info');
+        
+        try {
+            const url = facultyId 
+                ? `/api/timetable/${batchId}/?faculty=${facultyId}`
+                : `/api/timetable/${batchId}/`;
+                
+            const response = await fetch(url);
+            
+            if (!response.ok) {
+                if (response.status === 404) {
+                    timetableData = {};
+                    refreshTimetableDisplay();
+                    showMessage('No timetable found for this batch', 'info');
+                    return;
+                }
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            timetableData = {};
+            
+            if (data && data.shedules) {
+                Object.entries(data.shedules).forEach(([day, schedules]) => {
+                    if (Array.isArray(schedules)) {
+                        schedules.forEach(schedule => {
+                            const time24 = convertTo24Hour(schedule.start_time);
+                            const cellId = `${day}_${time24.replace(':', '')}`;
+                            
+                            timetableData[cellId] = {
+                                id: schedule.id,
+                                start_time: schedule.start_time,
+                                end_time: schedule.end_time,
+                                subject: schedule.subject || {},
+                                hall: schedule.hall || {},
+                                notes: schedule.notes || ''
+                            };
+                        });
+                    }
+                });
+            }
+            
+            refreshTimetableDisplay();
+            showMessage('Timetable loaded successfully', 'success');
+            
+        } catch (error) {
+            console.error('Error fetching timetable:', error);
+            showMessage('Failed to load timetable: ' + error.message, 'error');
+        }
+    }
+
+    function buildTimetableGrid() {
         const timetableBody = document.getElementById('timetableBody');
         if (!timetableBody) return;
         
@@ -1004,34 +1221,27 @@
         const endTime = document.getElementById('endTime').value;
         const interval = parseInt(document.getElementById('timeInterval').value);
         
-        // Clear existing rows
         timetableBody.innerHTML = '';
         
-        // Parse times
         const [startHour, startMinute] = startTime.split(':').map(Number);
         const [endHour, endMinute] = endTime.split(':').map(Number);
         
-        // Create time slots
         let currentHour = startHour;
         let currentMinute = startMinute;
         
         while (currentHour < endHour || (currentHour === endHour && currentMinute < endMinute)) {
-            // Create time string
             const time24 = `${currentHour.toString().padStart(2, '0')}:${currentMinute.toString().padStart(2, '0')}`;
-            const time12 = convert24to12(time24);
+            const nextTime = addMinutes(time24, interval);
             
-            // Create table row
             const row = document.createElement('tr');
             
-            // Time cell
             const timeCell = document.createElement('td');
             timeCell.className = 'time-cell';
-            timeCell.innerHTML = `<div class="time-display">${time12}</div>`;
+            timeCell.innerHTML = `<div class="time-display">${formatTime(time24)}</div>`;
             timeCell.dataset.time24 = time24;
             row.appendChild(timeCell);
             
-            // Create cells for each day
-            const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+            const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
             days.forEach(day => {
                 const cellId = `${day}_${time24.replace(':', '')}`;
                 const cell = document.createElement('td');
@@ -1039,126 +1249,65 @@
                 cell.dataset.day = day;
                 cell.dataset.time = time24;
                 cell.dataset.cellId = cellId;
+                cell.dataset.endTime = nextTime;
                 cell.onclick = () => openCellEditor(cell);
                 
-                // Check if data exists for this cell
-                if (timetableData[cellId]) {
-                    updateCellContent(cell, timetableData[cellId]);
-                } else {
-                    cell.innerHTML = `
-                        <div class="empty-cell">
-                            <i class="fas fa-plus"></i>
-                            <span>Click to add schedule</span>
-                        </div>
-                    `;
-                }
+                cell.innerHTML = `
+                    <div class="empty-cell">
+                        <i class="fas fa-plus"></i>
+                        <span>Click to add</span>
+                    </div>
+                `;
                 
                 row.appendChild(cell);
             });
             
             timetableBody.appendChild(row);
             
-            // Increment time
-            currentMinute += interval;
-            if (currentMinute >= 60) {
-                currentHour += Math.floor(currentMinute / 60);
-                currentMinute = currentMinute % 60;
-            }
+            currentHour = parseInt(nextTime.split(':')[0]);
+            currentMinute = parseInt(nextTime.split(':')[1]);
         }
     }
 
-    function populateExistingSchedules() {
-        // Convert Django schedules to timetable data
-        djangoSchedules.forEach(schedule => {
-            if (schedule.day && schedule.time) {
-                // Parse time to 24-hour format
-                const time24 = parseTimeTo24(schedule.time);
-                if (!time24) return;
-                
-                const cellId = `${schedule.day.toLowerCase()}_${time24.replace(':', '')}`;
-                
-                // Store schedule data
-                timetableData[cellId] = {
-                    id: schedule.id || null,
-                    subjectId: schedule.subject_id || schedule.subject,
-                    subjectName: schedule.subject_name || schedule.subject,
-                    subjectCode: schedule.code || '',
-                    teacherId: schedule.teacher_id || schedule.lecture,
-                    teacherName: schedule.teacher_name || schedule.lecture,
-                    roomId: schedule.room_id || schedule.room,
-                    roomName: schedule.room_name || schedule.room,
-                    type: schedule.type || 'lecture',
-                    notes: schedule.notes || '',
-                    recurring: schedule.recurring !== false,
-                    day: schedule.day.toLowerCase(),
-                    startTime: time24,
-                    endTime: schedule.end_time || addOneHour(time24)
-                };
-            }
+    function refreshTimetableDisplay() {
+        buildTimetableGrid();
+        Object.entries(timetableData).forEach(([cellId, data]) => {
+            const cell = document.querySelector(`[data-cell-id="${cellId}"]`);
+            if (cell) updateCellDisplay(cell, data);
         });
-        
-        // Re-initialize timetable to show populated data
-        updateTimetable();
     }
 
-    function parseTimeTo24(timeStr) {
-        // Handle various time formats
-        if (!timeStr) return null;
-        
-        // If already in 24-hour format
-        if (timeStr.match(/^\d{1,2}:\d{2}$/)) {
-            return timeStr;
-        }
-        
-        // If in format like "08.00 am"
-        const match = timeStr.match(/(\d{1,2})[.:](\d{2})\s*(am|pm)/i);
+    function rebuildTimetable() {
+        refreshTimetableDisplay();
+    }
+
+    function convertTo24Hour(time12) {
+        if (!time12) return '08:00';
+        const match = time12.toLowerCase().match(/(\d{1,2})[.:](\d{2})\s*(am|pm)?/);
         if (match) {
             let hours = parseInt(match[1]);
             const minutes = match[2];
-            const ampm = match[3].toLowerCase();
-            
-            if (ampm === 'pm' && hours < 12) hours += 12;
-            if (ampm === 'am' && hours === 12) hours = 0;
-            
+            const ampm = match[3];
+            if (ampm) {
+                if (ampm === 'pm' && hours < 12) hours += 12;
+                if (ampm === 'am' && hours === 12) hours = 0;
+            }
             return `${hours.toString().padStart(2, '0')}:${minutes}`;
         }
-        
-        return null;
+        if (time12.match(/^\d{2}:\d{2}$/)) return time12;
+        return time12;
     }
 
-    function addOneHour(time24) {
-        const [hours, minutes] = time24.split(':').map(Number);
-        let newHour = hours + 1;
-        if (newHour >= 24) newHour = 0;
-        return `${newHour.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+    function convertTo12Hour(time24) {
+        const [hours, minutes] = time24.split(':');
+        const hour = parseInt(hours);
+        const ampm = hour >= 12 ? 'pm' : 'am';
+        const hour12 = hour % 12 || 12;
+        return `${hour12}.${minutes}${ampm}`;
     }
 
-    function updateTimetable() {
-        initializeTimetable();
-        
-        // Populate cells with existing data
-        Object.keys(timetableData).forEach(cellId => {
-            const cell = document.querySelector(`[data-cell-id="${cellId}"]`);
-            if (cell && timetableData[cellId]) {
-                updateCellContent(cell, timetableData[cellId]);
-            }
-        });
-    }
-
-    function setTimeFormat(format) {
-        timeFormat = format;
-        const buttons = document.querySelectorAll('.view-options .btn-outline');
-        buttons.forEach(btn => btn.classList.remove('active'));
-        event.target.classList.add('active');
-        
-        // Update all time displays
-        document.querySelectorAll('.time-cell .time-display').forEach(cell => {
-            const time24 = cell.parentElement.dataset.time24;
-            cell.textContent = format === '12' ? convert24to12(time24) : time24;
-        });
-    }
-
-    function convert24to12(time24) {
+    function formatTime(time24) {
+        if (timeFormat === '24') return time24;
         const [hours, minutes] = time24.split(':');
         const hour = parseInt(hours);
         const ampm = hour >= 12 ? 'PM' : 'AM';
@@ -1166,67 +1315,143 @@
         return `${hour12}:${minutes} ${ampm}`;
     }
 
-    function openCellEditor(cell) {
+    function addMinutes(time, minutes) {
+        const [hours, mins] = time.split(':').map(Number);
+        const date = new Date();
+        date.setHours(hours, mins + minutes);
+        return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+    }
+
+    function setTimeFormat(format) {
+        timeFormat = format;
+        document.querySelectorAll('.view-options .btn-outline').forEach(btn => btn.classList.remove('active'));
+        event.target.classList.add('active');
+        document.querySelectorAll('.time-cell .time-display').forEach(cell => {
+            const time24 = cell.parentElement.dataset.time24;
+            cell.textContent = formatTime(time24);
+        });
+        document.querySelectorAll('.cell-time').forEach(cell => {
+            const timeText = cell.textContent;
+            if (timeText.match(/\d{2}:\d{2}/)) cell.textContent = formatTime(timeText);
+        });
+    }
+
+    function filterByHallType(type) {
+        currentHallFilter = type;
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.classList.remove('active');
+            if (btn.dataset.type === type || (type === 'all' && btn.dataset.type === 'all')) {
+                btn.classList.add('active');
+            }
+        });
+        document.querySelectorAll('.schedule-cell').forEach(cell => {
+            if (cell.querySelector('.filled-cell')) {
+                const hallType = cell.querySelector('.filled-cell').dataset.hallType;
+                cell.style.opacity = (type === 'all' || hallType === type) ? '1' : '0.3';
+            } else {
+                cell.style.opacity = '1';
+            }
+        });
+    }
+
+    async function fetchAvailableHalls() {
+        const day = document.getElementById('editDay').value.toLowerCase();
+        const startTime = document.getElementById('editStartTime').value;
+        const endTime = document.getElementById('editEndTime').value;
+        const faculty = document.getElementById('editFacultyId').value || facultyId;
+        const cellId = document.getElementById('editCellId').value;
+        const currentHallId = timetableData[cellId]?.hall?.id;
+        
+        if (!day || !startTime || !endTime || !faculty) return;
+        
+        const hallSelect = document.getElementById('editHall');
+        hallSelect.innerHTML = '<option value="">Loading available halls...</option>';
+        hallSelect.disabled = true;
+        
+        try {
+            const startTime12 = convertTo12Hour(startTime);
+            const endTime12 = convertTo12Hour(endTime);
+            const url = `/api/faculty/${faculty}/available-halls/?day=${day}&start_time=${encodeURIComponent(startTime12)}&end_time=${encodeURIComponent(endTime12)}`;
+            
+            const response = await fetch(url);
+            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+            
+            const data = await response.json();
+            const availableHalls = data.available_halls || [];
+            
+            hallSelect.innerHTML = '<option value="">Select Hall</option>';
+            
+            if (availableHalls.length === 0) {
+                hallSelect.innerHTML = '<option value="">No halls available for this time</option>';
+                document.getElementById('hallError').style.display = 'block';
+                document.getElementById('hallError').textContent = 'No halls available for the selected time slot';
+            } else {
+                availableHalls.forEach(hall => {
+                    const option = document.createElement('option');
+                    option.value = hall.id;
+                    // Display name, type, and capacity
+                    let displayText = hall.name;
+                    if (hall.type) displayText += ` (${hall.type}`;
+                    if (hall.capacity) displayText += ` - ${hall.capacity} seats`;
+                    if (hall.type) displayText += ')';
+                    option.textContent = displayText;
+                    option.dataset.type = hall.type || 'LH';
+                    
+                    if (currentHallId && hall.id === currentHallId) option.selected = true;
+                    
+                    hallSelect.appendChild(option);
+                });
+                document.getElementById('hallError').style.display = 'none';
+            }
+            hallSelect.disabled = false;
+            
+        } catch (error) {
+            console.error('Error fetching halls:', error);
+            hallSelect.innerHTML = '<option value="">Error loading halls</option>';
+            document.getElementById('hallError').style.display = 'block';
+            document.getElementById('hallError').textContent = 'Failed to load available halls: ' + error.message;
+            hallSelect.disabled = false;
+        }
+    }
+
+    async function openCellEditor(cell) {
         currentCell = cell;
         const day = cell.dataset.day;
         const time = cell.dataset.time;
+        const endTime = cell.dataset.endTime;
         const cellId = cell.dataset.cellId;
         
-        // Set modal title
         const dayName = day.charAt(0).toUpperCase() + day.slice(1);
-        document.querySelector('.modal-title').textContent = `Edit Schedule - ${dayName}`;
+        document.getElementById('modalTitle').textContent = timetableData[cellId] ? 'Edit Schedule' : 'Add Schedule';
         
-        // Set day field
         document.getElementById('editDay').value = dayName;
-        
-        // Set time fields (default to 1 hour slot)
         document.getElementById('editStartTime').value = time;
-        const endTime = addOneHour(time);
         document.getElementById('editEndTime').value = endTime;
-        
-        // Store cell ID
         document.getElementById('editCellId').value = cellId;
         
-        // Check if cell has existing data
+        document.getElementById('deleteBtn').style.display = timetableData[cellId] ? 'block' : 'none';
+        
         if (timetableData[cellId]) {
             const data = timetableData[cellId];
             document.getElementById('editScheduleId').value = data.id || '';
-            document.getElementById('editSubject').value = data.subjectId || '';
-            document.getElementById('editTeacher').value = data.teacherId || '';
-            document.getElementById('editRoom').value = data.roomId || '';
-            document.getElementById('editType').value = data.type || 'lecture';
+            if (data.subject && data.subject.id) {
+                document.getElementById('editSubject').value = data.subject.id;
+                if (data.subject.substitute_teacher && data.subject.substitute_teacher.id) {
+                    document.getElementById('editSubstituteTeacher').value = data.subject.substitute_teacher.id;
+                } else {
+                    document.getElementById('editSubstituteTeacher').value = '';
+                }
+            }
             document.getElementById('editNotes').value = data.notes || '';
-            document.getElementById('editRecurring').checked = data.recurring !== false;
-            document.getElementById('editStartTime').value = data.startTime || time;
-            document.getElementById('editEndTime').value = data.endTime || endTime;
         } else {
-            // Clear form for new schedule
-            clearCellEditor();
+            document.getElementById('editScheduleId').value = '';
+            document.getElementById('editSubject').value = '';
+            document.getElementById('editSubstituteTeacher').value = '';
+            document.getElementById('editNotes').value = '';
         }
         
-        // Store current cell data
-        currentCell.editorData = {
-            day: day,
-            time: time,
-            cellId: cellId
-        };
-        
-        // Show modal
         document.getElementById('cellEditorModal').style.display = 'flex';
-    }
-
-    function clearCellEditor() {
-        document.getElementById('editScheduleId').value = '';
-        document.getElementById('editSubject').value = '';
-        document.getElementById('editTeacher').value = '';
-        document.getElementById('editRoom').value = '';
-        document.getElementById('editType').value = 'lecture';
-        document.getElementById('editNotes').value = '';
-        document.getElementById('editRecurring').checked = true;
-        
-        const time = currentCell ? currentCell.dataset.time : '08:00';
-        document.getElementById('editStartTime').value = time;
-        document.getElementById('editEndTime').value = addOneHour(time);
+        await fetchAvailableHalls();
     }
 
     function closeCellEditor() {
@@ -1234,302 +1459,204 @@
         currentCell = null;
     }
 
-    function saveCellSchedule() {
+    async function saveCellSchedule() {
         if (!currentCell) return;
         
         const scheduleId = document.getElementById('editScheduleId').value;
         const subjectSelect = document.getElementById('editSubject');
-        const subjectId = subjectSelect.value;
-        const subjectName = subjectSelect.options[subjectSelect.selectedIndex]?.text || '';
-        const teacherId = document.getElementById('editTeacher').value;
-        const roomId = document.getElementById('editRoom').value;
-        const type = document.getElementById('editType').value;
-        const notes = document.getElementById('editNotes').value;
-        const recurring = document.getElementById('editRecurring').checked;
+        const hallSelect = document.getElementById('editHall');
+        const day = document.getElementById('editDay').value.toLowerCase();
         const startTime = document.getElementById('editStartTime').value;
         const endTime = document.getElementById('editEndTime').value;
-        const day = currentCell.editorData.day;
-        const cellId = currentCell.editorData.cellId;
+        const cellId = document.getElementById('editCellId').value;
         
-        // Validation
-        if (!subjectId) {
+        if (!subjectSelect.value) {
             showMessage('Please select a subject', 'error');
             return;
         }
-        
-        if (!roomId) {
-            showMessage('Please select a room', 'error');
+        if (!hallSelect.value) {
+            showMessage('Please select a hall', 'error');
             return;
         }
         
-        if (!startTime || !endTime) {
-            showMessage('Please set start and end time', 'error');
-            return;
-        }
+        const selectedSubject = subjectSelect.options[subjectSelect.selectedIndex];
+        const selectedHall = hallSelect.options[hallSelect.selectedIndex];
         
-        if (startTime >= endTime) {
-            showMessage('End time must be after start time', 'error');
-            return;
-        }
+        const teacherId = selectedSubject.dataset.teacherId;
+        const teacherName = selectedSubject.dataset.teacherName;
         
-        // Get subject code from option data
-        const subjectCode = subjectSelect.options[subjectSelect.selectedIndex]?.dataset.code || '';
-        
-        // Update cell data
-        timetableData[cellId] = {
-            id: scheduleId || null,
-            subjectId: subjectId,
-            subjectName: subjectName.split('(')[0].trim(),
-            subjectCode: subjectCode,
-            teacherId: teacherId,
-            teacherName: teacherId ? document.getElementById('editTeacher').options[document.getElementById('editTeacher').selectedIndex]?.text : '',
-            roomId: roomId,
-            roomName: document.getElementById('editRoom').options[document.getElementById('editRoom').selectedIndex]?.text,
-            type: type,
-            notes: notes,
-            recurring: recurring,
+        const scheduleData = {
             day: day,
-            startTime: startTime,
-            endTime: endTime
+            start_time: convertTo12Hour(startTime),
+            end_time: convertTo12Hour(endTime),
+            subject_id: parseInt(subjectSelect.value),
+            hall_id: parseInt(hallSelect.value),
+            teacher_id: teacherId ? parseInt(teacherId) : null,
+            substitute_teacher_id: document.getElementById('editSubstituteTeacher').value ? parseInt(document.getElementById('editSubstituteTeacher').value) : null,
+            notes: document.getElementById('editNotes').value,
+            batch_id: batchId,
+            faculty_id: facultyId
         };
         
-        // Mark as edited
-        if (scheduleId) {
-            editedSchedules.add(scheduleId);
-        } else {
-            editedSchedules.add(cellId); // Use cellId for new schedules
+        // If editing, include id
+        if (scheduleId) scheduleData.id = parseInt(scheduleId);
+        
+        try {
+            const url = scheduleId ? `/api/schedules/${scheduleId}/update/` : '/api/schedules/create/';
+            const method = scheduleId ? 'PUT' : 'POST';
+            
+            const response = await fetch(url, {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify(scheduleData)
+            });
+            
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.detail || errorData.message || `HTTP error! status: ${response.status}`);
+            }
+            
+            const result = await response.json();
+            
+            // Update local data with returned schedule (including new ID)
+            timetableData[cellId] = {
+                id: result.id || scheduleId,
+                start_time: scheduleData.start_time,
+                end_time: scheduleData.end_time,
+                subject: {
+                    id: scheduleData.subject_id,
+                    name: selectedSubject.text.split('(')[0].trim(),
+                    code: selectedSubject.dataset.code || '',
+                    teacher: teacherId ? { id: teacherId, name: teacherName } : null,
+                    substitute_teacher: scheduleData.substitute_teacher_id ? {
+                        id: scheduleData.substitute_teacher_id,
+                        name: document.getElementById('editSubstituteTeacher').options[document.getElementById('editSubstituteTeacher').selectedIndex]?.text || ''
+                    } : null
+                },
+                hall: {
+                    id: scheduleData.hall_id,
+                    type: selectedHall.dataset.type || 'LH'
+                },
+                notes: scheduleData.notes
+            };
+            
+            updateCellDisplay(currentCell, timetableData[cellId]);
+            closeCellEditor();
+            showMessage(`Schedule ${scheduleId ? 'updated' : 'created'} successfully!`, 'success');
+            
+        } catch (error) {
+            console.error('Error saving schedule:', error);
+            showMessage(`Error: ${error.message}`, 'error');
         }
-        
-        // Update cell display
-        updateCellDisplay(currentCell, timetableData[cellId]);
-        
-        // Close modal
-        closeCellEditor();
-        
-        // Show notification
-        showMessage('Schedule saved successfully!', 'success');
     }
 
     function updateCellDisplay(cell, data) {
-        // Create filled cell content
+        const subject = data.subject || {};
+        const hall = data.hall || {};
+        const substitute = subject.substitute_teacher;
+        const hallType = hall.type || 'LH';
+        
         cell.innerHTML = `
-            <div class="filled-cell" data-type="${data.type}" onclick="event.stopPropagation(); openCellEditor(this.parentElement)">
+            <div class="filled-cell" data-hall-type="${hallType}" onclick="event.stopPropagation(); openCellEditor(this.parentElement)">
                 <div class="cell-header">
-                    <div class="subject-code">${data.subjectCode || 'CODE'}</div>
-                    <div class="cell-time">${convert24to12(data.startTime)}</div>
+                    <div class="subject-code">${subject.code || 'CODE'}</div>
+                    <div class="cell-time">${formatTime(convertTo24Hour(data.start_time))}</div>
                 </div>
                 <div class="cell-content">
-                    <div class="subject-name">${data.subjectName}</div>
-                    ${data.teacherName ? `<div class="teacher-name">${data.teacherName}</div>` : ''}
+                    <div class="subject-name">${subject.name || 'Unknown Subject'}</div>
+                    ${substitute ? `<div class="teacher-name">Sub: ${substitute.name}</div>` : ''}
                 </div>
                 <div class="cell-footer">
-                    <div class="room-info">${data.roomName || 'Room'}</div>
-                    <div class="type-info">${data.type.substring(0, 3)}</div>
+                    <div class="hall-info">
+                        <i class="fas fa-door-open"></i> Hall ${hall.id || '?'}
+                        <span class="hall-type-badge">${hallType}</span>
+                    </div>
                 </div>
             </div>
         `;
-        
-        // Reattach click event to the whole cell
         cell.onclick = () => openCellEditor(cell);
     }
 
-    function deleteCellSchedule() {
+    async function deleteCellSchedule() {
         if (!currentCell) return;
         
-        const cellId = currentCell.editorData.cellId;
+        const cellId = currentCell.dataset.cellId;
         const scheduleData = timetableData[cellId];
         
-        if (scheduleData && scheduleData.id) {
-            // Mark for deletion if it has an ID (existing schedule)
-            deletedSchedules.add(scheduleData.id);
-        }
-        
-        // Clear cell content
-        currentCell.innerHTML = `
-            <div class="empty-cell">
-                <i class="fas fa-plus"></i>
-                <span>Click to add schedule</span>
-            </div>
-        `;
-        
-        // Remove from data
-        delete timetableData[cellId];
-        
-        // Reattach click event
-        currentCell.onclick = () => openCellEditor(currentCell);
-        
-        // Close modal
-        closeCellEditor();
-        
-        // Show notification
-        showMessage('Schedule deleted', 'success');
-    }
-
-    function saveTimetable() {
-        showLoading(true);
-        
-        // Prepare data for sending
-        const schedulesToSend = [];
-        
-        // Collect all schedules from timetableData
-        Object.values(timetableData).forEach(schedule => {
-            schedulesToSend.push({
-                id: schedule.id,
-                subject: schedule.subjectId,
-                teacher: schedule.teacherId || null,
-                room: schedule.roomId,
-                type: schedule.type,
-                notes: schedule.notes || '',
-                recurring: schedule.recurring,
-                day: schedule.day,
-                start_time: schedule.startTime,
-                end_time: schedule.endTime,
-                batch: batchId
-            });
-        });
-        
-        // Add deleted schedules
-        const deletedIds = Array.from(deletedSchedules);
-        
-        const data = {
-            schedules: schedulesToSend,
-            deleted_schedules: deletedIds,
-            batch_id: batchId
-        };
-        
-        // Send to API
-        fetch('/api/update-schedule/', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': getCookie('csrftoken')
-            },
-            body: JSON.stringify(data)
-        })
-        .then(response => {
-            if (!response.ok) {
-                return response.json().then(err => {
-                    throw new Error(err.detail || err.message || 'Failed to save timetable');
-                });
-            }
-            return response.json();
-        })
-        .then(data => {
-            showLoading(false);
-            showMessage('Timetable saved successfully!', 'success');
-            
-            // Clear edited/deleted sets
-            editedSchedules.clear();
-            deletedSchedules.clear();
-            
-            // Update schedule IDs for new schedules
-            if (data.updated_schedules) {
-                data.updated_schedules.forEach(updatedSchedule => {
-                    const cellId = `${updatedSchedule.day}_${updatedSchedule.start_time.replace(':', '')}`;
-                    if (timetableData[cellId]) {
-                        timetableData[cellId].id = updatedSchedule.id;
-                    }
-                });
-            }
-        })
-        .catch(error => {
-            showLoading(false);
-            showMessage(`Error: ${error.message}`, 'error');
-            console.error('Error saving timetable:', error);
-        });
-    }
-
-    function clearTimetable() {
-        if (!confirm('Are you sure you want to clear the entire timetable?')) {
+        if (!scheduleData || !scheduleData.id) {
+            // If no ID, just remove locally
+            delete timetableData[cellId];
+            currentCell.innerHTML = `<div class="empty-cell"><i class="fas fa-plus"></i><span>Click to add</span></div>`;
+            currentCell.onclick = () => openCellEditor(currentCell);
+            closeCellEditor();
+            showMessage('Schedule removed', 'success');
             return;
         }
         
-        // Mark all existing schedules for deletion
-        Object.values(timetableData).forEach(schedule => {
-            if (schedule.id) {
-                deletedSchedules.add(schedule.id);
-            }
-        });
-        
-        // Clear all cells
-        document.querySelectorAll('.schedule-cell').forEach(cell => {
-            cell.innerHTML = `
-                <div class="empty-cell">
-                    <i class="fas fa-plus"></i>
-                    <span>Click to add schedule</span>
-                </div>
-            `;
-            cell.onclick = () => openCellEditor(cell);
+        try {
+            const response = await fetch(`/api/schedules/${scheduleData.id}/delete/`, {
+                method: 'DELETE',
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken')
+                }
+            });
             
-            const cellId = cell.dataset.cellId;
+            if (!response.ok && response.status !== 204) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
             delete timetableData[cellId];
-        });
-        
-        showMessage('Timetable cleared (changes will be saved)', 'warning');
+            currentCell.innerHTML = `<div class="empty-cell"><i class="fas fa-plus"></i><span>Click to add</span></div>`;
+            currentCell.onclick = () => openCellEditor(currentCell);
+            closeCellEditor();
+            showMessage('Schedule deleted successfully', 'success');
+            
+        } catch (error) {
+            console.error('Error deleting schedule:', error);
+            showMessage(`Error: ${error.message}`, 'error');
+        }
+    }
+
+    function clearTimetable() {
+        if (!confirm('Are you sure you want to clear the entire timetable?')) return;
+        // Note: This only clears local; you may want to implement bulk delete via API if needed.
+        timetableData = {};
+        refreshTimetableDisplay();
+        showMessage('Timetable cleared locally', 'warning');
     }
 
     function printTimetable() {
         window.print();
     }
 
+    function changeFaculty(facultyId) {
+        if (facultyId) window.location.href = `?faculty=${facultyId}&batch=${batchId}`;
+    }
+
     function showMessage(message, type) {
         const container = document.getElementById('messageContainer');
-        if (!container) return;
-        
-        const messageDiv = document.createElement('div');
-        messageDiv.className = `message ${type}`;
-        messageDiv.innerHTML = `
-            <span>${message}</span>
-            <button onclick="this.parentElement.remove()">×</button>
-        `;
-        
-        container.appendChild(messageDiv);
-        
-        // Auto-remove after 5 seconds
-        setTimeout(() => {
-            if (messageDiv.parentNode) {
-                messageDiv.remove();
-            }
-        }, 5000);
+        const msgDiv = document.createElement('div');
+        msgDiv.className = `message ${type}`;
+        msgDiv.innerHTML = `<span>${message}</span><button onclick="this.parentElement.remove()">×</button>`;
+        container.appendChild(msgDiv);
+        setTimeout(() => msgDiv.remove(), 5000);
     }
 
-    function showLoading(show) {
-        const overlay = document.getElementById('loadingOverlay');
-        if (overlay) {
-            overlay.style.display = show ? 'flex' : 'none';
-        }
-    }
-
-    // Helper function to get CSRF token
     function getCookie(name) {
         let cookieValue = null;
         if (document.cookie && document.cookie !== '') {
-            const cookies = document.cookie.split(';');
-            for (let i = 0; i < cookies.length; i++) {
-                const cookie = cookies[i].trim();
+            document.cookie.split(';').some(c => {
+                const cookie = c.trim();
                 if (cookie.substring(0, name.length + 1) === (name + '=')) {
                     cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                    break;
+                    return true;
                 }
-            }
+            });
         }
         return cookieValue;
     }
-
-    // Add CSS for animation
-    const style = document.createElement('style');
-    style.textContent = `
-        @keyframes slideIn {
-            from {
-                transform: translateX(100%);
-                opacity: 0;
-            }
-            to {
-                transform: translateX(0);
-                opacity: 1;
-            }
-        }
-    `;
-    document.head.appendChild(style);
 </script>
 {% endblock %}

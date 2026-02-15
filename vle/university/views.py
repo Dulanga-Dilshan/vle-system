@@ -194,6 +194,8 @@ def manage_faculty(request,id:int):
     contex['faculty'] = university_models.Faculty.objects.filter(id=id).first()
     contex['departments'] = university_models.Department.objects.filter(faculty=id)
     contex['available_hods'] = user_models.Staff.objects.filter(faculty_name=id)
+    contex['resources'] = university_models.LectureHall.objects.filter(faculty__id=id)
+    contex['hall_types'] = university_models.LectureHall.HALL_TYPE
     if contex['faculty'] is None:
         return HttpResponse("Page not found", status=404)
     return render(request,'dashboard/admin/manage_faculty.html',contex)

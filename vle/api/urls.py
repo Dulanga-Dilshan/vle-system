@@ -14,7 +14,10 @@ urlpatterns = [
     path('',test),
     path('faculties/create/',views.create_faculty),          
     path('faculties/<int:id>/delete/',views.delete_faculty), 
-    path('faculties/<int:id>/update/',views.update_faculty), 
+    path('faculties/<int:id>/update/',views.update_faculty),
+    path('faculty/<int:faculty_id>/resources/add/',views.add_resource), 
+    path('faculty/<int:faculty_id>/resources/<int:resource_id>/update/',views.update_resource),
+    path('faculty/<int:faculty_id>/resources/<int:resource_id>/delete/',views.delete_resource),
 
     path('departments/create/',views.create_department),        
     path('departments/<int:id>/update/',views.update_department), 
@@ -50,6 +53,8 @@ urlpatterns = [
 
     path('mark_annoucments/',views.mark_annoucments),
     path('remove_annoucments/',views.remove_annoucments),
+
+    path('timetable/<int:batch_id>/',views.get_schedules),
 
 
 

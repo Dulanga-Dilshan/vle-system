@@ -35,6 +35,24 @@ class Department(models.Model):
     def __str__(self):
         return f"{self.name} - {self.faculty.name }"
     
+class LectureHall(models.Model):
+    HALL_TYPE = [
+        ('LAB', 'Laboratory'),
+        ('LH', 'Lecture Hall'),
+        ('SEMINAR', 'Seminar Room'),
+        ('AUD', 'Auditorium'),
+        ('CONF', 'Conference Hall'),
+    ]
+
+    faculty = models.ForeignKey(Faculty,on_delete=models.CASCADE)
+    name = models.CharField(max_length=50,unique=True)
+    hall_type = models.CharField(max_length=10,choices=HALL_TYPE,default='LH')
+    capacity = models.IntegerField()
+
+    def __str__(self):
+        return f"{self.name} - {self.hall_type}"
+
+    
 class Course(models.Model):
     department = models.ForeignKey(Department, on_delete=models.CASCADE,related_name='courses')
     code = models.CharField(max_length=20)
@@ -96,4 +114,6 @@ class BatchSubject(models.Model):
 
     def __str__(self):
         return f"{self.batch} - {self.subject}"
+    
+
     

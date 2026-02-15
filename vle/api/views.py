@@ -55,6 +55,36 @@ def update_faculty(request,id:int):
 
 
 @api_view(['POST'])
+def add_resource(request,faculty_id):
+    resource = serializer.LectureHallSerializer(data=request.data)
+    resource.is_valid(raise_exception=True)
+    resource.save()
+    return response.Response(resource.data,status=status.HTTP_201_CREATED)
+
+
+@api_view(['PUT','PATCH'])
+def update_resource(request,faculty_id,resource_id):
+    try:
+        univercity_services.update_resource(resource_id=resource_id,faculty_id=faculty_id,data=request.data)
+    except ValidationError as e:
+        return response.Response({'message':f'resource data invalid{e.detail}'},status=status.HTTP_400_BAD_REQUEST)
+    except NotFound:
+        return response.Response({'message':'resource not found'},status=status.HTTP_404_NOT_FOUND)
+    
+    return response.Response({},status=status.HTTP_200_OK)
+
+
+@api_view(['DELETE'])
+def delete_resource(request,faculty_id,resource_id):
+    resource = university_models.LectureHall.objects.filter(id=resource_id,faculty__id=faculty_id).first()
+    if resource is None:
+        return response.Response({'message':'resource not found'},status=status.HTTP_404_NOT_FOUND)
+    
+    resource.delete()
+    return response.Response({},status=status.HTTP_204_NO_CONTENT)
+    
+
+@api_view(['POST'])
 @permission_classes([permissions.IsFacultyAdminstrator])
 def create_department(request):
     new_department = serializer.DepartmentSerializer(data=request.data)
@@ -521,3 +551,94 @@ def advance_batch(request,batch_id):
     batch.save()
 
     return response.Response({},status=status.HTTP_200_OK)
+
+@api_view(['GET'])
+def get_schedules(request,batch_id):
+    schedule = {
+        'shedules':{
+            'monday':[
+                {
+                    'id':1,
+                    'start_time':'08.00am',
+                    'end_time':'09.00am',
+                    'subject':{
+                        'id': 1,
+                        'name':'subject name',
+                        'code':'sub code',
+                        'teacher':{
+                            'id': 1,
+                            'name':'teacher name'
+                        },
+                        'substitute_teacher':{
+                            'id': 1,
+                            'name':'substitute teacher'
+                        }
+                    },
+                    'hall':{
+                        'id':1,
+                        'type':'type'
+                    }
+                },
+                {
+                    'id':4,
+                    'start_time':'10.00am',
+                    'end_time':'11.00am',
+                    'subject':{
+                        'id': 4,
+                        'name':'subject name',
+                        'code':'sub code',
+                        'teacher':{
+                            'id': 6,
+                            'name':'teacher name'
+                        },
+                        'substitute_teacher':None
+                    },
+                    'hall':{
+                        'id':1,
+                        'type':'type'
+                    }
+                }
+            ],
+            'tuesday':[
+                {
+                    'id':7,
+                    'start_time':'10.00am',
+                    'end_time':'12.00pm',
+                    'subject':{
+                        'id': 7,
+                        'name':'subject name',
+                        'code':'sub code',
+                        'teacher':{
+                            'id': 9,
+                            'name':'teacher name'
+                        },
+                        'substitute_teacher':None
+                    },
+                    'hall':{
+                        'id':1,
+                        'type':'type'
+                    }
+                },
+                {
+                    'id':21,
+                    'start_time':'10.00am',
+                    'end_time':'11.00am',
+                    'subject':{
+                        'id': 4,
+                        'name':'subject name',
+                        'code':'sub code',
+                        'teacher':{
+                            'id': 6,
+                            'name':'teacher name'
+                        },
+                        'substitute_teacher':None
+                    },
+                    'hall':{
+                        'id':1,
+                        'type':'type'
+                    }
+                }
+            ]
+        }
+    }
+    return response.Response(schedule,status=status.HTTP_200_OK)

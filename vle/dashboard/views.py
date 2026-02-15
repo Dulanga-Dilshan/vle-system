@@ -377,4 +377,26 @@ def manage_shedules(request):
     return render(request,'dashboard/admin/manage_shedules.html',{'batches':batches})
 
 def manage_shedule(request,batch_id):
-    return render(request,'dashboard/admin/manage_shedule.html')
+    context = {}
+    context['batch'] = university_models.Batch.objects.filter(id=batch_id).first()
+    context['subjects'] = university_models.BatchSubject.objects.filter(batch=context['batch'])
+    context['teachers'] = models.Staff.objects.filter(faculty_name=context['batch'].course.department.faculty)
+    return render(request,'dashboard/admin/manage_shedule.html',context)
+
+
+
+
+{
+    'available_halls':[
+        {
+            'id':'id',
+            'name':'name',
+            'type':'type'
+        },
+        {
+            'id':'another id',
+            'name':'another name',
+            'type':'another type'
+        },
+    ]
+}

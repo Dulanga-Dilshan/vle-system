@@ -7,6 +7,7 @@ from . import models
 admin.site.register(models.University)
 admin.site.register(models.Faculty)
 admin.site.register(models.Department)
+admin.site.register(models.LectureHall)
 
 admin.site.register(models.Course)
 admin.site.register(models.Batch)

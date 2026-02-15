@@ -1,8 +1,5 @@
 from rest_framework import serializers
 from university import models as university_models
-from Users import models as user_models
-
-
 
 class FacultySerializer(serializers.ModelSerializer):
     class Meta:
@@ -20,4 +17,9 @@ class DepartmentSerializer(serializers.ModelSerializer):
 class BatchSerializer(serializers.ModelSerializer):
     class Meta:
         model = university_models.Batch
+        fields = '__all__'
+
+class LectureHallSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = university_models.LectureHall
         fields = '__all__'
