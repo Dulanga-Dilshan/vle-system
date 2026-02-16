@@ -115,5 +115,26 @@ class BatchSubject(models.Model):
     def __str__(self):
         return f"{self.batch} - {self.subject}"
     
+   
+class Schedule(models.Model):
+    DAYS = [
+        ('mon','monday'),
+        ('tue','tuesday'),
+        ('wed','wednesday'),
+        ('thu','thursday'),
+        ('fri','friday'),
+    ]
 
-    
+    subject = models.ForeignKey(BatchSubject,on_delete=models.CASCADE)
+    hall = models.ForeignKey(LectureHall,on_delete=models.CASCADE)
+    substitute_teacher = models.ForeignKey("Users.Staff",on_delete=models.SET_NULL,null=True,blank=True)
+    day = models.CharField(choices=DAYS,max_length=5,default='mon')
+    start_time = models.CharField(max_length=10)
+    end_time = models.CharField(max_length=10)
+    notes = models.TextField(max_length=100,null=True,blank=True,default='')
+
+    class Meta:
+        ordering = ['day','start_time']
+
+    def __str__(self):
+        return f'{self.subject.subject.code} - {self.day}'

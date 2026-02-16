@@ -4,6 +4,7 @@ from django.shortcuts import get_object_or_404
 from rest_framework.exceptions import NotFound
 from rest_framework.exceptions import ValidationError
 from django.db import transaction
+from Users.models import Staff
 
 
 @transaction.atomic
@@ -125,3 +126,184 @@ def update_resource(resource_id:int,faculty_id:int,data:dict)->None:
         resource.capacity = data['capacity']
     
     resource.save()
+
+
+def validate_time(time:str)->bool:
+    parts = time.split('.')
+    hour = parts[0]
+    minuts = parts[1][:2]
+    meridiem = parts[1][2:4]
+
+    if int(hour) < 0 or int(hour) >12:
+        return False
+    
+    if int(minuts)<0 or int(minuts)>60:
+        return False
+    
+    if not (meridiem=='am' or meridiem=='pm'):
+        return False
+    
+    return True
+
+@transaction.atomic
+def create_schedule(data:dict):
+    batch_subject = models.BatchSubject.objects.filter(batch__id=data['batch_id'],id=data['batch_subject_id']).first()
+    if batch_subject is None:
+        raise NotFound('invalide subject')
+    
+    hall = models.LectureHall.objects.filter(id=data['hall_id'],faculty=batch_subject.batch.course.department.faculty).first()
+    if hall is None:
+        raise NotFound('invalide Lecture Hall')
+    
+    substitute_teacher = Staff.objects.filter(id=data['substitute_teacher_id'],faculty_name=batch_subject.batch.course.department.faculty).first()
+    if not substitute_teacher and data['substitute_teacher_id']:
+        raise NotFound('invalide substitute teacher')
+    
+    all_shedules = models.Schedule.objects.filter(subject=batch_subject,day=data['day'])
+    for shedule in all_shedules:
+        if is_between_time(shedule.start_time,shedule.end_time,data['start_time']):
+            raise NotFound('invalid time slot')
+    
+    for _,day in models.Schedule.DAYS:
+        if day == data['day']:
+            break
+    else:
+        raise ValidationError(f'not a valid day.{models.Schedule.DAYS}')
+    
+    
+    times = [data['start_time'],data['end_time']]
+
+    for time in times:
+        if not validate_time(time):
+            raise ValidationError(f'not a valid time format. (8.00pm)')
+        
+    data['notes'].strip()
+    if len(data['notes']) >100:
+        raise ValidationError(f'not a valid note. max len 100')
+
+
+    schedule = models.Schedule(
+        subject = batch_subject,
+        hall = hall,
+        substitute_teacher = substitute_teacher,
+        day = day,
+        start_time = data['start_time'],
+        end_time = data['end_time'],
+        notes = data['notes']
+    )
+
+    try:
+        schedule.save()
+        print('saving')
+    except Exception as e:
+        raise ValidationError(f'data is invalid')
+
+def get_shedules(batch_id:int)->dict:
+    shedule_objs = models.Schedule.objects.filter(subject__batch__id=batch_id)
+    if shedule_objs is None:
+        raise NotFound('no shedukes for the batch')
+    shedules = {}
+
+    for _,day in models.Schedule.DAYS:
+        objs  = shedule_objs.filter(day=day)
+        shedules[day]=[]
+        for obj in objs:
+            shedule = {
+                'id' : obj.id,
+                'start_time':obj.start_time,
+                'end_time':obj.end_time,
+                'subject':{
+                    'id':obj.subject.subject.id,
+                    'name':obj.subject.subject.name,
+                    'code':obj.subject.subject.code,
+                    'teacher':None if obj.subject.staff is None else{
+                        'id':obj.subject.staff.id,
+                        'name':obj.subject.staff.name,
+                    },
+                    'substitute_teacher':None if obj.substitute_teacher is None else {          
+                        'id':obj.substitute_teacher.id,
+                        'name':obj.substitute_teacher.name,
+                    } 
+                },
+                'hall':{
+                    'id':obj.hall.id,
+                    'name':obj.hall.name,
+                    'type':obj.hall.hall_type,
+                }
+            }
+            shedules[day].append(shedule)
+    
+    return {'shedules':shedules}
+
+def get_availble_halls(batch_id:int,data:dict)->dict:
+
+    times = [data['start_time'],data['end_time']]
+
+    for time in times:
+        if not validate_time(time):
+            raise ValidationError(f'not a valid time format.')
+        
+    batch = models.Batch.objects.filter(id=batch_id).first()
+    if batch is None:
+        raise NotFound('invalide batch')
+    
+
+    
+    all_hall_objs = models.LectureHall.objects.filter(faculty=batch.course.department.faculty)
+    shedule_objs = models.Schedule.objects.filter(subject__batch=batch,day=data['day'])
+
+    available_halls = []
+
+    for hall_obj in all_hall_objs:
+        for shedule_obj in shedule_objs:
+            if hall_obj==shedule_obj.hall:
+                if not is_between_time(shedule_obj.start_time,shedule_obj.end_time,data['start_time']):
+                    available_halls.append(
+                        {
+                            'id':hall_obj.id,
+                            'name':hall_obj.name,
+                            'type':hall_obj.hall_type,
+                            'capacity':hall_obj.capacity,
+                        }
+                    )
+                    break
+            else:
+                available_halls.append(
+                        {
+                            'id':hall_obj.id,
+                            'name':hall_obj.name,
+                            'type':hall_obj.hall_type,
+                            'capacity':hall_obj.capacity,
+                        }
+                    )
+                break
+        else:
+            available_halls.append(
+                        {
+                            'id':hall_obj.id,
+                            'name':hall_obj.name,
+                            'type':hall_obj.hall_type,
+                            'capacity':hall_obj.capacity,
+                        }
+                    )
+    return {'available_halls':available_halls}
+        
+    
+def is_between_time(start_time:str,end_time:str,new_time:str)->bool:
+    times = [start_time,end_time,new_time]
+    times_in_float = []
+    for time in times:
+        parts = time.split('.')
+        h = float(parts[0])
+        m = float(parts[1][:2])
+        mi = parts[1][2:4]
+        if mi=='pm':
+            h+=12
+        if m != 0:
+            h+= m/100
+        times_in_float.append(h)
+    
+    if times_in_float[0]<times_in_float[2] and times_in_float[1] > times_in_float[2]:
+        return True
+    
+    return False

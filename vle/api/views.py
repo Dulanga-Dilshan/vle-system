@@ -554,91 +554,48 @@ def advance_batch(request,batch_id):
 
 @api_view(['GET'])
 def get_schedules(request,batch_id):
-    schedule = {
-        'shedules':{
-            'monday':[
-                {
-                    'id':1,
-                    'start_time':'08.00am',
-                    'end_time':'09.00am',
-                    'subject':{
-                        'id': 1,
-                        'name':'subject name',
-                        'code':'sub code',
-                        'teacher':{
-                            'id': 1,
-                            'name':'teacher name'
-                        },
-                        'substitute_teacher':{
-                            'id': 1,
-                            'name':'substitute teacher'
-                        }
-                    },
-                    'hall':{
-                        'id':1,
-                        'type':'type'
-                    }
-                },
-                {
-                    'id':4,
-                    'start_time':'10.00am',
-                    'end_time':'11.00am',
-                    'subject':{
-                        'id': 4,
-                        'name':'subject name',
-                        'code':'sub code',
-                        'teacher':{
-                            'id': 6,
-                            'name':'teacher name'
-                        },
-                        'substitute_teacher':None
-                    },
-                    'hall':{
-                        'id':1,
-                        'type':'type'
-                    }
-                }
-            ],
-            'tuesday':[
-                {
-                    'id':7,
-                    'start_time':'10.00am',
-                    'end_time':'12.00pm',
-                    'subject':{
-                        'id': 7,
-                        'name':'subject name',
-                        'code':'sub code',
-                        'teacher':{
-                            'id': 9,
-                            'name':'teacher name'
-                        },
-                        'substitute_teacher':None
-                    },
-                    'hall':{
-                        'id':1,
-                        'type':'type'
-                    }
-                },
-                {
-                    'id':21,
-                    'start_time':'10.00am',
-                    'end_time':'11.00am',
-                    'subject':{
-                        'id': 4,
-                        'name':'subject name',
-                        'code':'sub code',
-                        'teacher':{
-                            'id': 6,
-                            'name':'teacher name'
-                        },
-                        'substitute_teacher':None
-                    },
-                    'hall':{
-                        'id':1,
-                        'type':'type'
-                    }
-                }
-            ]
-        }
+    try:
+        schedules = univercity_services.get_shedules(batch_id)
+    except NotFound as e:
+        return response.Response({'message':f'resource not found({str(e)})'},status=status.HTTP_404_NOT_FOUND)
+    return response.Response(schedules,status=status.HTTP_200_OK)
+
+
+@api_view(['POST'])
+def availble_halls(request,batch_id):
+    try:
+        halls = univercity_services.get_availble_halls(batch_id,request.data)
+
+    except NotFound as e:
+        return response.Response({'message':f'resource not found({str(e)})'},status=status.HTTP_404_NOT_FOUND)
+    
+    except ValidationError as e:
+        return response.Response({'message':e.detail},status=status.HTTP_400_BAD_REQUEST)
+
+    return response.Response(halls,status=status.HTTP_200_OK)
+
+
+@api_view(['POST'])
+def create_schedule(request):
+    schedule_data = {
+        'batch_id':request.data['batch_id'],
+        'batch_subject_id':request.data['subject_id'],
+        'hall_id':request.data['hall_id'],
+        'day':request.data['day'],
+        'start_time':request.data['start_time'],
+        'end_time':request.data['end_time'],
+        'notes':request.data['notes'],
+        'substitute_teacher_id':request.data['substitute_teacher_id'],
     }
-    return response.Response(schedule,status=status.HTTP_200_OK)
+
+    try:
+        univercity_services.create_schedule(data=schedule_data)
+    except ValidationError as e:
+        print(e.detail)
+        return response.Response({'message':f'resource data invalid{e.detail}'},status=status.HTTP_400_BAD_REQUEST)
+    except NotFound as nf:
+        return response.Response({'message':str(nf)},status=status.HTTP_404_NOT_FOUND)
+
+    return response.Response({},status=status.HTTP_200_OK)
+
+

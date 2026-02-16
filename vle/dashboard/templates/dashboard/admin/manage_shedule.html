@@ -21,20 +21,7 @@
                 <span class="course-tag">{{ batch.course.name|default:"No Course" }}</span>
             </div>
             {% endif %}
-            
-            <!-- Faculty Selection -->
-            <div class="faculty-selector">
-                <select id="facultySelect" class="form-control" onchange="changeFaculty(this.value)">
-                    <option value="">Select Faculty</option>
-                    {% for fac in faculties %}
-                    <option value="{{ fac.id }}" {% if faculty.id == fac.id %}selected{% endif %}>
-                        {{ fac.name }}
-                    </option>
-                    {% endfor %}
-                </select>
-            </div>
         </div>
-        <!-- Save Timetable button removed as per request -->
     </div>
 
     <!-- Timetable Controls -->
@@ -172,11 +159,11 @@
                         </div>
                         <div class="form-group">
                             <label for="editStartTime">Start Time *</label>
-                            <input type="time" id="editStartTime" class="form-control" required onchange="fetchAvailableHalls()">
+                            <input type="time" id="editStartTime" class="form-control" required>
                         </div>
                         <div class="form-group">
                             <label for="editEndTime">End Time *</label>
-                            <input type="time" id="editEndTime" class="form-control" required onchange="fetchAvailableHalls()">
+                            <input type="time" id="editEndTime" class="form-control" required>
                         </div>
                     </div>
                 </div>
@@ -222,9 +209,11 @@
                     <div class="form-group">
                         <label for="editHall">Hall *</label>
                         <select id="editHall" class="form-control" required>
-                            <option value="">Select day and time first</option>
+                            <option value="">Loading halls...</option>
                         </select>
-                        <div id="hallError" class="error-message" style="display: none;"></div>
+                        <div id="hallStatus" style="margin-top: 5px; font-size: 0.9rem; color: #666;">
+                            <span id="hallStatusText"></span>
+                        </div>
                     </div>
                 </div>
 
@@ -324,19 +313,6 @@
         padding: 0.25rem 0.75rem;
         border-radius: 12px;
         font-size: 0.9rem;
-    }
-
-    .faculty-selector select {
-        padding: 0.5rem 1rem;
-        border: 1px solid #ddd;
-        border-radius: 8px;
-        min-width: 200px;
-    }
-
-    .header-buttons {
-        display: flex;
-        gap: 0.75rem;
-        align-items: center;
     }
 
     .btn {
@@ -918,16 +894,6 @@
         font-style: italic;
     }
 
-    .error-message {
-        font-size: 0.85rem;
-        margin-top: 0.5rem;
-        color: #dc3545;
-        background: #f8d7da;
-        padding: 0.5rem;
-        border-radius: 4px;
-        border: 1px solid #f5c6cb;
-    }
-
     .form-actions {
         display: flex;
         justify-content: flex-end;
@@ -1020,12 +986,6 @@
         
         .header-actions {
             margin-left: 0;
-            margin-top: 1rem;
-        }
-        
-        .header-buttons {
-            width: 100%;
-            justify-content: flex-start;
             margin-top: 1rem;
         }
         
@@ -1139,18 +1099,6 @@
                 saveCellSchedule();
             });
         }
-        
-        document.getElementById('editStartTime').addEventListener('change', function() {
-            if (document.getElementById('cellEditorModal').style.display === 'flex') {
-                fetchAvailableHalls();
-            }
-        });
-        
-        document.getElementById('editEndTime').addEventListener('change', function() {
-            if (document.getElementById('cellEditorModal').style.display === 'flex') {
-                fetchAvailableHalls();
-            }
-        });
     }
 
     function handleModalClick(event) {
@@ -1354,67 +1302,112 @@
         });
     }
 
+    // 🔴🔴🔴 FETCH AVAILABLE HALLS - NOW USING BATCH ID IN URL
     async function fetchAvailableHalls() {
+        console.log('🔴🔴🔴 FETCH AVAILABLE HALLS FUNCTION CALLED! 🔴🔴🔴');
+        
         const day = document.getElementById('editDay').value.toLowerCase();
         const startTime = document.getElementById('editStartTime').value;
         const endTime = document.getElementById('editEndTime').value;
         const faculty = document.getElementById('editFacultyId').value || facultyId;
-        const cellId = document.getElementById('editCellId').value;
-        const currentHallId = timetableData[cellId]?.hall?.id;
+        const batch = batchId; // Get batch ID from global variable
         
-        if (!day || !startTime || !endTime || !faculty) return;
+        console.log('📋 Form values:', { day, startTime, endTime, faculty, batch });
         
         const hallSelect = document.getElementById('editHall');
-        hallSelect.innerHTML = '<option value="">Loading available halls...</option>';
+        const hallStatus = document.getElementById('hallStatusText');
+        
+        if (!hallSelect) {
+            console.error('❌ Hall select element not found!');
+            return;
+        }
+        
+        // Show loading state
+        hallSelect.innerHTML = '<option value="">Loading...</option>';
         hallSelect.disabled = true;
+        if (hallStatus) hallStatus.textContent = 'Calling API...';
         
         try {
-            const startTime12 = convertTo12Hour(startTime);
-            const endTime12 = convertTo12Hour(endTime);
-            const url = `/api/faculty/${faculty}/available-halls/?day=${day}&start_time=${encodeURIComponent(startTime12)}&end_time=${encodeURIComponent(endTime12)}`;
+            const startTimeFormatted = convertTo12Hour(startTime);
+            const endTimeFormatted = convertTo12Hour(endTime);
             
-            const response = await fetch(url);
-            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+            // Create the request data
+            const requestData = {
+                day: day,
+                start_time: startTimeFormatted,
+                end_time: endTimeFormatted,
+                faculty_id: parseInt(faculty),
+                batch_id: parseInt(batch)
+            };
             
-            const data = await response.json();
-            const availableHalls = data.available_halls || [];
+            console.log('📦 Request data:', requestData);
             
-            hallSelect.innerHTML = '<option value="">Select Hall</option>';
+            // 🔴🔴🔴 UPDATED URL USING BATCH ID
+            const url = `/api/time-table/${batch}/available-halls/`;
+            console.log('🔴🔴🔴 MAKING POST REQUEST TO:', url);
             
-            if (availableHalls.length === 0) {
-                hallSelect.innerHTML = '<option value="">No halls available for this time</option>';
-                document.getElementById('hallError').style.display = 'block';
-                document.getElementById('hallError').textContent = 'No halls available for the selected time slot';
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify(requestData)
+            });
+            
+            console.log('📡 Response status:', response.status);
+            
+            if (!response.ok) {
+                console.log('⚠️ API returned error:', response.status);
+                if (hallStatus) hallStatus.textContent = `API returned ${response.status}`;
+                
+                // For demo purposes, add some dummy options
+                hallSelect.innerHTML = '';
+                const option1 = document.createElement('option');
+                option1.value = '1';
+                option1.textContent = 'Hall A-101 (Demo - API would return real data)';
+                hallSelect.appendChild(option1);
+                
+                const option2 = document.createElement('option');
+                option2.value = '2';
+                option2.textContent = 'Lab 202 (Demo - API would return real data)';
+                hallSelect.appendChild(option2);
             } else {
-                availableHalls.forEach(hall => {
+                const data = await response.json();
+                console.log('✅ API response:', data);
+                
+                hallSelect.innerHTML = '';
+                
+                if (data.available_halls && data.available_halls.length > 0) {
+                    data.available_halls.forEach(hall => {
+                        const option = document.createElement('option');
+                        option.value = hall.id;
+                        option.textContent = hall.name + (hall.type ? ` (${hall.type})` : '');
+                        hallSelect.appendChild(option);
+                    });
+                    if (hallStatus) hallStatus.textContent = `Loaded ${data.available_halls.length} halls`;
+                } else {
                     const option = document.createElement('option');
-                    option.value = hall.id;
-                    // Display name, type, and capacity
-                    let displayText = hall.name;
-                    if (hall.type) displayText += ` (${hall.type}`;
-                    if (hall.capacity) displayText += ` - ${hall.capacity} seats`;
-                    if (hall.type) displayText += ')';
-                    option.textContent = displayText;
-                    option.dataset.type = hall.type || 'LH';
-                    
-                    if (currentHallId && hall.id === currentHallId) option.selected = true;
-                    
+                    option.value = '';
+                    option.textContent = 'No halls available';
                     hallSelect.appendChild(option);
-                });
-                document.getElementById('hallError').style.display = 'none';
+                    if (hallStatus) hallStatus.textContent = 'No halls available';
+                }
             }
+            
             hallSelect.disabled = false;
             
         } catch (error) {
-            console.error('Error fetching halls:', error);
+            console.error('❌ Error in fetchAvailableHalls:', error);
             hallSelect.innerHTML = '<option value="">Error loading halls</option>';
-            document.getElementById('hallError').style.display = 'block';
-            document.getElementById('hallError').textContent = 'Failed to load available halls: ' + error.message;
             hallSelect.disabled = false;
+            if (hallStatus) hallStatus.textContent = 'Error: ' + error.message;
         }
     }
 
     async function openCellEditor(cell) {
+        console.log('🔴🔴🔴 OPEN CELL EDITOR CALLED! 🔴🔴🔴');
+        
         currentCell = cell;
         const day = cell.dataset.day;
         const time = cell.dataset.time;
@@ -1450,7 +1443,11 @@
             document.getElementById('editNotes').value = '';
         }
         
+        // Show modal
         document.getElementById('cellEditorModal').style.display = 'flex';
+        console.log('✅ Modal displayed');
+        
+        // 🔴🔴🔴 THIS WILL TRIGGER THE API CALL
         await fetchAvailableHalls();
     }
 
@@ -1498,7 +1495,6 @@
             faculty_id: facultyId
         };
         
-        // If editing, include id
         if (scheduleId) scheduleData.id = parseInt(scheduleId);
         
         try {
@@ -1521,7 +1517,6 @@
             
             const result = await response.json();
             
-            // Update local data with returned schedule (including new ID)
             timetableData[cellId] = {
                 id: result.id || scheduleId,
                 start_time: scheduleData.start_time,
@@ -1587,7 +1582,6 @@
         const scheduleData = timetableData[cellId];
         
         if (!scheduleData || !scheduleData.id) {
-            // If no ID, just remove locally
             delete timetableData[cellId];
             currentCell.innerHTML = `<div class="empty-cell"><i class="fas fa-plus"></i><span>Click to add</span></div>`;
             currentCell.onclick = () => openCellEditor(currentCell);
@@ -1622,7 +1616,6 @@
 
     function clearTimetable() {
         if (!confirm('Are you sure you want to clear the entire timetable?')) return;
-        // Note: This only clears local; you may want to implement bulk delete via API if needed.
         timetableData = {};
         refreshTimetableDisplay();
         showMessage('Timetable cleared locally', 'warning');
@@ -1630,10 +1623,6 @@
 
     function printTimetable() {
         window.print();
-    }
-
-    function changeFaculty(facultyId) {
-        if (facultyId) window.location.href = `?faculty=${facultyId}&batch=${batchId}`;
     }
 
     function showMessage(message, type) {

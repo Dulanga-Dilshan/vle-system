@@ -55,6 +55,8 @@ urlpatterns = [
     path('remove_annoucments/',views.remove_annoucments),
 
     path('timetable/<int:batch_id>/',views.get_schedules),
+    path('time-table/<int:batch_id>/available-halls/',views.availble_halls),
+    path('schedules/create/',views.create_schedule),
 
 
 
