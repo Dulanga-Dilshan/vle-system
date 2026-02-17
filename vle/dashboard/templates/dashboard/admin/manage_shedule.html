@@ -146,8 +146,10 @@
                 <input type="hidden" id="editScheduleId" value="">
                 <input type="hidden" id="editCellId" value="">
                 <input type="hidden" id="editFacultyId" value="{% if faculty %}{{ faculty.id }}{% endif %}">
+                <input type="hidden" id="editStartTime" value="">
+                <input type="hidden" id="editEndTime" value="">
                 
-                <!-- Time Section -->
+                <!-- Time Section - Read Only -->
                 <div class="form-section">
                     <div class="section-title">
                         <i class="fas fa-clock"></i> Time Settings
@@ -158,12 +160,12 @@
                             <input type="text" id="editDay" class="form-control" readonly>
                         </div>
                         <div class="form-group">
-                            <label for="editStartTime">Start Time *</label>
-                            <input type="time" id="editStartTime" class="form-control" required>
+                            <label for="editStartTimeDisplay">Start Time</label>
+                            <input type="text" id="editStartTimeDisplay" class="form-control" readonly>
                         </div>
                         <div class="form-group">
-                            <label for="editEndTime">End Time *</label>
-                            <input type="time" id="editEndTime" class="form-control" required>
+                            <label for="editEndTimeDisplay">End Time</label>
+                            <input type="text" id="editEndTimeDisplay" class="form-control" readonly>
                         </div>
                     </div>
                 </div>
@@ -879,6 +881,8 @@
     .form-control[readonly] {
         background: #e9ecef;
         cursor: not-allowed;
+        border-color: #ddd;
+        color: #495057;
     }
 
     textarea.form-control {
@@ -1132,6 +1136,8 @@
             const data = await response.json();
             timetableData = {};
             
+            console.log('Fetched timetable data:', data);
+            
             if (data && data.shedules) {
                 Object.entries(data.shedules).forEach(([day, schedules]) => {
                     if (Array.isArray(schedules)) {
@@ -1139,14 +1145,20 @@
                             const time24 = convertTo24Hour(schedule.start_time);
                             const cellId = `${day}_${time24.replace(':', '')}`;
                             
+                            // FIXED: Notes are inside the subject object
                             timetableData[cellId] = {
                                 id: schedule.id,
                                 start_time: schedule.start_time,
                                 end_time: schedule.end_time,
                                 subject: schedule.subject || {},
                                 hall: schedule.hall || {},
-                                notes: schedule.notes || ''
+                                notes: schedule.subject?.notes || ''  // Extract notes from subject
                             };
+                            
+                            console.log(`Loaded schedule for ${cellId}:`, {
+                                notes: schedule.subject?.notes,
+                                subject: schedule.subject
+                            });
                         });
                     }
                 });
@@ -1231,6 +1243,10 @@
 
     function convertTo24Hour(time12) {
         if (!time12) return '08:00';
+        
+        // Handle if it's already 24-hour format
+        if (time12.match(/^\d{2}:\d{2}$/)) return time12;
+        
         const match = time12.toLowerCase().match(/(\d{1,2})[.:](\d{2})\s*(am|pm)?/);
         if (match) {
             let hours = parseInt(match[1]);
@@ -1242,11 +1258,17 @@
             }
             return `${hours.toString().padStart(2, '0')}:${minutes}`;
         }
-        if (time12.match(/^\d{2}:\d{2}$/)) return time12;
         return time12;
     }
 
     function convertTo12Hour(time24) {
+        if (!time24) return '8.00am';
+        
+        // Handle if it's already 12-hour format
+        if (time24.toLowerCase().includes('am') || time24.toLowerCase().includes('pm')) {
+            return time24;
+        }
+        
         const [hours, minutes] = time24.split(':');
         const hour = parseInt(hours);
         const ampm = hour >= 12 ? 'pm' : 'am';
@@ -1255,7 +1277,14 @@
     }
 
     function formatTime(time24) {
+        if (!time24) return '';
         if (timeFormat === '24') return time24;
+        
+        // Handle if it's already in 12-hour format
+        if (time24.toLowerCase().includes('am') || time24.toLowerCase().includes('pm')) {
+            return time24;
+        }
+        
         const [hours, minutes] = time24.split(':');
         const hour = parseInt(hours);
         const ampm = hour >= 12 ? 'PM' : 'AM';
@@ -1274,14 +1303,7 @@
         timeFormat = format;
         document.querySelectorAll('.view-options .btn-outline').forEach(btn => btn.classList.remove('active'));
         event.target.classList.add('active');
-        document.querySelectorAll('.time-cell .time-display').forEach(cell => {
-            const time24 = cell.parentElement.dataset.time24;
-            cell.textContent = formatTime(time24);
-        });
-        document.querySelectorAll('.cell-time').forEach(cell => {
-            const timeText = cell.textContent;
-            if (timeText.match(/\d{2}:\d{2}/)) cell.textContent = formatTime(timeText);
-        });
+        refreshTimetableDisplay();
     }
 
     function filterByHallType(type) {
@@ -1292,46 +1314,47 @@
                 btn.classList.add('active');
             }
         });
+        
         document.querySelectorAll('.schedule-cell').forEach(cell => {
-            if (cell.querySelector('.filled-cell')) {
-                const hallType = cell.querySelector('.filled-cell').dataset.hallType;
-                cell.style.opacity = (type === 'all' || hallType === type) ? '1' : '0.3';
+            const filledCell = cell.querySelector('.filled-cell');
+            if (filledCell) {
+                const hallType = filledCell.dataset.hallType;
+                if (type === 'all' || hallType === type) {
+                    cell.style.opacity = '1';
+                    cell.style.display = '';
+                } else {
+                    cell.style.opacity = '0.3';
+                }
             } else {
                 cell.style.opacity = '1';
             }
         });
     }
 
-    // 🔴🔴🔴 FETCH AVAILABLE HALLS - NOW USING BATCH ID IN URL
     async function fetchAvailableHalls() {
-        console.log('🔴🔴🔴 FETCH AVAILABLE HALLS FUNCTION CALLED! 🔴🔴🔴');
+        console.log('Fetching available halls...');
         
         const day = document.getElementById('editDay').value.toLowerCase();
         const startTime = document.getElementById('editStartTime').value;
         const endTime = document.getElementById('editEndTime').value;
         const faculty = document.getElementById('editFacultyId').value || facultyId;
-        const batch = batchId; // Get batch ID from global variable
+        const batch = batchId;
         
-        console.log('📋 Form values:', { day, startTime, endTime, faculty, batch });
+        console.log('Form values:', { day, startTime, endTime, faculty, batch });
         
         const hallSelect = document.getElementById('editHall');
         const hallStatus = document.getElementById('hallStatusText');
         
-        if (!hallSelect) {
-            console.error('❌ Hall select element not found!');
-            return;
-        }
+        if (!hallSelect) return;
         
-        // Show loading state
         hallSelect.innerHTML = '<option value="">Loading...</option>';
         hallSelect.disabled = true;
-        if (hallStatus) hallStatus.textContent = 'Calling API...';
+        if (hallStatus) hallStatus.textContent = 'Loading halls...';
         
         try {
             const startTimeFormatted = convertTo12Hour(startTime);
             const endTimeFormatted = convertTo12Hour(endTime);
             
-            // Create the request data
             const requestData = {
                 day: day,
                 start_time: startTimeFormatted,
@@ -1340,11 +1363,10 @@
                 batch_id: parseInt(batch)
             };
             
-            console.log('📦 Request data:', requestData);
+            console.log('Request data:', requestData);
             
-            // 🔴🔴🔴 UPDATED URL USING BATCH ID
             const url = `/api/time-table/${batch}/available-halls/`;
-            console.log('🔴🔴🔴 MAKING POST REQUEST TO:', url);
+            console.log('Making POST request to:', url);
             
             const response = await fetch(url, {
                 method: 'POST',
@@ -1355,26 +1377,27 @@
                 body: JSON.stringify(requestData)
             });
             
-            console.log('📡 Response status:', response.status);
+            console.log('Response status:', response.status);
             
             if (!response.ok) {
-                console.log('⚠️ API returned error:', response.status);
+                console.log('API returned error:', response.status);
                 if (hallStatus) hallStatus.textContent = `API returned ${response.status}`;
                 
-                // For demo purposes, add some dummy options
                 hallSelect.innerHTML = '';
                 const option1 = document.createElement('option');
                 option1.value = '1';
-                option1.textContent = 'Hall A-101 (Demo - API would return real data)';
+                option1.textContent = 'Hall A-101 (Demo)';
+                option1.dataset.type = 'LH';
                 hallSelect.appendChild(option1);
                 
                 const option2 = document.createElement('option');
                 option2.value = '2';
-                option2.textContent = 'Lab 202 (Demo - API would return real data)';
+                option2.textContent = 'Lab 202 (Demo)';
+                option2.dataset.type = 'LAB';
                 hallSelect.appendChild(option2);
             } else {
                 const data = await response.json();
-                console.log('✅ API response:', data);
+                console.log('API response:', data);
                 
                 hallSelect.innerHTML = '';
                 
@@ -1382,7 +1405,8 @@
                     data.available_halls.forEach(hall => {
                         const option = document.createElement('option');
                         option.value = hall.id;
-                        option.textContent = hall.name + (hall.type ? ` (${hall.type})` : '');
+                        option.textContent = `${hall.name} (${hall.type || 'LH'})`;
+                        option.dataset.type = hall.type || 'LH';
                         hallSelect.appendChild(option);
                     });
                     if (hallStatus) hallStatus.textContent = `Loaded ${data.available_halls.length} halls`;
@@ -1398,15 +1422,46 @@
             hallSelect.disabled = false;
             
         } catch (error) {
-            console.error('❌ Error in fetchAvailableHalls:', error);
+            console.error('Error in fetchAvailableHalls:', error);
             hallSelect.innerHTML = '<option value="">Error loading halls</option>';
             hallSelect.disabled = false;
             if (hallStatus) hallStatus.textContent = 'Error: ' + error.message;
         }
     }
 
+    // Function to load subject from the cell's displayed data
+    function loadSubjectFromCell(cell) {
+        const filledCell = cell.querySelector('.filled-cell');
+        if (!filledCell) return null;
+        
+        // Extract subject name from the displayed text
+        const subjectNameElement = filledCell.querySelector('.subject-name');
+        const subjectCodeElement = filledCell.querySelector('.subject-code');
+        
+        if (!subjectNameElement) return null;
+        
+        const subjectName = subjectNameElement.textContent.trim();
+        const subjectCode = subjectCodeElement ? subjectCodeElement.textContent.trim() : '';
+        
+        console.log('Extracted subject from cell:', { name: subjectName, code: subjectCode });
+        
+        // Try to find matching subject in dropdown by text
+        const subjectSelect = document.getElementById('editSubject');
+        for (let i = 0; i < subjectSelect.options.length; i++) {
+            const optionText = subjectSelect.options[i].text;
+            // Check if the option text contains the subject name
+            if (optionText.includes(subjectName) || (subjectCode && optionText.includes(subjectCode))) {
+                subjectSelect.selectedIndex = i;
+                console.log('Subject matched by text:', optionText);
+                return subjectSelect.options[i].value;
+            }
+        }
+        
+        return null;
+    }
+
     async function openCellEditor(cell) {
-        console.log('🔴🔴🔴 OPEN CELL EDITOR CALLED! 🔴🔴🔴');
+        console.log('Opening cell editor...');
         
         currentCell = cell;
         const day = cell.dataset.day;
@@ -1417,38 +1472,92 @@
         const dayName = day.charAt(0).toUpperCase() + day.slice(1);
         document.getElementById('modalTitle').textContent = timetableData[cellId] ? 'Edit Schedule' : 'Add Schedule';
         
+        // Set display values (read-only)
         document.getElementById('editDay').value = dayName;
+        document.getElementById('editStartTimeDisplay').value = formatTime(time);
+        document.getElementById('editEndTimeDisplay').value = formatTime(endTime);
+        
+        // Set hidden values for form submission
         document.getElementById('editStartTime').value = time;
         document.getElementById('editEndTime').value = endTime;
         document.getElementById('editCellId').value = cellId;
         
         document.getElementById('deleteBtn').style.display = timetableData[cellId] ? 'block' : 'none';
         
-        if (timetableData[cellId]) {
-            const data = timetableData[cellId];
-            document.getElementById('editScheduleId').value = data.id || '';
-            if (data.subject && data.subject.id) {
-                document.getElementById('editSubject').value = data.subject.id;
-                if (data.subject.substitute_teacher && data.subject.substitute_teacher.id) {
-                    document.getElementById('editSubstituteTeacher').value = data.subject.substitute_teacher.id;
-                } else {
-                    document.getElementById('editSubstituteTeacher').value = '';
-                }
-            }
-            document.getElementById('editNotes').value = data.notes || '';
-        } else {
-            document.getElementById('editScheduleId').value = '';
-            document.getElementById('editSubject').value = '';
-            document.getElementById('editSubstituteTeacher').value = '';
-            document.getElementById('editNotes').value = '';
-        }
+        // Reset form first
+        document.getElementById('editSubject').value = '';
+        document.getElementById('editSubstituteTeacher').value = '';
+        document.getElementById('editNotes').value = '';
+        document.getElementById('editScheduleId').value = '';
         
         // Show modal
         document.getElementById('cellEditorModal').style.display = 'flex';
-        console.log('✅ Modal displayed');
+        console.log('Modal displayed');
         
-        // 🔴🔴🔴 THIS WILL TRIGGER THE API CALL
+        // Fetch available halls
         await fetchAvailableHalls();
+        
+        // Load existing data if available
+        if (timetableData[cellId]) {
+            const data = timetableData[cellId];
+            console.log('Loading existing schedule data:', data);
+            
+            document.getElementById('editScheduleId').value = data.id || '';
+            
+            // FIXED: Load notes from the data
+            if (data.notes) {
+                document.getElementById('editNotes').value = data.notes;
+                console.log('Loaded notes:', data.notes);
+            }
+            
+            // Set substitute teacher if exists
+            if (data.subject && data.subject.substitute_teacher && data.subject.substitute_teacher.id) {
+                document.getElementById('editSubstituteTeacher').value = data.subject.substitute_teacher.id;
+            }
+            
+            // Load subject from the cell's displayed content
+            setTimeout(() => {
+                const subjectId = loadSubjectFromCell(cell);
+                if (subjectId) {
+                    console.log('Subject loaded from cell display:', subjectId);
+                } else {
+                    console.warn('Could not load subject from cell display, trying data.subject.id');
+                    // Fallback to data.subject.id
+                    if (data.subject && data.subject.id) {
+                        const subjectSelect = document.getElementById('editSubject');
+                        for (let i = 0; i < subjectSelect.options.length; i++) {
+                            if (subjectSelect.options[i].value == data.subject.id) {
+                                subjectSelect.selectedIndex = i;
+                                console.log('Subject set from data.id:', subjectSelect.options[i].text);
+                                break;
+                            }
+                        }
+                    }
+                }
+            }, 300);
+            
+            // Try to pre-select the hall after halls load
+            if (data.hall && data.hall.id) {
+                setTimeout(() => {
+                    const hallSelect = document.getElementById('editHall');
+                    const hallId = data.hall.id.toString();
+                    console.log('Attempting to select hall:', hallId);
+                    
+                    for (let i = 0; i < hallSelect.options.length; i++) {
+                        if (hallSelect.options[i].value === hallId) {
+                            hallSelect.selectedIndex = i;
+                            console.log('Hall selected:', hallSelect.options[i].text);
+                            break;
+                        }
+                    }
+                }, 500);
+            }
+        } else {
+            // For empty cells, still try to load from displayed content (in case it's filled but not in timetableData)
+            setTimeout(() => {
+                loadSubjectFromCell(cell);
+            }, 300);
+        }
     }
 
     function closeCellEditor() {
@@ -1466,6 +1575,7 @@
         const startTime = document.getElementById('editStartTime').value;
         const endTime = document.getElementById('editEndTime').value;
         const cellId = document.getElementById('editCellId').value;
+        const notes = document.getElementById('editNotes').value;
         
         if (!subjectSelect.value) {
             showMessage('Please select a subject', 'error');
@@ -1482,6 +1592,8 @@
         const teacherId = selectedSubject.dataset.teacherId;
         const teacherName = selectedSubject.dataset.teacherName;
         
+        const hallType = selectedHall.dataset.type || 'LH';
+        
         const scheduleData = {
             day: day,
             start_time: convertTo12Hour(startTime),
@@ -1490,9 +1602,9 @@
             hall_id: parseInt(hallSelect.value),
             teacher_id: teacherId ? parseInt(teacherId) : null,
             substitute_teacher_id: document.getElementById('editSubstituteTeacher').value ? parseInt(document.getElementById('editSubstituteTeacher').value) : null,
-            notes: document.getElementById('editNotes').value,
-            batch_id: batchId,
-            faculty_id: facultyId
+            notes: notes,  // Include notes in the data
+            batch_id: batchId ? parseInt(batchId) : null,
+            faculty_id: facultyId ? parseInt(facultyId) : null
         };
         
         if (scheduleId) scheduleData.id = parseInt(scheduleId);
@@ -1529,13 +1641,14 @@
                     substitute_teacher: scheduleData.substitute_teacher_id ? {
                         id: scheduleData.substitute_teacher_id,
                         name: document.getElementById('editSubstituteTeacher').options[document.getElementById('editSubstituteTeacher').selectedIndex]?.text || ''
-                    } : null
+                    } : null,
+                    notes: notes  // Store notes in subject for API consistency
                 },
                 hall: {
                     id: scheduleData.hall_id,
-                    type: selectedHall.dataset.type || 'LH'
+                    type: hallType
                 },
-                notes: scheduleData.notes
+                notes: notes  // Also store at root level for easy access
             };
             
             updateCellDisplay(currentCell, timetableData[cellId]);
@@ -1552,12 +1665,17 @@
         const subject = data.subject || {};
         const hall = data.hall || {};
         const substitute = subject.substitute_teacher;
+        const notes = data.notes || subject.notes || '';
+        
         const hallType = hall.type || 'LH';
+        
+        // Add a notes indicator if notes exist
+        const notesIndicator = notes ? '<span class="notes-indicator" title="' + notes + '"><i class="fas fa-sticky-note"></i></span>' : '';
         
         cell.innerHTML = `
             <div class="filled-cell" data-hall-type="${hallType}" onclick="event.stopPropagation(); openCellEditor(this.parentElement)">
                 <div class="cell-header">
-                    <div class="subject-code">${subject.code || 'CODE'}</div>
+                    <div class="subject-code">${subject.code || 'CODE'} ${notesIndicator}</div>
                     <div class="cell-time">${formatTime(convertTo24Hour(data.start_time))}</div>
                 </div>
                 <div class="cell-content">
@@ -1589,6 +1707,8 @@
             showMessage('Schedule removed', 'success');
             return;
         }
+        
+        if (!confirm('Are you sure you want to delete this schedule?')) return;
         
         try {
             const response = await fetch(`/api/schedules/${scheduleData.id}/delete/`, {
@@ -1647,5 +1767,10 @@
         }
         return cookieValue;
     }
+
+    // Debug function to check timetable data
+    window.debugTimetable = function() {
+        console.log('Current timetableData:', timetableData);
+    };
 </script>
 {% endblock %}

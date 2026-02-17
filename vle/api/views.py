@@ -55,15 +55,25 @@ def update_faculty(request,id:int):
 
 
 @api_view(['POST'])
+@permission_classes([permissions.IsFacultyAdminstratorResource])
 def add_resource(request,faculty_id):
+    faculty = university_models.Faculty.objects.filter(id=faculty_id).first()
+    if faculty is None:
+        return response.Response({'message':'faculty not found'},status=status.HTTP_404_NOT_FOUND)
     resource = serializer.LectureHallSerializer(data=request.data)
     resource.is_valid(raise_exception=True)
     resource.save()
+    log_activity(actor=request.user,action=f"added resource to {faculty.name}")
     return response.Response(resource.data,status=status.HTTP_201_CREATED)
 
 
 @api_view(['PUT','PATCH'])
+@permission_classes([permissions.IsFacultyAdminstratorResource])
 def update_resource(request,faculty_id,resource_id):
+    faculty = university_models.Faculty.objects.filter(id=faculty_id).first()
+    if faculty is None:
+        return response.Response({'message':'faculty not found'},status=status.HTTP_404_NOT_FOUND)
+    
     try:
         univercity_services.update_resource(resource_id=resource_id,faculty_id=faculty_id,data=request.data)
     except ValidationError as e:
@@ -71,16 +81,22 @@ def update_resource(request,faculty_id,resource_id):
     except NotFound:
         return response.Response({'message':'resource not found'},status=status.HTTP_404_NOT_FOUND)
     
+    log_activity(actor=request.user,action=f"update resource on {faculty.name}")
     return response.Response({},status=status.HTTP_200_OK)
 
 
 @api_view(['DELETE'])
+@permission_classes([permissions.IsFacultyAdminstratorResource])
 def delete_resource(request,faculty_id,resource_id):
+    faculty = university_models.Faculty.objects.filter(id=faculty_id).first()
+    if faculty is None:
+        return response.Response({'message':'faculty not found'},status=status.HTTP_404_NOT_FOUND)
     resource = university_models.LectureHall.objects.filter(id=resource_id,faculty__id=faculty_id).first()
     if resource is None:
         return response.Response({'message':'resource not found'},status=status.HTTP_404_NOT_FOUND)
     
     resource.delete()
+    log_activity(actor=request.user,action=f"deleted resource on {faculty.name}")
     return response.Response({},status=status.HTTP_204_NO_CONTENT)
     
 
@@ -409,7 +425,7 @@ def update_settings(request):
         except ValidationError as e:
             return response.Response({'detail':e.detail},status=status.HTTP_400_BAD_REQUEST)
         
-        log_activity(actor=request.user,action=f"setting {key}  updated",content_info={key:old_value})
+        log_activity(actor=request.user,action=f"setting {key}:{old_value}  updated",content_info={key:old_value})
                 
     return response.Response({'detail':f"settings updated"},status=status.HTTP_200_OK)
 
@@ -522,7 +538,6 @@ def get_batch_subjects(request,batch_id):
 @api_view(['POST'])
 @permission_classes([permissions.IsValiedAssignment])
 def assign_lecture(request):
-
     batch_subject = university_models.BatchSubject.objects.filter(batch__id=request.data['batch_id'],subject__id=request.data['subject_id']).first()
     if not batch_subject:
         return response.Response({'detail':"invalid assignment"},status=status.HTTP_400_BAD_REQUEST)
@@ -549,10 +564,13 @@ def advance_batch(request,batch_id):
     
     batch.progression_year = semesters[ semesters.index(float(batch.progression_year)) +1 ]
     batch.save()
+    log_activity(actor=request.user,action=f"batch {batch.name} is advanced to next semester")
 
     return response.Response({},status=status.HTTP_200_OK)
 
+
 @api_view(['GET'])
+@permission_classes([permissions.IsFacultyAdminAdvanceBatch])
 def get_schedules(request,batch_id):
     try:
         schedules = univercity_services.get_shedules(batch_id)
@@ -562,6 +580,7 @@ def get_schedules(request,batch_id):
 
 
 @api_view(['POST'])
+@permission_classes([permissions.IsFacultyAdminAdvanceBatch])
 def availble_halls(request,batch_id):
     try:
         halls = univercity_services.get_availble_halls(batch_id,request.data)
@@ -576,6 +595,7 @@ def availble_halls(request,batch_id):
 
 
 @api_view(['POST'])
+@permission_classes([permissions.IsFacultyAdminstratorSchedule])
 def create_schedule(request):
     schedule_data = {
         'batch_id':request.data['batch_id'],
@@ -591,11 +611,31 @@ def create_schedule(request):
     try:
         univercity_services.create_schedule(data=schedule_data)
     except ValidationError as e:
-        print(e.detail)
         return response.Response({'message':f'resource data invalid{e.detail}'},status=status.HTTP_400_BAD_REQUEST)
     except NotFound as nf:
         return response.Response({'message':str(nf)},status=status.HTTP_404_NOT_FOUND)
+    
+    return response.Response({},status=status.HTTP_200_OK)
+
+@api_view(['PUT'])
+@permission_classes([permissions.IsFacultyAdminstratorSchedule])
+def update_shedule(request,schedule_id):
+    try:
+        univercity_services.update_shedule(schedule_id,request.data)
+    except NotFound as e:
+        return response.Response({'message':str(e)},status=status.HTTP_404_NOT_FOUND)
+    
+    except ValidationError as e:
+        return response.Response({'message':e.detail},status=status.HTTP_400_BAD_REQUEST)
 
     return response.Response({},status=status.HTTP_200_OK)
 
+@api_view(['DELETE'])
+@permission_classes([permissions.IsFacultyAdminstratorSchedule])
+def delete_shedule(request,schedule_id):
+    shedule = university_models.Schedule.objects.filter(id=schedule_id).first()
+    if shedule is None:
+        return response.Response({'message':'shedule not found'},status=status.HTTP_404_NOT_FOUND)
 
+    shedule.delete()
+    return response.Response({},status=status.HTTP_204_NO_CONTENT)

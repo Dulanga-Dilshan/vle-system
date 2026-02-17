@@ -194,7 +194,6 @@ def create_schedule(data:dict):
 
     try:
         schedule.save()
-        print('saving')
     except Exception as e:
         raise ValidationError(f'data is invalid')
 
@@ -223,7 +222,8 @@ def get_shedules(batch_id:int)->dict:
                     'substitute_teacher':None if obj.substitute_teacher is None else {          
                         'id':obj.substitute_teacher.id,
                         'name':obj.substitute_teacher.name,
-                    } 
+                    },
+                    'notes':obj.notes,
                 },
                 'hall':{
                     'id':obj.hall.id,
@@ -307,3 +307,43 @@ def is_between_time(start_time:str,end_time:str,new_time:str)->bool:
         return True
     
     return False
+
+
+@transaction.atomic
+def update_shedule(schedule_id,data:dict)->None:
+    schedule = models.Schedule.objects.filter(id=schedule_id).first()
+    if schedule is None:
+        raise NotFound('invalide shedule')
+    
+    batch_subject = models.BatchSubject.objects.filter(id=data['subject_id']).first()
+    if batch_subject is None:
+        raise NotFound('invalide subject')
+    
+    if schedule.subject != batch_subject:
+        raise ValidationError('invalid subject')
+    
+    substitute_teacher = Staff.objects.filter(id=data['substitute_teacher_id']).first()
+    if data['substitute_teacher_id'] is not None:
+        if substitute_teacher is None:
+            raise NotFound('substitute teacher not found')
+        
+    lec_hall = models.LectureHall.objects.filter(id=data['hall_id']).first()
+
+    data['notes']=data['notes'].strip()
+    if len(data['notes'])>100:
+        raise ValidationError('max lenth exseeded. max=100chars')
+
+
+    if schedule.subject != batch_subject:
+        schedule.subject = batch_subject
+    
+    if schedule.substitute_teacher != substitute_teacher:
+        schedule.substitute_teacher=substitute_teacher
+    
+    if schedule.hall != lec_hall:
+        schedule.hall = lec_hall
+    
+    if schedule.notes != data['notes']:
+        schedule.notes = data['notes']
+    
+    schedule.save()

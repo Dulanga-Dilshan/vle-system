@@ -43,6 +43,7 @@ class IsFacultyAdminstrator(BasePermission):
             faculty_id=int(faculty_id)
         else:
             faculty_id = int(view.kwargs.get('id',0))
+
         
         if staff.faculty_name.id != faculty_id:
             return False
@@ -199,3 +200,67 @@ class IsFacultyAdminAdvanceBatch(BasePermission):
         
         return False
         
+
+class IsFacultyAdminstratorResource(BasePermission):
+    message = 'unotherized'
+
+    def has_permission(self, request, view):
+        if request.user and request.user.is_superuser:
+            return True
+
+        staff = getattr(request.user,'staff',None)
+        
+        if not staff:
+            return False
+        
+        try:
+            faculty_id = int(view.kwargs.get('faculty_id',0))
+        except Exception:
+            return False
+        
+        if faculty_id == 0:
+            return False
+        
+        if staff.faculty_name.id != faculty_id:
+            return False
+        
+        return request.user.is_staff
+
+class IsFacultyAdminstratorSchedule(BasePermission):
+    message = 'unotherized'
+
+    def has_permission(self, request, view):
+        if request.user and request.user.is_superuser:
+            return True
+        
+        if not request.user:
+            return False
+
+        staff = getattr(request.user,'staff',None)
+        
+        if not staff:
+            return False
+        
+        if request.method=='POST':
+            batch_id = request.data['batch_id']
+            batch = university_models.Batch.objects.filter(id=batch_id).first()
+            if batch is None:
+                return False
+
+            if batch.course.department.faculty != request.user.faculty_name:
+                return False
+            
+            return request.user.is_staff
+        else:
+            shedule_id=view.kwargs.get('schedule_id',0)
+            if shedule_id == 0:
+                return False
+            
+            shedule = university_models.Schedule.objects.filter(id=shedule_id).first()
+            if shedule is None:
+                return False
+            
+            if shedule.hall.faculty != request.user.faculty_name:
+                return False
+            
+            return request.user.is_staff
