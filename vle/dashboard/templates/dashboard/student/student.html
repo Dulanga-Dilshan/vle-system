@@ -25,6 +25,7 @@
             --gray-light: #e5e7eb;
             --border-radius: 12px;
             --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --shadow-lg: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.02);
             --transition: all 0.3s ease;
         }
 
@@ -48,7 +49,7 @@
             padding: 1.5rem 0;
             display: flex;
             flex-direction: column;
-            box-shadow: var(--shadow);
+            box-shadow: var(--shadow-lg);
             z-index: 10;
         }
 
@@ -95,11 +96,19 @@
             font-size: 1.1rem;
         }
 
+        /* Profile Section - Clickable for Popup */
         .user-profile {
             padding: 1.5rem;
             border-top: 1px solid rgba(255, 255, 255, 0.1);
             display: flex;
             align-items: center;
+            cursor: pointer;
+            position: relative;
+            transition: background-color 0.2s;
+        }
+
+        .user-profile:hover {
+            background-color: rgba(255, 255, 255, 0.05);
         }
 
         .user-avatar {
@@ -122,6 +131,89 @@
         .user-info p {
             font-size: 0.8rem;
             opacity: 0.8;
+        }
+
+        /* Profile Popup Menu */
+        .profile-popup {
+            position: absolute;
+            bottom: 100%;
+            left: 0;
+            width: 100%;
+            background: white;
+            border-radius: 12px;
+            box-shadow: var(--shadow-lg);
+            padding: 0.5rem 0;
+            margin-bottom: 0.5rem;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(10px);
+            transition: all 0.3s ease;
+            z-index: 100;
+            border: 1px solid var(--gray-light);
+        }
+
+        .profile-popup.show {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        .popup-header {
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid var(--gray-light);
+        }
+
+        .popup-name {
+            font-weight: 600;
+            color: var(--dark);
+            font-size: 1rem;
+        }
+
+        .popup-email {
+            color: var(--gray);
+            font-size: 0.85rem;
+            margin-top: 0.2rem;
+        }
+
+        .popup-menu {
+            list-style: none;
+            padding: 0.5rem 0;
+        }
+
+        .popup-menu li {
+            padding: 0;
+        }
+
+        .popup-menu a {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem 1.25rem;
+            color: var(--dark);
+            text-decoration: none;
+            transition: all 0.2s ease;
+            font-size: 0.95rem;
+        }
+
+        .popup-menu a:hover {
+            background-color: var(--light);
+            color: var(--primary);
+        }
+
+        .popup-menu i {
+            width: 20px;
+            color: var(--gray);
+            font-size: 1rem;
+        }
+
+        .popup-menu a:hover i {
+            color: var(--primary);
+        }
+
+        .popup-divider {
+            height: 1px;
+            background-color: var(--gray-light);
+            margin: 0.5rem 0;
         }
 
         /* Main Content */
@@ -728,11 +820,28 @@
                 </div>
             </div>
             
-            <div class="user-profile">
+            <!-- User Profile with Popup Trigger -->
+            <div class="user-profile" id="profileTrigger">
                 <div class="user-avatar">JS</div>
                 <div class="user-info">
                     <h3>John Student</h3>
                     <p>Computer Science</p>
+                </div>
+                
+                <!-- Profile Popup Menu -->
+                <div class="profile-popup" id="profilePopup">
+                    <div class="popup-header">
+                        <div class="popup-name">John Student</div>
+                        <div class="popup-email">john.student@univle.edu</div>
+                    </div>
+                    <ul class="popup-menu">
+                        <li><a href="#"><i class="fas fa-user-circle"></i> My Profile</a></li>
+                        <li><a href="#" id="change-password-link"><i class="fas fa-key"></i> Reset Password</a></li>
+                        <li><a href="#"><i class="fas fa-calendar-alt"></i> My Schedule</a></li>
+                        <li><a href="#"><i class="fas fa-cog"></i> Account Settings</a></li>
+                        <li class="popup-divider"></li>
+                        <li><a href="{% url 'Users:logout' %}" id="logout-link"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+                    </ul>
                 </div>
             </div>
         </nav>
@@ -1040,37 +1149,61 @@
     </div>
 
     <script>
-        // Animate GPA progress circle
+        // Profile popup toggle
         document.addEventListener('DOMContentLoaded', function() {
-            const circle = document.querySelector('.progress-ring-circle');
-            const radius = circle.r.baseVal.value;
-            const circumference = radius * 2 * Math.PI;
+            const profileTrigger = document.getElementById('profileTrigger');
+            const profilePopup = document.getElementById('profilePopup');
             
-            circle.style.strokeDasharray = `${circumference} ${circumference}`;
-            circle.style.strokeDashoffset = circumference;
-            
-            // Calculate progress for 3.75 GPA (out of 4.0)
-            const progress = 3.75 / 4.0;
-            const offset = circumference - progress * circumference;
-            
-            // Animate the circle
-            setTimeout(() => {
-                circle.style.strokeDashoffset = offset;
-                circle.style.stroke = '#4f46e5';
-                circle.style.transition = 'stroke-dashoffset 1.5s ease, stroke 0.5s ease';
-            }, 300);
-            
-            // Add hover effect to cards
-            const cards = document.querySelectorAll('.card');
-            cards.forEach(card => {
-                card.addEventListener('mouseenter', function() {
-                    this.style.transform = 'translateY(-5px)';
-                });
-                
-                card.addEventListener('mouseleave', function() {
-                    this.style.transform = 'translateY(0)';
-                });
+            // Toggle popup on click
+            profileTrigger.addEventListener('click', function(e) {
+                e.stopPropagation();
+                profilePopup.classList.toggle('show');
             });
+            
+            // Close popup when clicking outside
+            document.addEventListener('click', function(e) {
+                if (!profileTrigger.contains(e.target)) {
+                    profilePopup.classList.remove('show');
+                }
+            });
+            
+            // Change password link inside popup
+            document.getElementById('change-password-link').addEventListener('click', function(e) {
+                e.preventDefault();
+                alert('Redirecting to password reset page... (demo)');
+                // In a real app: window.location.href = 'reset_password.php';
+            });
+            
+            // Logout link with confirmation
+            const logoutLink = document.getElementById('logout-link');
+            if (logoutLink) {
+                logoutLink.addEventListener('click', function(e) {
+                    if (!confirm('Are you sure you want to logout?')) {
+                        e.preventDefault();
+                    }
+                });
+            }
+            
+            // Animate GPA progress circle
+            const circle = document.querySelector('.progress-ring-circle');
+            if (circle) {
+                const radius = circle.r.baseVal.value;
+                const circumference = radius * 2 * Math.PI;
+                
+                circle.style.strokeDasharray = `${circumference} ${circumference}`;
+                circle.style.strokeDashoffset = circumference;
+                
+                // Calculate progress for 3.75 GPA (out of 4.0)
+                const progress = 3.75 / 4.0;
+                const offset = circumference - progress * circumference;
+                
+                // Animate the circle
+                setTimeout(() => {
+                    circle.style.strokeDashoffset = offset;
+                    circle.style.stroke = '#4f46e5';
+                    circle.style.transition = 'stroke-dashoffset 1.5s ease, stroke 0.5s ease';
+                }, 300);
+            }
             
             // Navigation active state
             const navItems = document.querySelectorAll('.nav-item');
@@ -1085,10 +1218,12 @@
             const notification = document.querySelector('.notification');
             const badge = document.querySelector('.badge');
             
-            notification.addEventListener('click', function() {
-                badge.style.display = 'none';
-                // In a real app, you would mark notifications as read here
-            });
+            if (notification) {
+                notification.addEventListener('click', function() {
+                    badge.style.display = 'none';
+                    alert('Notifications marked as read (demo)');
+                });
+            }
             
             // Action buttons
             const actionButtons = document.querySelectorAll('.action-btn');
@@ -1104,6 +1239,15 @@
             joinButtons.forEach(button => {
                 button.addEventListener('click', function() {
                     alert("Joining class/meeting... In a real application, this would connect to the video conference.");
+                });
+            });
+            
+            // View all links
+            const viewAllLinks = document.querySelectorAll('.view-all');
+            viewAllLinks.forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    alert(`View all items (demo)`);
                 });
             });
         });

@@ -29,15 +29,6 @@ def student(request):
     return render(request,"dashboard/student/student.html",contex)
 
 
-#staff veiw
-@login_required(login_url='Users:login')
-def staff(request):
-    if request.user.role != 'staff':
-        return redirect('dashboard:route')
-
-    contex=get_name_avatar(request)
-    return render(request,"dashboard/staff/staff.html",contex)
-
 
 #admin veiw
 @login_required(login_url='Users:login')
@@ -385,18 +376,17 @@ def manage_shedule(request,batch_id):
 
 
 
+#staff veiw
+@login_required(login_url='Users:login')
+def staff(request):
+    if request.user.role != 'staff':
+        return redirect('dashboard:route')
+    contex=get_name_avatar(request)
+    staff = models.Staff.objects.filter(username=request.user).first()
+    contex['staff'] = staff
+    return render(request,"dashboard/staff/staff.html",contex)
 
-{
-    'available_halls':[
-        {
-            'id':'id',
-            'name':'name',
-            'type':'type'
-        },
-        {
-            'id':'another id',
-            'name':'another name',
-            'type':'another type'
-        },
-    ]
-}
+@login_required(login_url='Users:login')
+def manage_subjects(request):
+    subjects = university_models.BatchSubject.objects.filter(staff__username=request.user)
+    return render(request,"dashboard/staff/manage_subjects.html",{'subjects':subjects})

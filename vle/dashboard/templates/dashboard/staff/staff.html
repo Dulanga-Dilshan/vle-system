@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>University VLE - Staff Dashboard</title>
+    <title>{{ settings.SYSTEM_NAME }} - Staff Dashboard</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -18,6 +18,8 @@
             background-color: #f5f7fa;
             color: #333;
             min-height: 100vh;
+            display: flex;
+            flex-direction: column;
         }
 
         /* Navigation Styles */
@@ -78,6 +80,8 @@
             display: flex;
             align-items: center;
             gap: 1rem;
+            cursor: pointer;
+            position: relative;
         }
 
         .user-avatar {
@@ -91,11 +95,96 @@
             font-weight: 600;
         }
 
+        /* Profile Popup Menu */
+        .profile-popup {
+            position: absolute;
+            top: 60px;
+            right: 0;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+            width: 260px;
+            padding: 1rem 0;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-10px);
+            transition: all 0.3s ease;
+            z-index: 1001;
+            border: 1px solid #f1f3f4;
+        }
+
+        .profile-popup.show {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        .popup-header {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid #f1f3f4;
+        }
+
+        .popup-name {
+            font-weight: 600;
+            color: #2c3e50;
+            font-size: 1.1rem;
+        }
+
+        .popup-email {
+            color: #6c757d;
+            font-size: 0.9rem;
+            margin-top: 0.2rem;
+        }
+
+        .popup-menu {
+            list-style: none;
+            padding: 0.5rem 0;
+        }
+
+        .popup-menu li {
+            padding: 0;
+        }
+
+        .popup-menu a {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            padding: 0.7rem 1.5rem;
+            color: #495057;
+            text-decoration: none;
+            transition: all 0.2s ease;
+            font-size: 0.95rem;
+        }
+
+        .popup-menu a:hover {
+            background-color: #f8f9fa;
+            color: #339af0;
+        }
+
+        .popup-menu i {
+            width: 20px;
+            color: #6c757d;
+            font-size: 1rem;
+        }
+
+        .popup-divider {
+            height: 1px;
+            background-color: #f1f3f4;
+            margin: 0.5rem 0;
+        }
+
+        /* Fixed-width container */
+        .fixed-container {
+            max-width: 1400px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 0 2rem; /* inner spacing on smaller screens */
+            flex: 1;
+        }
+
         /* Main Content */
         .page-container {
-            padding: 2rem;
-            max-width: 1400px;
-            margin: 0 auto;
+            padding: 2rem 0; /* vertical padding only, horizontal handled by fixed-container */
         }
 
         .dashboard-header {
@@ -122,31 +211,6 @@
             height: 4px;
             background: linear-gradient(to right, #4dabf7, #339af0);
             border-radius: 2px;
-        }
-
-        .profile-link {
-            background-color: #fff;
-            border: none;
-            padding: 0.8rem 1.5rem;
-            border-radius: 8px;
-            font-weight: 500;
-            cursor: pointer;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            color: #495057;
-        }
-
-        .profile-link:hover {
-            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
-            transform: translateY(-2px);
-            color: #339af0;
-        }
-
-        .profile-link i {
-            font-size: 1.1rem;
         }
 
         /* Dashboard Grid */
@@ -394,7 +458,25 @@
             font-size: 0.85rem;
         }
 
+        /* Footer */
+        .footer {
+            text-align: center;
+            padding: 1.5rem;
+            margin-top: 3rem;
+            color: #6c757d;
+            font-size: 0.9rem;
+            border-top: 1px solid #e9ecef;
+            background-color: #f5f7fa;
+            width: 100%;
+        }
+
         /* Responsive Design */
+        @media (max-width: 1400px) {
+            .fixed-container {
+                max-width: 1200px; /* slightly narrower on smaller screens */
+            }
+        }
+
         @media (max-width: 1100px) {
             .dashboard-grid {
                 grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
@@ -418,6 +500,10 @@
                 margin-top: 0.5rem;
             }
 
+            .fixed-container {
+                padding: 0 1rem;
+            }
+
             .dashboard-header {
                 flex-direction: column;
                 align-items: flex-start;
@@ -435,11 +521,16 @@
             .quick-stats {
                 grid-template-columns: 1fr 1fr;
             }
+
+            .profile-popup {
+                right: 10px;
+                width: 240px;
+            }
         }
 
         @media (max-width: 480px) {
             .page-container {
-                padding: 1rem;
+                padding: 1rem 0;
             }
 
             .quick-stats {
@@ -451,22 +542,20 @@
             }
         }
 
-        /* Footer */
-        .footer {
-            text-align: center;
-            padding: 1.5rem;
-            margin-top: 3rem;
-            color: #6c757d;
-            font-size: 0.9rem;
-            border-top: 1px solid #e9ecef;
+        /* Adjust button link style */
+        .action-btn a {
+            text-decoration: none;
+            color: inherit;
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
         }
     </style>
 </head>
 <body>
-    <!-- Navigation -->
     <nav class="navbar">
         <div class="logo-container">
-            <a href="#" class="logo"><span>Uni</span>VLE</a>
+            <a href="{% url 'dashboard:staff' %}" class="logo">{{ settings.SYSTEM_NAME }}</a>
             <div class="nav-title">Staff Dashboard</div>
         </div>
         
@@ -477,238 +566,276 @@
             <li><a href="#"><i class="fas fa-cog"></i> Settings</a></li>
         </ul>
         
-        <div class="user-info">
-            <div class="user-avatar">JD</div>
+        <!-- User info with popup trigger -->
+        <div class="user-info" id="profileTrigger">
+            <div class="user-avatar">{{ avetar }}</div>
             <div>
-                <div class="user-name">Dr. Jane Doe</div>
-                <div class="user-role">Faculty Member</div>
+                <div class="user-name">{{ name }}</div>
+                <div class="user-role">{{ staff.staff_type }}</div>
+            </div>
+            
+            <!-- Profile Popup Menu -->
+            <div class="profile-popup" id="profilePopup">
+                <div class="popup-header">
+                    <div class="popup-name">{{ name }}</div>
+                    <div class="popup-email">{{ request.user.email }}</div>
+                </div>
+                <ul class="popup-menu">
+                    <li><a href="#"><i class="fas fa-user-circle"></i> My Profile</a></li>
+                    <li><a href="#" id="change-password-link"><i class="fas fa-key"></i> Change Password</a></li>
+                    <li><a href="#"><i class="fas fa-calendar-alt"></i> My Schedule</a></li>
+                    <li><a href="#"><i class="fas fa-cog"></i> Account Settings</a></li>
+                    <li class="popup-divider"></li>
+                    <li><a href="{% url 'Users:logout' %}"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+                </ul>
             </div>
         </div>
     </nav>
 
-    <!-- Main Content -->
-    <div class="page-container">
-        <!-- Dashboard Header -->
-        <div class="dashboard-header">
-            <h1 class="dashboard-title">Staff Dashboard</h1>
-            <button id="change-password-btn" class="profile-link">
-                <i class="fas fa-key"></i> Change Password
-            </button>
-        </div>
+    <!-- Fixed-width container for main content -->
+    <div class="fixed-container">
+        <div class="page-container">
+            <!-- Dashboard Header -->
+            <div class="dashboard-header">
+                <h1 class="dashboard-title">Staff Dashboard</h1>
+            </div>
 
-        <!-- Quick Stats -->
-        <div class="quick-stats">
-            <div class="stat-card">
-                <div class="stat-icon blue-icon">
-                    <i class="fas fa-chalkboard-teacher"></i>
-                </div>
-                <div class="stat-info">
-                    <h3>5</h3>
-                    <p>Active Courses</p>
-                </div>
-            </div>
-            
-            <div class="stat-card">
-                <div class="stat-icon purple-icon">
-                    <i class="fas fa-user-graduate"></i>
-                </div>
-                <div class="stat-info">
-                    <h3>142</h3>
-                    <p>Total Students</p>
-                </div>
-            </div>
-            
-            <div class="stat-card">
-                <div class="stat-icon red-icon">
-                    <i class="fas fa-tasks"></i>
-                </div>
-                <div class="stat-info">
-                    <h3>23</h3>
-                    <p>Pending Grading</p>
-                </div>
-            </div>
-            
-            <div class="stat-card">
-                <div class="stat-icon green-icon">
-                    <i class="fas fa-bullhorn"></i>
-                </div>
-                <div class="stat-info">
-                    <h3>7</h3>
-                    <p>Active Notices</p>
-                </div>
-            </div>
-        </div>
-
-        <!-- Dashboard Grid -->
-        <div class="dashboard-grid">
-            <!-- Course Management Card -->
-            <div class="dashboard-card">
-                <div class="card-header">
-                    <div class="card-icon blue-icon">
+            <!-- Quick Stats -->
+            <div class="quick-stats">
+                <div class="stat-card">
+                    <div class="stat-icon blue-icon">
                         <i class="fas fa-chalkboard-teacher"></i>
                     </div>
-                    <h3 class="card-title">Course Management</h3>
+                    <div class="stat-info">
+                        <h3>5</h3>
+                        <p>Active Courses</p>
+                    </div>
                 </div>
-                <p class="card-description">Manage your courses, schedule lectures, upload materials, and organize course content for your students.</p>
-                <div class="card-actions">
-                    <button class="action-btn blue-btn">
-                        <a href="course_management.php" style="text-decoration:none; color:white;">Manage Courses</a>
-                        <i class="fas fa-arrow-right"></i>
-                    </button>
-                    <button class="action-btn green-btn">
-                        <i class="fas fa-video"></i> Host Class
-                    </button>
-                </div>
-            </div>
-
-            <!-- Student Tracking Card -->
-            <div class="dashboard-card">
-                <div class="card-header">
-                    <div class="card-icon purple-icon">
+                
+                <div class="stat-card">
+                    <div class="stat-icon purple-icon">
                         <i class="fas fa-user-graduate"></i>
                     </div>
-                    <h3 class="card-title">Student Tracking</h3>
-                </div>
-                <p class="card-description">Track student progress, attendance, grade assignments, and answer student questions.</p>
-                <div class="card-actions">
-                    <button class="action-btn blue-btn">
-                        View Students <i class="fas fa-arrow-right"></i>
-                    </button>
-                    <button class="action-btn yellow-btn">
-                        <i class="fas fa-comments"></i> Q&A Forum
-                    </button>
-                </div>
-            </div>
-
-            <!-- Assignment Monitoring Card -->
-            <div class="dashboard-card">
-                <div class="card-header">
-                    <div class="card-icon red-icon">
-                        <i class="fas fa-eye"></i>
+                    <div class="stat-info">
+                        <h3>142</h3>
+                        <p>Total Students</p>
                     </div>
-                    <h3 class="card-title">Assignment Monitoring</h3>
                 </div>
-                <p class="card-description">Monitor student submissions, check for plagiarism, grade assignments, and provide feedback.</p>
-                <div class="card-actions">
-                    <button class="action-btn blue-btn">
-                        Monitor Assignments <i class="fas fa-arrow-right"></i>
-                    </button>
-                    <button class="action-btn yellow-btn">
-                        <i class="fas fa-chart-bar"></i> Analytics
-                    </button>
-                </div>
-            </div>
-
-            <!-- Results Management Card -->
-            <div class="dashboard-card">
-                <div class="card-header">
-                    <div class="card-icon indigo-icon">
-                        <i class="fas fa-chart-line"></i>
+                
+                <div class="stat-card">
+                    <div class="stat-icon red-icon">
+                        <i class="fas fa-tasks"></i>
                     </div>
-                    <h3 class="card-title">Results Management</h3>
+                    <div class="stat-info">
+                        <h3>23</h3>
+                        <p>Pending Grading</p>
+                    </div>
                 </div>
-                <p class="card-description">Enter, analyze, and release student examination results with comprehensive reporting tools.</p>
-                <button class="action-btn blue-btn">
-                    Manage Results <i class="fas fa-arrow-right"></i>
-                </button>
-            </div>
-
-            <!-- Notice Board Management Card -->
-            <div class="dashboard-card">
-                <div class="card-header">
-                    <div class="card-icon yellow-icon">
+                
+                <div class="stat-card">
+                    <div class="stat-icon green-icon">
                         <i class="fas fa-bullhorn"></i>
                     </div>
-                    <h3 class="card-title">Notice Board</h3>
-                </div>
-                <p class="card-description">Post and manage important announcements, deadlines, and updates for students.</p>
-                <div class="card-actions">
-                    <button class="action-btn blue-btn">
-                        Manage Notices <i class="fas fa-arrow-right"></i>
-                    </button>
-                    <button class="action-btn green-btn">
-                        <i class="fas fa-plus"></i> New Notice
-                    </button>
+                    <div class="stat-info">
+                        <h3>7</h3>
+                        <p>Active Notices</p>
+                    </div>
                 </div>
             </div>
 
-            <!-- Add Past Papers Card -->
-            <div class="dashboard-card">
-                <div class="card-header">
-                    <div class="card-icon green-icon">
-                        <i class="fas fa-file-upload"></i>
+            <!-- Dashboard Grid -->
+            <div class="dashboard-grid">
+                <!-- Course Management Card -->
+                <div class="dashboard-card">
+                    <div class="card-header">
+                        <div class="card-icon blue-icon">
+                            <i class="fas fa-chalkboard-teacher"></i>
+                        </div>
+                        <h3 class="card-title">Subject Management</h3>
                     </div>
-                    <h3 class="card-title">Add Past Papers</h3>
+                    <p class="card-description">Manage your Subjects, upload materials, and organize Subject content for your students.</p>
+                    <div class="card-actions">
+                        <button class="action-btn blue-btn">
+                            <a href="{% url 'dashboard:manage_subjects' %}" style="text-decoration:none; color:white;">Manage Subject</a>
+                            <i class="fas fa-arrow-right"></i>
+                        </button>
+
+                    </div>
                 </div>
-                <p class="card-description">Upload previous exam papers, solutions, and study materials for student reference and practice.</p>
-                <div class="card-actions">
+
+                <!-- Student Tracking Card -->
+                <div class="dashboard-card">
+                    <div class="card-header">
+                        <div class="card-icon purple-icon">
+                            <i class="fas fa-user-graduate"></i>
+                        </div>
+                        <h3 class="card-title">Student Tracking</h3>
+                    </div>
+                    <p class="card-description">Track student progress, attendance, grade assignments, and answer student questions.</p>
+                    <div class="card-actions">
+                        <button class="action-btn blue-btn">
+                            <a href="trackstdnts" style="text-decoration:none; color:white;">View Students</a>
+                            <i class="fas fa-arrow-right"></i>
+                        </button>
+                        <button class="action-btn yellow-btn">
+                            <i class="fas fa-comments"></i> Q&A Forum
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Assignment Monitoring Card -->
+                <div class="dashboard-card">
+                    <div class="card-header">
+                        <div class="card-icon red-icon">
+                            <i class="fas fa-eye"></i>
+                        </div>
+                        <h3 class="card-title">Assignment Monitoring</h3>
+                    </div>
+                    <p class="card-description">Monitor student submissions, check for plagiarism, grade assignments, and provide feedback.</p>
+                    <div class="card-actions">
+                        <button class="action-btn blue-btn">
+                            Monitor Assignments <i class="fas fa-arrow-right"></i>
+                        </button>
+                        <button class="action-btn yellow-btn">
+                            <i class="fas fa-chart-bar"></i> Analytics
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Results Management Card -->
+                <div class="dashboard-card">
+                    <div class="card-header">
+                        <div class="card-icon indigo-icon">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                        <h3 class="card-title">Results Management</h3>
+                    </div>
+                    <p class="card-description">Enter, analyze, and release student examination results with comprehensive reporting tools.</p>
                     <button class="action-btn blue-btn">
-                        Upload Papers <i class="fas fa-arrow-right"></i>
+                        Manage Results <i class="fas fa-arrow-right"></i>
                     </button>
-                    <button class="action-btn yellow-btn">
-                        <i class="fas fa-archive"></i> Archive
-                    </button>
+                </div>
+
+                <!-- Notice Board Management Card -->
+                <div class="dashboard-card">
+                    <div class="card-header">
+                        <div class="card-icon yellow-icon">
+                            <i class="fas fa-bullhorn"></i>
+                        </div>
+                        <h3 class="card-title">Notice Board</h3>
+                    </div>
+                    <p class="card-description">Post and manage important announcements, deadlines, and updates for students.</p>
+                    <div class="card-actions">
+                        <button class="action-btn blue-btn">
+                            Manage Notices <i class="fas fa-arrow-right"></i>
+                        </button>
+                        <button class="action-btn green-btn">
+                            <i class="fas fa-plus"></i> New Notice
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Add Past Papers Card -->
+                <div class="dashboard-card">
+                    <div class="card-header">
+                        <div class="card-icon green-icon">
+                            <i class="fas fa-file-upload"></i>
+                        </div>
+                        <h3 class="card-title">Add Past Papers</h3>
+                    </div>
+                    <p class="card-description">Upload previous exam papers, solutions, and study materials for student reference and practice.</p>
+                    <div class="card-actions">
+                        <button class="action-btn blue-btn">
+                            Upload Papers <i class="fas fa-arrow-right"></i>
+                        </button>
+                        <button class="action-btn yellow-btn">
+                            <i class="fas fa-archive"></i> Archive
+                        </button>
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <!-- Recent Activity Section -->
-        <div class="recent-activity">
-            <h2 class="section-title"><i class="fas fa-history"></i> Recent Activity</h2>
-            <ul class="activity-list">
-                <li class="activity-item">
-                    <div class="activity-icon blue-icon">
-                        <i class="fas fa-upload"></i>
-                    </div>
-                    <div class="activity-details">
-                        <h4>New Material Uploaded</h4>
-                        <p>Lecture slides for "Advanced Algorithms" uploaded</p>
-                    </div>
-                    <div class="activity-time">2 hours ago</div>
-                </li>
-                <li class="activity-item">
-                    <div class="activity-icon green-icon">
-                        <i class="fas fa-check-circle"></i>
-                    </div>
-                    <div class="activity-details">
-                        <h4>Assignment Graded</h4>
-                        <p>Graded "Data Structures Assignment 3" for 42 students</p>
-                    </div>
-                    <div class="activity-time">Yesterday</div>
-                </li>
-                <li class="activity-item">
-                    <div class="activity-icon yellow-icon">
-                        <i class="fas fa-bullhorn"></i>
-                    </div>
-                    <div class="activity-details">
-                        <h4>New Announcement Posted</h4>
-                        <p>Posted "Midterm Exam Schedule" to all courses</p>
-                    </div>
-                    <div class="activity-time">2 days ago</div>
-                </li>
-                <li class="activity-item">
-                    <div class="activity-icon purple-icon">
-                        <i class="fas fa-question-circle"></i>
-                    </div>
-                    <div class="activity-details">
-                        <h4>Student Question Answered</h4>
-                        <p>Answered query about "Dynamic Programming" in Q&A</p>
-                    </div>
-                    <div class="activity-time">3 days ago</div>
-                </li>
-            </ul>
+            <!-- Recent Activity Section -->
+            <div class="recent-activity">
+                <h2 class="section-title"><i class="fas fa-history"></i> Recent Activity</h2>
+                <ul class="activity-list">
+                    <li class="activity-item">
+                        <div class="activity-icon blue-icon">
+                            <i class="fas fa-upload"></i>
+                        </div>
+                        <div class="activity-details">
+                            <h4>New Material Uploaded</h4>
+                            <p>Lecture slides for "Advanced Algorithms" uploaded</p>
+                        </div>
+                        <div class="activity-time">2 hours ago</div>
+                    </li>
+                    <li class="activity-item">
+                        <div class="activity-icon green-icon">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                        <div class="activity-details">
+                            <h4>Assignment Graded</h4>
+                            <p>Graded "Data Structures Assignment 3" for 42 students</p>
+                        </div>
+                        <div class="activity-time">Yesterday</div>
+                    </li>
+                    <li class="activity-item">
+                        <div class="activity-icon yellow-icon">
+                            <i class="fas fa-bullhorn"></i>
+                        </div>
+                        <div class="activity-details">
+                            <h4>New Announcement Posted</h4>
+                            <p>Posted "Midterm Exam Schedule" to all courses</p>
+                        </div>
+                        <div class="activity-time">2 days ago</div>
+                    </li>
+                    <li class="activity-item">
+                        <div class="activity-icon purple-icon">
+                            <i class="fas fa-question-circle"></i>
+                        </div>
+                        <div class="activity-details">
+                            <h4>Student Question Answered</h4>
+                            <p>Answered query about "Dynamic Programming" in Q&A</p>
+                        </div>
+                        <div class="activity-time">3 days ago</div>
+                    </li>
+                </ul>
+            </div>
         </div>
     </div>
 
-    <!-- Footer -->
+    <!-- Footer (full width) -->
     <div class="footer">
         <p>University Virtual Learning Environment &copy; 2023 | Staff Dashboard v2.1</p>
         <p>For technical support, contact: <a href="mailto:support@univle.edu" style="color:#4dabf7;">support@univle.edu</a></p>
     </div>
 
     <script>
-        // Simple interactivity for buttons
+        // Profile popup toggle
         document.addEventListener('DOMContentLoaded', function() {
+            const profileTrigger = document.getElementById('profileTrigger');
+            const profilePopup = document.getElementById('profilePopup');
+            
+            // Toggle popup on click
+            profileTrigger.addEventListener('click', function(e) {
+                e.stopPropagation();
+                profilePopup.classList.toggle('show');
+            });
+            
+            // Close popup when clicking outside
+            document.addEventListener('click', function(e) {
+                if (!profileTrigger.contains(e.target)) {
+                    profilePopup.classList.remove('show');
+                }
+            });
+            
+            // Change password link inside popup
+            document.getElementById('change-password-link').addEventListener('click', function(e) {
+                e.preventDefault();
+                window.location.href = 'reset_passwd.php';
+            });
+            
+            // Button interactions (existing code)
             const buttons = document.querySelectorAll('.action-btn');
             
             buttons.forEach(button => {
@@ -721,16 +848,11 @@
                     
                     // For demo purposes, show an alert for buttons without links
                     if (!this.querySelector('a') && !this.getAttribute('href')) {
-                        const cardTitle = this.closest('.dashboard-card').querySelector('.card-title').textContent;
+                        const cardTitle = this.closest('.dashboard-card')?.querySelector('.card-title')?.textContent || 'Dashboard';
                         const btnText = this.textContent.trim();
                         alert(`You clicked: ${btnText}\nFrom: ${cardTitle}\n\nThis is a demo. In the actual system, this would navigate to the appropriate page.`);
                     }
                 });
-            });
-            
-            // Change password button
-            document.getElementById('change-password-btn').addEventListener('click', function() {
-                window.location.href = 'reset_passwd.php';
             });
         });
     </script>
