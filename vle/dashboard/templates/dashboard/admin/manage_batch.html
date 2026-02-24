@@ -3455,7 +3455,7 @@
             
             if (response.ok) {
                 const result = await response.json();
-                showNotification('success', `${result.added || result.message || 'Student(s) added successfully!'}`);
+                showNotification('success', `${result.message || result.added || 'Student(s) added successfully!'}`);
                 setTimeout(() => {
                     closeCSVUploadModal();
                     location.reload();
@@ -3793,7 +3793,7 @@
             
             if (response.ok) {
                 const result = await response.json();
-                showNotification('success', `${result.added || result.message || 'Student(s) added successfully!'}`);
+                showNotification('success', `${result.message || result.added || 'Student(s) added successfully!'}`);
                 
                 setTimeout(() => {
                     closeAddStudentsModal();

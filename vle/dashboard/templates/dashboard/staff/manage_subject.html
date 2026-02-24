@@ -1,0 +1,1940 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ settings.SYSTEM_NAME }} - Manage Subject</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        body {
+            background-color: #f5f7fa;
+            color: #333;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Navigation Styles */
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 2rem;
+            background: linear-gradient(135deg, #2c3e50 0%, #4a6491 100%);
+            color: white;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .logo-container {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .logo {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #fff;
+            text-decoration: none;
+        }
+
+        .logo span {
+            color: #4dabf7;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+            list-style: none;
+        }
+
+        .nav-links a {
+            color: white;
+            text-decoration: none;
+            font-weight: 500;
+            padding: 0.5rem 0.8rem;
+            border-radius: 4px;
+            transition: all 0.3s ease;
+        }
+
+        .nav-links a:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .nav-links a.active {
+            background-color: #4dabf7;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: #4dabf7;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+        }
+
+        .user-name {
+            font-weight: 500;
+        }
+
+        .user-role {
+            font-size: 0.8rem;
+            opacity: 0.8;
+        }
+
+        /* Profile Popup Menu */
+        .profile-popup {
+            position: absolute;
+            top: 60px;
+            right: 0;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+            width: 260px;
+            padding: 1rem 0;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-10px);
+            transition: all 0.3s ease;
+            z-index: 1001;
+            border: 1px solid #f1f3f4;
+        }
+
+        .profile-popup.show {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        .popup-header {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid #f1f3f4;
+        }
+
+        .popup-name {
+            font-weight: 600;
+            color: #2c3e50;
+            font-size: 1.1rem;
+        }
+
+        .popup-email {
+            color: #6c757d;
+            font-size: 0.9rem;
+            margin-top: 0.2rem;
+        }
+
+        .popup-menu {
+            list-style: none;
+            padding: 0.5rem 0;
+        }
+
+        .popup-menu li {
+            padding: 0;
+        }
+
+        .popup-menu a {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            padding: 0.7rem 1.5rem;
+            color: #495057;
+            text-decoration: none;
+            transition: all 0.2s ease;
+            font-size: 0.95rem;
+        }
+
+        .popup-menu a:hover {
+            background-color: #f8f9fa;
+            color: #339af0;
+        }
+
+        .popup-menu i {
+            width: 20px;
+            color: #6c757d;
+            font-size: 1rem;
+        }
+
+        .popup-divider {
+            height: 1px;
+            background-color: #f1f3f4;
+            margin: 0.5rem 0;
+        }
+
+        /* Fixed-width container */
+        .fixed-container {
+            max-width: 1400px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 0 2rem;
+            flex: 1;
+        }
+
+        /* Main Content */
+        .page-container {
+            padding: 2rem 0;
+        }
+
+        /* Breadcrumb */
+        .breadcrumb {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+            color: #6c757d;
+            font-size: 0.95rem;
+        }
+
+        .breadcrumb a {
+            color: #4dabf7;
+            text-decoration: none;
+        }
+
+        .breadcrumb a:hover {
+            text-decoration: underline;
+        }
+
+        .breadcrumb i {
+            font-size: 0.8rem;
+            color: #adb5bd;
+        }
+
+        /* Subject Header Card */
+        .subject-header-card {
+            background: white;
+            border-radius: 16px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.07);
+            border: 1px solid #f1f3f4;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1.5rem;
+        }
+
+        .subject-info {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .subject-large-icon {
+            width: 80px;
+            height: 80px;
+            border-radius: 16px;
+            background: linear-gradient(135deg, #4dabf7 0%, #339af0 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 2.5rem;
+        }
+
+        .subject-details h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 0.5rem;
+        }
+
+        .subject-meta {
+            display: flex;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: #6c757d;
+            font-size: 0.95rem;
+        }
+
+        .meta-item i {
+            color: #4dabf7;
+            width: 18px;
+        }
+
+        .meta-item strong {
+            color: #2c3e50;
+            font-weight: 600;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #4dabf7 0%, #339af0 100%);
+            color: white;
+            border: none;
+            padding: 0.8rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.3s ease;
+            font-size: 0.95rem;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(77, 171, 247, 0.3);
+        }
+
+        .btn-outline {
+            background: white;
+            color: #4dabf7;
+            border: 2px solid #4dabf7;
+            padding: 0.8rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.3s ease;
+            font-size: 0.95rem;
+        }
+
+        .btn-outline:hover {
+            background: #4dabf7;
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(77, 171, 247, 0.2);
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+            border: 1px solid #f1f3f4;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .stat-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #4dabf7 0%, #339af0 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.3rem;
+        }
+
+        .stat-icon.green {
+            background: linear-gradient(135deg, #51cf66 0%, #40c057 100%);
+        }
+
+        .stat-icon.yellow {
+            background: linear-gradient(135deg, #ffd43b 0%, #fcc419 100%);
+        }
+
+        .stat-icon.purple {
+            background: linear-gradient(135deg, #9c36b5 0%, #862e9c 100%);
+        }
+
+        .stat-content h3 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #2c3e50;
+            line-height: 1.2;
+        }
+
+        .stat-content p {
+            color: #6c757d;
+            font-size: 0.9rem;
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 2rem;
+            border-bottom: 2px solid #e9ecef;
+            padding-bottom: 0;
+        }
+
+        .tab {
+            padding: 0.8rem 1.5rem;
+            background: transparent;
+            border: none;
+            color: #6c757d;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            position: relative;
+            transition: all 0.3s ease;
+            font-size: 1rem;
+        }
+
+        .tab i {
+            font-size: 1.1rem;
+        }
+
+        .tab:hover {
+            color: #4dabf7;
+        }
+
+        .tab.active {
+            color: #4dabf7;
+        }
+
+        .tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(135deg, #4dabf7 0%, #339af0 100%);
+            border-radius: 3px 3px 0 0;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Materials Section */
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .section-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #2c3e50;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .section-title i {
+            color: #4dabf7;
+        }
+
+        /* Materials Grid */
+        .materials-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .material-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+            border: 1px solid #f1f3f4;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .material-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+            border-color: #4dabf7;
+        }
+
+        .material-icon {
+            width: 45px;
+            height: 45px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #4dabf7 0%, #339af0 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.2rem;
+            margin-bottom: 1rem;
+        }
+
+        .material-icon.pdf {
+            background: linear-gradient(135deg, #ff6b6b 0%, #fa5252 100%);
+        }
+
+        .material-icon.video {
+            background: linear-gradient(135deg, #51cf66 0%, #40c057 100%);
+        }
+
+        .material-icon.link {
+            background: linear-gradient(135deg, #ffd43b 0%, #fcc419 100%);
+        }
+
+        .material-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 0.5rem;
+            padding-right: 2rem;
+        }
+
+        .material-meta {
+            display: flex;
+            gap: 1rem;
+            color: #6c757d;
+            font-size: 0.85rem;
+            margin-bottom: 1rem;
+        }
+
+        .material-meta i {
+            margin-right: 0.3rem;
+        }
+
+        .material-actions {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 1rem;
+            opacity: 0.7;
+            transition: opacity 0.3s ease;
+        }
+
+        .material-card:hover .material-actions {
+            opacity: 1;
+        }
+
+        .material-btn {
+            width: 35px;
+            height: 35px;
+            border-radius: 8px;
+            border: 1px solid #e9ecef;
+            background: white;
+            color: #6c757d;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+
+        .material-btn:hover {
+            background: #4dabf7;
+            color: white;
+            border-color: #4dabf7;
+        }
+
+        .material-btn.delete:hover {
+            background: #fa5252;
+            border-color: #fa5252;
+        }
+
+        .material-type {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            padding: 0.3rem 0.8rem;
+            border-radius: 30px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .type-pdf {
+            background: #fff5f5;
+            color: #fa5252;
+        }
+
+        .type-video {
+            background: #e6fcf5;
+            color: #40c057;
+        }
+
+        .type-link {
+            background: #fff9db;
+            color: #fcc419;
+        }
+
+        .type-doc {
+            background: #e7f5ff;
+            color: #339af0;
+        }
+
+        /* Upload Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.show {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 16px;
+            width: 90%;
+            max-width: 500px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+        }
+
+        .modal-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid #f1f3f4;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h2 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #2c3e50;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            color: #6c757d;
+            cursor: pointer;
+            transition: color 0.2s ease;
+        }
+
+        .modal-close:hover {
+            color: #fa5252;
+        }
+
+        .modal-body {
+            padding: 1.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #2c3e50;
+            font-weight: 500;
+            font-size: 0.95rem;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 0.8rem 1rem;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: #4dabf7;
+        }
+
+        .type-selector {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+        }
+
+        .type-option {
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            padding: 1rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .type-option:hover {
+            border-color: #4dabf7;
+            background: #f8f9fa;
+        }
+
+        .type-option.selected {
+            border-color: #4dabf7;
+            background: #e7f5ff;
+        }
+
+        .type-option i {
+            font-size: 1.5rem;
+            color: #4dabf7;
+            margin-bottom: 0.5rem;
+            display: block;
+        }
+
+        .type-option span {
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: #2c3e50;
+        }
+
+        .modal-footer {
+            padding: 1.5rem;
+            border-top: 1px solid #f1f3f4;
+            display: flex;
+            justify-content: flex-end;
+            gap: 1rem;
+        }
+
+        /* Assignments Table */
+        .assignments-table {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid #f1f3f4;
+        }
+
+        .table-header {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr 0.5fr;
+            background: #f8f9fa;
+            padding: 1rem 1.5rem;
+            font-weight: 600;
+            color: #2c3e50;
+            border-bottom: 2px solid #e9ecef;
+        }
+
+        .table-row {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr 0.5fr;
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid #f1f3f4;
+            align-items: center;
+        }
+
+        .table-row:last-child {
+            border-bottom: none;
+        }
+
+        .assignment-title {
+            font-weight: 500;
+            color: #2c3e50;
+        }
+
+        .assignment-status {
+            padding: 0.3rem 0.8rem;
+            border-radius: 30px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            display: inline-block;
+        }
+
+        .status-active {
+            background: #e6fcf5;
+            color: #40c057;
+        }
+
+        .status-pending {
+            background: #fff9db;
+            color: #fcc419;
+        }
+
+        .status-closed {
+            background: #f1f3f4;
+            color: #868e96;
+        }
+
+        .row-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .row-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            border: 1px solid #e9ecef;
+            background: white;
+            color: #6c757d;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+
+        .row-btn:hover {
+            background: #4dabf7;
+            color: white;
+            border-color: #4dabf7;
+        }
+
+        /* Discussion Section */
+        .discussion-container {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            border: 1px solid #f1f3f4;
+        }
+
+        .comment-box {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .comment-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #4dabf7;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            flex-shrink: 0;
+        }
+
+        .comment-input {
+            flex: 1;
+        }
+
+        .comment-input textarea {
+            width: 100%;
+            padding: 1rem;
+            border: 2px solid #e9ecef;
+            border-radius: 12px;
+            font-size: 0.95rem;
+            resize: vertical;
+            min-height: 100px;
+            transition: all 0.3s ease;
+        }
+
+        .comment-input textarea:focus {
+            outline: none;
+            border-color: #4dabf7;
+        }
+
+        .comment-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+
+        .discussion-thread {
+            margin-top: 2rem;
+        }
+
+        .comment-item {
+            display: flex;
+            gap: 1rem;
+            padding: 1.5rem 0;
+            border-bottom: 1px solid #f1f3f4;
+        }
+
+        .comment-item:last-child {
+            border-bottom: none;
+        }
+
+        .comment-content {
+            flex: 1;
+        }
+
+        .comment-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+        }
+
+        .comment-author {
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .comment-time {
+            color: #6c757d;
+            font-size: 0.85rem;
+        }
+
+        .comment-text {
+            color: #495057;
+            line-height: 1.6;
+            margin-bottom: 0.5rem;
+        }
+
+        .comment-reply {
+            color: #4dabf7;
+            font-size: 0.9rem;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+
+        .comment-reply:hover {
+            text-decoration: underline;
+        }
+
+        /* Empty State */
+        .empty-state {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 4rem 2rem;
+            background: white;
+            border-radius: 12px;
+            border: 2px dashed #e9ecef;
+        }
+
+        .empty-state i {
+            font-size: 4rem;
+            color: #4dabf7;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        .empty-state h3 {
+            font-size: 1.5rem;
+            color: #2c3e50;
+            margin-bottom: 0.5rem;
+        }
+
+        .empty-state p {
+            color: #6c757d;
+            margin-bottom: 2rem;
+        }
+
+        /* Footer */
+        .footer {
+            text-align: center;
+            padding: 1.5rem;
+            margin-top: 3rem;
+            color: #6c757d;
+            font-size: 0.9rem;
+            border-top: 1px solid #e9ecef;
+            background-color: #f5f7fa;
+            width: 100%;
+        }
+
+        .footer a {
+            color: #4dabf7;
+            text-decoration: none;
+        }
+
+        /* Loading spinner */
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            background: white;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 3000;
+            display: none;
+            align-items: center;
+            gap: 0.8rem;
+            min-width: 300px;
+        }
+
+        .notification.show {
+            display: flex;
+        }
+
+        .notification.success {
+            border-left: 4px solid #40c057;
+        }
+
+        .notification.error {
+            border-left: 4px solid #fa5252;
+        }
+
+        .notification i {
+            font-size: 1.2rem;
+        }
+
+        .notification.success i {
+            color: #40c057;
+        }
+
+        .notification.error i {
+            color: #fa5252;
+        }
+
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .materials-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .navbar {
+                flex-direction: column;
+                padding: 1rem;
+            }
+
+            .nav-links {
+                margin: 1rem 0;
+                flex-wrap: wrap;
+                justify-content: center;
+                gap: 1rem;
+            }
+
+            .fixed-container {
+                padding: 0 1rem;
+            }
+
+            .subject-header-card {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .subject-info {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .header-actions {
+                width: 100%;
+            }
+
+            .btn-primary {
+                flex: 1;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .materials-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .tabs {
+                overflow-x: auto;
+                white-space: nowrap;
+                width: 100%;
+            }
+
+            .table-header, .table-row {
+                grid-template-columns: 1.5fr 1fr 1fr 0.8fr 0.5fr;
+                font-size: 0.9rem;
+            }
+
+            .profile-popup {
+                right: 10px;
+                width: 240px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .table-header, .table-row {
+                grid-template-columns: 1fr;
+                gap: 0.5rem;
+            }
+
+            .table-header {
+                display: none;
+            }
+
+            .table-row {
+                padding: 1rem;
+                border-bottom: 2px solid #e9ecef;
+            }
+
+            .row-actions {
+                justify-content: flex-start;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo-container">
+            <a href="{% url 'dashboard:staff' %}" class="logo">{{ settings.SYSTEM_NAME }}</a>
+            <div class="nav-title">Manage Subject</div>
+        </div>
+        
+        <ul class="nav-links">
+            <li><a href="{% url 'dashboard:staff' %}"><i class="fas fa-home"></i> Dashboard</a></li>
+            <li><a href="{% url 'dashboard:manage_subjects' %}"><i class="fas fa-book"></i> Subjects</a></li>
+            <li><a href="#"><i class="fas fa-calendar-alt"></i> Schedule</a></li>
+            <li><a href="#"><i class="fas fa-envelope"></i> Messages</a></li>
+        </ul>
+        
+        <div class="user-info" id="profileTrigger">
+            <div class="user-avatar">{{ staff.avatar|default:'A' }}</div>
+            <div>
+                <div class="user-name">{{ staff.name|default:'Staff Member' }}</div>
+                <div class="user-role">{{ staff.staff_type|default:'Staff' }}</div>
+            </div>
+            
+            <div class="profile-popup" id="profilePopup">
+                <div class="popup-header">
+                    <div class="popup-name">{{ staff.name|default:'Staff Member' }}</div>
+                    <div class="popup-email">{{ request.user.email|default:'staff@university.edu' }}</div>
+                </div>
+                <ul class="popup-menu">
+                    <li><a href="#"><i class="fas fa-user-circle"></i> My Profile</a></li>
+                    <li><a href="#" id="change-password-link"><i class="fas fa-key"></i> Change Password</a></li>
+                    <li><a href="#"><i class="fas fa-calendar-alt"></i> My Schedule</a></li>
+                    <li><a href="#"><i class="fas fa-cog"></i> Account Settings</a></li>
+                    <li class="popup-divider"></li>
+                    <li><a href="{% url 'Users:logout' %}"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="fixed-container">
+        <div class="page-container">
+            <!-- Breadcrumb -->
+            <div class="breadcrumb">
+                <a href="{% url 'dashboard:staff' %}">Dashboard</a>
+                <i class="fas fa-chevron-right"></i>
+                <a href="{% url 'dashboard:manage_subjects' %}">Subjects</a>
+                <i class="fas fa-chevron-right"></i>
+                <span>{{ batch_subject.subject.name }}</span>
+            </div>
+
+            <!-- Subject Header Card -->
+            <div class="subject-header-card">
+                <div class="subject-info">
+                    <div class="subject-large-icon">
+                        <i class="fas fa-book-open"></i>
+                    </div>
+                    <div class="subject-details">
+                        <h1>{{ batch_subject.subject.name }}</h1>
+                        <div class="subject-meta">
+                            <span class="meta-item">
+                                <i class="fas fa-code"></i>
+                                <strong>{{ batch_subject.subject.code }}</strong>
+                            </span>
+                            <span class="meta-item">
+                                <i class="fas fa-users"></i>
+                                {{ batch_subject.batch.name }}
+                            </span>
+                            <span class="meta-item">
+                                <i class="fas fa-calendar-alt"></i>
+                                Year {{ batch_subject.batch.progression_year }}
+                            </span>
+                            <span class="meta-item">
+                                <i class="fas fa-star"></i>
+                                {{ batch_subject.subject.credits }} Credits
+                            </span>
+                            <span class="meta-item">
+                                <i class="fas fa-clock"></i>
+                                {{ batch_subject.subject.total_hours }} Hours
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                <div class="header-actions">
+                    <button class="btn-primary" id="addMaterialBtn">
+                        <i class="fas fa-plus"></i> Add Material
+                    </button>
+                </div>
+            </div>
+
+            <!-- Stats Grid -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-file"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3>24</h3>
+                        <p>Total Materials</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon green">
+                        <i class="fas fa-video"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3>12</h3>
+                        <p>Video Lectures</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon yellow">
+                        <i class="fas fa-file-pdf"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3>8</h3>
+                        <p>PDF Documents</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon purple">
+                        <i class="fas fa-tasks"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3>6</h3>
+                        <p>Assignments</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tabs -->
+            <div class="tabs">
+                <button class="tab active" data-tab="materials">
+                    <i class="fas fa-file"></i> Materials
+                </button>
+                <button class="tab" data-tab="assignments">
+                    <i class="fas fa-tasks"></i> Assignments
+                </button>
+                <button class="tab" data-tab="discussion">
+                    <i class="fas fa-comments"></i> Discussion
+                </button>
+                <button class="tab" data-tab="students">
+                    <i class="fas fa-users"></i> Students
+                </button>
+            </div>
+
+            <!-- Materials Tab Content -->
+            <div class="tab-content active" id="materials-tab">
+                <div class="section-header">
+                    <h2 class="section-title">
+                        <i class="fas fa-file"></i> Course Materials
+                    </h2>
+                    <button class="btn-primary" id="addMaterialBtn2">
+                        <i class="fas fa-plus"></i> Upload Material
+                    </button>
+                </div>
+
+                <div class="materials-grid">
+                {% if materials %}
+                    {% for material in materials %}
+                        
+                            {% if material.material_type == "pdf" %}
+                                <div class="material-card">
+                                    <div class="material-icon pdf">
+                                        <i class="fas fa-file-pdf"></i>
+                                    </div>
+                                    <span class="material-type type-pdf">PDF</span>
+                                    <h3 class="material-title">{{ material.title }}</h3>
+                                    <div class="material-meta">
+                                        <span><i class="fas fa-calendar"></i> {{ material.uploaded_on|date:"j M Y" }} {{ material.uploaded_on|time:"H:i" }}</span>
+                                        <span><i class="fas fa-file-size"></i>{{ material.file_detail }}</span>
+                                    </div>
+                                    <div class="material-actions">
+                                        <button class="material-btn" title="View">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                        <button class="material-btn" title="Download">
+                                            <i class="fas fa-download"></i>
+                                        </button>
+                                        <button class="material-btn" title="Edit">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button class="material-btn delete" title="Delete">
+                                            <i class="fas fa-trash"></i>
+                                        </button>     
+                                    </div>
+                                </div>
+                            {% elif material.material_type == "vid" %}
+                                <div class="material-card">
+                                    <div class="material-icon video">
+                                        <i class="fas fa-video"></i>
+                                    </div>
+                                    <span class="material-type type-video">VIDEO</span>
+                                    <h3 class="material-title">{{ material.title }}</h3>
+                                    <div class="material-meta">
+                                        <span><i class="fas fa-calendar"></i> {{ material.uploaded_on|date:"j M Y" }} {{ material.uploaded_on|time:"H:i" }}</span>
+                                        <span><i class="fas fa-clock"></i>{{ material.file_detail }}</span>
+                                    </div>
+                                    <div class="material-actions">
+                                        <button class="material-btn" title="Download">
+                                            <i class="fas fa-download"></i>
+                                        </button>
+                                        <button class="material-btn" title="Play">
+                                            <i class="fas fa-play"></i>
+                                        </button>
+                                        <button class="material-btn" title="Edit">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button class="material-btn delete" title="Delete">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </div>                       
+                            {% endif %}
+
+                    {% endfor %}
+                {% else %}
+                <!-- Material Card 1 -->
+                    <div class="material-card">
+                        <div class="material-icon pdf">
+                            <i class="fas fa-file-pdf"></i>
+                        </div>
+                        <span class="material-type type-pdf">PDF</span>
+                        <h3 class="material-title">Introduction to Subject - Lecture Notes</h3>
+                        <div class="material-meta">
+                            <span><i class="fas fa-calendar"></i> 15 Jan 2024</span>
+                            <span><i class="fas fa-file-size"></i> 2.4 MB</span>
+                        </div>
+                        <div class="material-actions">
+                            <button class="material-btn" title="Delete">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            <button class="material-btn" title="Download">
+                                <i class="fas fa-download"></i>
+                            </button>
+                            <button class="material-btn" title="Edit">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="material-btn delete" title="Delete">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Material Card 2 -->
+                    <div class="material-card">
+                        <div class="material-icon video">
+                            <i class="fas fa-video"></i>
+                        </div>
+                        <span class="material-type type-video">VIDEO</span>
+                        <h3 class="material-title">Week 1 - Lecture Recording</h3>
+                        <div class="material-meta">
+                            <span><i class="fas fa-calendar"></i> 16 Jan 2024</span>
+                            <span><i class="fas fa-clock"></i> 45 min</span>
+                        </div>
+                        <div class="material-actions">
+                            <button class="material-btn" title="Download">
+                                <i class="fas fa-download"></i>
+                            </button>
+                            <button class="material-btn" title="Play">
+                                <i class="fas fa-play"></i>
+                            </button>
+                            <button class="material-btn" title="Edit">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="material-btn delete" title="Delete">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Material Card 3 -->
+                    <div class="material-card">
+                        <div class="material-icon link">
+                            <i class="fas fa-link"></i>
+                        </div>
+                        <span class="material-type type-link">LINK</span>
+                        <h3 class="material-title">External Resource - Practice Problems</h3>
+                        <div class="material-meta">
+                            <span><i class="fas fa-calendar"></i> 18 Jan 2024</span>
+                            <span><i class="fas fa-globe"></i> khanacademy.org</span>
+                        </div>
+                        <div class="material-actions">
+                            <button class="material-btn" title="Open Link">
+                                <i class="fas fa-external-link-alt"></i>
+                            </button>
+                            <button class="material-btn" title="Edit">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="material-btn delete" title="Delete">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Material Card 4 -->
+                    <div class="material-card">
+                        <div class="material-icon">
+                            <i class="fas fa-file-word"></i>
+                        </div>
+                        <span class="material-type type-doc">DOC</span>
+                        <h3 class="material-title">Lab Manual - Week 1 Exercises</h3>
+                        <div class="material-meta">
+                            <span><i class="fas fa-calendar"></i> 20 Jan 2024</span>
+                            <span><i class="fas fa-file-size"></i> 1.2 MB</span>
+                        </div>
+                        <div class="material-actions">
+                            <button class="material-btn" title="Download">
+                                <i class="fas fa-download"></i>
+                            </button>
+                            <button class="material-btn" title="Edit">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="material-btn delete" title="Delete">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+
+
+                {% endif %}
+                
+            </div>
+
+            <!-- Assignments Tab Content -->
+            <div class="tab-content" id="assignments-tab">
+                <div class="section-header">
+                    <h2 class="section-title">
+                        <i class="fas fa-tasks"></i> Assignments
+                    </h2>
+                    <button class="btn-primary">
+                        <i class="fas fa-plus"></i> Create Assignment
+                    </button>
+                </div>
+
+                <div class="assignments-table">
+                    <div class="table-header">
+                        <div>Assignment Title</div>
+                        <div>Due Date</div>
+                        <div>Submissions</div>
+                        <div>Status</div>
+                        <div>Actions</div>
+                    </div>
+
+                    <div class="table-row">
+                        <div class="assignment-title">Assignment 1: Basic Concepts</div>
+                        <div>25 Jan 2024</div>
+                        <div>32/45</div>
+                        <div><span class="assignment-status status-active">Active</span></div>
+                        <div class="row-actions">
+                            <button class="row-btn" title="View">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            <button class="row-btn" title="Edit">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="row-btn" title="Grade">
+                                <i class="fas fa-check"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="table-row">
+                        <div class="assignment-title">Assignment 2: Problem Set</div>
+                        <div>1 Feb 2024</div>
+                        <div>18/45</div>
+                        <div><span class="assignment-status status-active">Active</span></div>
+                        <div class="row-actions">
+                            <button class="row-btn" title="View">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            <button class="row-btn" title="Edit">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="row-btn" title="Grade">
+                                <i class="fas fa-check"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="table-row">
+                        <div class="assignment-title">Midterm Project</div>
+                        <div>15 Feb 2024</div>
+                        <div>5/45</div>
+                        <div><span class="assignment-status status-pending">Upcoming</span></div>
+                        <div class="row-actions">
+                            <button class="row-btn" title="View">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            <button class="row-btn" title="Edit">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="row-btn" title="Grade">
+                                <i class="fas fa-check"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="table-row">
+                        <div class="assignment-title">Assignment 3: Advanced Topics</div>
+                        <div>5 Mar 2024</div>
+                        <div>0/45</div>
+                        <div><span class="assignment-status status-closed">Draft</span></div>
+                        <div class="row-actions">
+                            <button class="row-btn" title="View">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            <button class="row-btn" title="Edit">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="row-btn" title="Publish">
+                                <i class="fas fa-cloud-upload-alt"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Discussion Tab Content -->
+            <div class="tab-content" id="discussion-tab">
+                <div class="section-header">
+                    <h2 class="section-title">
+                        <i class="fas fa-comments"></i> Discussion Forum
+                    </h2>
+                </div>
+
+                <div class="discussion-container">
+                    <div class="comment-box">
+                        <div class="comment-avatar">{{ staff.name|default:'S'|first }}</div>
+                        <div class="comment-input">
+                            <textarea placeholder="Start a discussion or ask a question..."></textarea>
+                            <div class="comment-actions">
+                                <button class="btn-outline">Cancel</button>
+                                <button class="btn-primary">Post Comment</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="discussion-thread">
+                        <div class="comment-item">
+                            <div class="comment-avatar">J</div>
+                            <div class="comment-content">
+                                <div class="comment-header">
+                                    <span class="comment-author">John Smith</span>
+                                    <span class="comment-time">2 hours ago</span>
+                                </div>
+                                <div class="comment-text">
+                                    Can someone explain the concept from Chapter 3? I'm having trouble understanding the application.
+                                </div>
+                                <div class="comment-reply">
+                                    <i class="fas fa-reply"></i> Reply
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="comment-item">
+                            <div class="comment-avatar">M</div>
+                            <div class="comment-content">
+                                <div class="comment-header">
+                                    <span class="comment-author">Mary Johnson</span>
+                                    <span class="comment-time">1 hour ago</span>
+                                </div>
+                                <div class="comment-text">
+                                    @John, check the video lecture from Week 3. It explains that concept really well with examples.
+                                </div>
+                                <div class="comment-reply">
+                                    <i class="fas fa-reply"></i> Reply
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="comment-item">
+                            <div class="comment-avatar">A</div>
+                            <div class="comment-content">
+                                <div class="comment-header">
+                                    <span class="comment-author">Ahmed Khan</span>
+                                    <span class="comment-time">30 minutes ago</span>
+                                </div>
+                                <div class="comment-text">
+                                    When is the next assignment due? I don't see it in the schedule.
+                                </div>
+                                <div class="comment-reply">
+                                    <i class="fas fa-reply"></i> Reply
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Students Tab Content -->
+            <div class="tab-content" id="students-tab">
+                <div class="section-header">
+                    <h2 class="section-title">
+                        <i class="fas fa-users"></i> Enrolled Students
+                    </h2>
+                    <button class="btn-primary">
+                        <i class="fas fa-user-plus"></i> Add Student
+                    </button>
+                </div>
+
+                <div class="assignments-table">
+                    <div class="table-header">
+                        <div>Student Name</div>
+                        <div>Student ID</div>
+                        <div>Last Active</div>
+                        <div>Actions</div>
+                    </div>
+                    
+                    {% if students %}
+                        {% for student in students %}
+                            <div class="table-row">
+                                <div>{{ student.name }}</div>
+                                <div>{{ student.username }}</div>
+                                <div>{{ student.last_activity|default:'Today' }}</div>
+                                <div class="row-actions">
+                                    <button class="row-btn" title="View Profile">
+                                        <i class="fas fa-user"></i>
+                                    </button>
+                                    <button class="row-btn" title="Message">
+                                        <i class="fas fa-envelope"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="empty-state">
+                            <i class="fas fa-users"></i>
+                            <h3>No Students Enrolled</h3>
+                            <p>There are no students enrolled in this subject yet.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Upload Material Modal -->
+    <div class="modal" id="uploadModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-upload"></i> Upload Material</h2>
+                <button class="modal-close" id="closeModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="uploadForm">
+                    <div class="form-group">
+                        <label class="form-label">Material Title</label>
+                        <input type="text" class="form-control" id="materialTitle" placeholder="e.g., Lecture Notes - Chapter 1" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Material Type</label>
+                        <div class="type-selector" id="typeSelector">
+                            <div class="type-option selected" data-type="pdf">
+                                <i class="fas fa-file-pdf"></i>
+                                <span>PDF</span>
+                            </div>
+                            <div class="type-option" data-type="video">
+                                <i class="fas fa-video"></i>
+                                <span>Video</span>
+                            </div>
+                            <div class="type-option" data-type="link">
+                                <i class="fas fa-link"></i>
+                                <span>Link</span>
+                            </div>
+                            <div class="type-option" data-type="document">
+                                <i class="fas fa-file-word"></i>
+                                <span>Document</span>
+                            </div>
+                        </div>
+                        <input type="hidden" id="materialType" value="pdf">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Description</label>
+                        <textarea class="form-control" id="materialDescription" rows="3" placeholder="Brief description of the material..."></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" id="fileLabel">File</label>
+                        <input type="file" class="form-control" id="fileInput">
+                        <small style="color: #6c757d;" id="urlHint" style="display: none;">Enter URL for links</small>
+                        <input type="url" class="form-control" id="urlInput" style="margin-top: 0.5rem; display: none;" placeholder="https://...">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-outline" id="cancelModal">Cancel</button>
+                <button class="btn-primary" id="uploadBtn">
+                    <span id="uploadText">Upload Material</span>
+                    <span id="uploadSpinner" class="spinner" style="display: none;"></span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification -->
+    <div class="notification" id="notification">
+        <i class="fas fa-check-circle"></i>
+        <span id="notificationMessage"></span>
+    </div>
+
+    <div class="footer">
+        <p>University Virtual Learning Environment &copy; 2023 | Subject Management v1.0</p>
+        <p>For technical support, contact: <a href="mailto:support@univle.edu">support@univle.edu</a></p>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Profile popup toggle
+            const profileTrigger = document.getElementById('profileTrigger');
+            const profilePopup = document.getElementById('profilePopup');
+            
+            if (profileTrigger) {
+                profileTrigger.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    profilePopup.classList.toggle('show');
+                });
+            }
+            
+            document.addEventListener('click', function(e) {
+                if (profilePopup && !profileTrigger.contains(e.target)) {
+                    profilePopup.classList.remove('show');
+                }
+            });
+
+            // Tab switching
+            const tabs = document.querySelectorAll('.tab');
+            const tabContents = document.querySelectorAll('.tab-content');
+
+            tabs.forEach(tab => {
+                tab.addEventListener('click', function() {
+                    const tabId = this.dataset.tab;
+                    
+                    tabs.forEach(t => t.classList.remove('active'));
+                    tabContents.forEach(c => c.classList.remove('active'));
+                    
+                    this.classList.add('active');
+                    document.getElementById(tabId + '-tab').classList.add('active');
+                });
+            });
+
+            // Modal functionality
+            const modal = document.getElementById('uploadModal');
+            const addBtns = document.querySelectorAll('#addMaterialBtn, #addMaterialBtn2');
+            const closeBtn = document.getElementById('closeModal');
+            const cancelBtn = document.getElementById('cancelModal');
+            const typeOptions = document.querySelectorAll('.type-option');
+            const materialType = document.getElementById('materialType');
+            const fileInput = document.getElementById('fileInput');
+            const urlInput = document.getElementById('urlInput');
+            const fileLabel = document.getElementById('fileLabel');
+            const urlHint = document.getElementById('urlHint');
+            const uploadBtn = document.getElementById('uploadBtn');
+            const uploadText = document.getElementById('uploadText');
+            const uploadSpinner = document.getElementById('uploadSpinner');
+            const notification = document.getElementById('notification');
+            const notificationMessage = document.getElementById('notificationMessage');
+
+            // Get subject ID from URL or data attribute
+            const subjectId = '{{ batch_subject.id }}';
+
+            // Open modal
+            addBtns.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    modal.classList.add('show');
+                    // Reset form
+                    document.getElementById('uploadForm').reset();
+                    typeOptions.forEach(o => o.classList.remove('selected'));
+                    typeOptions[0].classList.add('selected');
+                    materialType.value = 'pdf';
+                    fileInput.style.display = 'block';
+                    urlInput.style.display = 'none';
+                    urlHint.style.display = 'none';
+                    fileLabel.textContent = 'File';
+                });
+            });
+
+            // Close modal functions
+            function closeModal() {
+                modal.classList.remove('show');
+            }
+
+            if (closeBtn) closeBtn.addEventListener('click', closeModal);
+            if (cancelBtn) cancelBtn.addEventListener('click', closeModal);
+
+            window.addEventListener('click', function(e) {
+                if (e.target === modal) {
+                    closeModal();
+                }
+            });
+
+            // Material type selector
+            typeOptions.forEach(option => {
+                option.addEventListener('click', function() {
+                    typeOptions.forEach(o => o.classList.remove('selected'));
+                    this.classList.add('selected');
+                    const type = this.dataset.type;
+                    materialType.value = type;
+                    
+                    // Toggle file/url inputs based on type
+                    if (type === 'link') {
+                        fileInput.style.display = 'none';
+                        urlInput.style.display = 'block';
+                        urlHint.style.display = 'block';
+                        fileLabel.textContent = 'URL';
+                        fileInput.required = false;
+                        urlInput.required = true;
+                    } else {
+                        fileInput.style.display = 'block';
+                        urlInput.style.display = 'none';
+                        urlHint.style.display = 'none';
+                        fileLabel.textContent = 'File';
+                        fileInput.required = true;
+                        urlInput.required = false;
+                    }
+                });
+            });
+
+            // Show notification
+            function showNotification(message, type = 'success') {
+                notification.className = 'notification show ' + type;
+                notificationMessage.textContent = message;
+                
+                if (type === 'success') {
+                    notification.querySelector('i').className = 'fas fa-check-circle';
+                } else {
+                    notification.querySelector('i').className = 'fas fa-exclamation-circle';
+                }
+                
+                setTimeout(() => {
+                    notification.classList.remove('show');
+                }, 3000);
+            }
+
+            // Upload material
+            uploadBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                
+                const title = document.getElementById('materialTitle').value;
+                const description = document.getElementById('materialDescription').value;
+                const type = materialType.value;
+                
+                if (!title) {
+                    showNotification('Please enter a material title', 'error');
+                    return;
+                }
+                
+                // Show loading state
+                uploadText.style.display = 'none';
+                uploadSpinner.style.display = 'inline-block';
+                uploadBtn.disabled = true;
+                
+                // Prepare form data
+                const formData = new FormData();
+                formData.append('title', title);
+                formData.append('description', description);
+                formData.append('type', type);
+                
+                if (type === 'link') {
+                    const url = urlInput.value;
+                    if (!url) {
+                        showNotification('Please enter a URL', 'error');
+                        uploadText.style.display = 'inline';
+                        uploadSpinner.style.display = 'none';
+                        uploadBtn.disabled = false;
+                        return;
+                    }
+                    formData.append('url', url);
+                } else {
+                    const file = fileInput.files[0];
+                    if (!file) {
+                        showNotification('Please select a file', 'error');
+                        uploadText.style.display = 'inline';
+                        uploadSpinner.style.display = 'none';
+                        uploadBtn.disabled = false;
+                        return;
+                    }
+                    formData.append('file', file);
+                }
+                
+                // Send to API endpoint
+                fetch(`/api/material/${subjectId}/upload`, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-CSRFToken': '{{ csrf_token }}'
+                    }
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Upload failed');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    showNotification('Material uploaded successfully!', 'success');
+                    closeModal();
+                    // Refresh materials list here if needed
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showNotification('Failed to upload material. Please try again.', 'error');
+                })
+                .finally(() => {
+                    uploadText.style.display = 'inline';
+                    uploadSpinner.style.display = 'none';
+                    uploadBtn.disabled = false;
+                });
+            });
+
+            // Change password link
+            const changePasswordLink = document.getElementById('change-password-link');
+            if (changePasswordLink) {
+                changePasswordLink.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    window.location.href = 'reset_passwd.php';
+                });
+            }
+        });
+    </script>
+</body>
+</html>

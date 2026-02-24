@@ -622,9 +622,6 @@
                     <button class="btn-secondary">
                         <i class="fas fa-download"></i> Export
                     </button>
-                    <button class="btn-primary">
-                        <i class="fas fa-plus"></i> Add Subject
-                    </button>
                 </div>
             </div>
 
@@ -645,7 +642,7 @@
                 <!-- 4-Column Grid of BatchSubject objects -->
                 <div class="subjects-grid">
                     {% for batch_subject in subjects %}
-                        <a href="/manage_subject/{{ batch_subject.id }}/" class="subject-card">
+                        <a href="/dashboard/staff/manage_subject/{{ batch_subject.id }}/" class="subject-card">
                             <div class="subject-header">
                                 <div class="subject-icon">
                                     <i class="fas fa-book-open"></i>
@@ -734,17 +731,8 @@
                     }, 150);
                 });
             });
-
-            // Add Subject button
-            const addButtons = document.querySelectorAll('.btn-primary');
-            addButtons.forEach(button => {
-                button.addEventListener('click', function() {
-                    if (this.textContent.includes('Add Subject') || this.textContent.includes('Add Your First Subject')) {
-                        alert('Redirecting to add subject form...');
-                        // window.location.href = '/add-subject/';
-                    }
-                });
-            });
+n
+            
 
             // Export button
             const exportBtn = document.querySelector('.btn-secondary');

@@ -169,6 +169,16 @@
                     <div class="form-help">Maximum file size allowed for uploads</div>
                 </div>
 
+                <!-- MAX_UPLOAD_PER_COURSE_MB -->
+                <div class="form-group setting-item" data-key="MAX_UPLOAD_PER_COURSE_MB" data-type="int">
+                    <label class="form-label">MAX UPLOAD PER COURSE (MB)</label>
+                    <input type="number" 
+                           class="form-control setting-input" 
+                           value="{{ settings.MAX_UPLOAD_PER_COURSE_MB|default:100 }}"
+                           min="100" max="2000">
+                    <div class="form-help">Maximum Allcated size for COURSE materials</div>
+                </div>
+
                 <!-- ALLOWED_FILE_EXTENSIONS -->
                 <div class="form-group setting-item" data-key="ALLOWED_FILE_EXTENSIONS" data-type="str">
                     <label class="form-label">Allowed File Extensions</label>

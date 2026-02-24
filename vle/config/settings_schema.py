@@ -66,15 +66,25 @@ SETTINGS_SCHEMA = {
 
     # -------- Uploads --------
     "MAX_UPLOAD_MB": {
-        "default": 10,
+        "default": 100,
         "type": "int",
         "rules": {
             "min": 1,
             "max": 200,
         },
     },
+
+    "MAX_UPLOAD_PER_COURSE_MB":{
+        "default": 1000,
+        "type": "int",
+        "rules": {
+            "min": 100,
+            "max": 2000,
+        },
+    },
+
     "ALLOWED_FILE_EXTENSIONS": {
-        "default": ".pdf,.doc,.docx,.jpg,.jpeg,.png",
+        "default": ".pdf,.doc,.docx,.jpg,.jpeg,.png,.mp4,.mkv",
         "type": "str",
         "rules": {
             "format": "csv_extensions",
