@@ -2,6 +2,7 @@ from django.db import models,transaction
 from pymediainfo import MediaInfo
 from django.core.exceptions import ValidationError
 from config.config import get_setting
+from urllib.parse import urlparse
 
 
 semesters = [1.1,1.2,2.1,2.2,3.1,3.2,4.1,4.2]
@@ -181,7 +182,7 @@ class  LectureMaterials(models.Model):
         
         if self.material_type == 'link':
             if self.external_url:
-                return self.external_url
+                return urlparse(self.external_url).hostname
             
             return None
 

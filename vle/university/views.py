@@ -6,6 +6,9 @@ from . import models as university_models,services as university_services
 from django.http.request import QueryDict
 from django.http import HttpResponse
 from Users import services as user_services
+import mimetypes
+from django.http import FileResponse,StreamingHttpResponse
+import os
 
 @login_required(login_url='Users:login')
 def manage_course(request,id):
@@ -232,3 +235,91 @@ def manage_batch(request,id:int):
         context['can_advance'] = True
     
     return render(request,'dashboard/admin/manage_batch.html',context)
+
+
+#HttpResponseForbidden
+@login_required(login_url='Users:login')
+def download_material(request,id):
+    material = get_object_or_404(university_models.LectureMaterials,id=id)
+
+    content_type, _ = mimetypes.guess_type(material.file.name)
+    content_type = content_type or "application/octet-stream"
+
+    resp = FileResponse(material.file.open("rb"), as_attachment=True, content_type=content_type)
+
+    filename = material.file.name.split("/")[-1]
+    resp["Content-Disposition"] = f'attachment; filename="{filename}"'
+    return resp
+
+
+#HttpResponseForbidden
+@login_required(login_url='Users:login')
+def view_material(request,id):
+    material = get_object_or_404(university_models.LectureMaterials,id=id)
+
+    content_type, _ = mimetypes.guess_type(material.file.name)
+    content_type = content_type or "application/octet-stream"
+
+    resp = FileResponse(material.file.open("rb"), content_type=content_type)
+    filename = material.file.name.split("/")[-1]
+    resp["Content-Disposition"] = f'inline; filename="{filename}"'
+    return resp
+
+
+
+def stream_material_video(request,id):
+    material = get_object_or_404(university_models.LectureMaterials, id=id, material_type="vid")
+
+    path = material.file.path
+    file_size = os.path.getsize(path)
+
+    content_type, _ = mimetypes.guess_type(path)
+    content_type = content_type or "video/mp4"
+
+    range_header = request.META.get("HTTP_RANGE", "")
+
+    if not range_header:
+        resp = StreamingHttpResponse(open(path, "rb"), content_type=content_type)
+        resp["Content-Length"] = str(file_size)
+        resp["Accept-Ranges"] = "bytes"
+        return resp
+
+    try:
+        units, range_spec = range_header.split("=")
+        if units.strip() != "bytes":
+            return HttpResponse(status=416)
+
+        start_str, end_str = range_spec.split("-")
+        start = int(start_str) if start_str else 0
+        end = int(end_str) if end_str else file_size - 1
+
+        if start >= file_size or start > end:
+            return HttpResponse(status=416)
+
+        end = min(end, file_size - 1)
+    except Exception:
+        return HttpResponse(status=416)
+
+    length = end - start + 1
+
+    def file_iterator(file_path, offset, length, chunk_size=8192):
+        with open(file_path, "rb") as f:
+            f.seek(offset)
+            remaining = length
+            while remaining > 0:
+                chunk = f.read(min(chunk_size, remaining))
+                if not chunk:
+                    break
+                remaining -= len(chunk)
+                yield chunk
+
+    resp = StreamingHttpResponse(
+        file_iterator(path, start, length),
+        status=206,
+        content_type=content_type
+    )
+    resp["Content-Length"] = str(length)
+    resp["Content-Range"] = f"bytes {start}-{end}/{file_size}"
+    resp["Accept-Ranges"] = "bytes"
+    return resp
+

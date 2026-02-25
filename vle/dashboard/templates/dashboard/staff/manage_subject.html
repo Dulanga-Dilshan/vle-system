@@ -6,6 +6,8 @@
     <title>{{ settings.SYSTEM_NAME }} - Manage Subject</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://vjs.zencdn.net/8.5.2/video-js.css" rel="stylesheet" />
+    <script src="https://vjs.zencdn.net/8.5.2/video.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -332,6 +334,26 @@
             box-shadow: 0 6px 12px rgba(77, 171, 247, 0.2);
         }
 
+        .btn-danger {
+            background: linear-gradient(135deg, #ff6b6b 0%, #fa5252 100%);
+            color: white;
+            border: none;
+            padding: 0.8rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.3s ease;
+            font-size: 0.95rem;
+        }
+
+        .btn-danger:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(250, 82, 82, 0.3);
+        }
+
         /* Stats Grid */
         .stats-grid {
             display: grid;
@@ -526,6 +548,7 @@
             color: #6c757d;
             font-size: 0.85rem;
             margin-bottom: 1rem;
+            flex-wrap: wrap;
         }
 
         .material-meta i {
@@ -556,6 +579,7 @@
             align-items: center;
             justify-content: center;
             transition: all 0.2s ease;
+            text-decoration: none;
         }
 
         .material-btn:hover {
@@ -567,6 +591,11 @@
         .material-btn.delete:hover {
             background: #fa5252;
             border-color: #fa5252;
+        }
+
+        .material-btn.view:hover {
+            background: #20c997;
+            border-color: #20c997;
         }
 
         .material-type {
@@ -600,7 +629,7 @@
             color: #339af0;
         }
 
-        /* Upload Modal */
+        /* Upload/Edit Modal */
         .modal {
             display: none;
             position: fixed;
@@ -634,6 +663,10 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            position: sticky;
+            top: 0;
+            background: white;
+            z-index: 10;
         }
 
         .modal-header h2 {
@@ -688,6 +721,11 @@
             border-color: #4dabf7;
         }
 
+        .form-control:disabled, .form-control[readonly] {
+            background: #f8f9fa;
+            cursor: not-allowed;
+        }
+
         .type-selector {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
@@ -713,6 +751,12 @@
             background: #e7f5ff;
         }
 
+        .type-option.disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            background: #f8f9fa;
+        }
+
         .type-option i {
             font-size: 1.5rem;
             color: #4dabf7;
@@ -732,6 +776,113 @@
             display: flex;
             justify-content: flex-end;
             gap: 1rem;
+            position: sticky;
+            bottom: 0;
+            background: white;
+        }
+
+        /* Video Player Modal */
+        .video-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.95);
+            z-index: 4000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .video-modal.show {
+            display: flex;
+        }
+
+        .video-modal-content {
+            width: 90%;
+            max-width: 1000px;
+            background: #000;
+            border-radius: 12px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .video-modal-header {
+            padding: 1rem;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: white;
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 10;
+        }
+
+        .video-modal-header h3 {
+            font-size: 1.1rem;
+            font-weight: 500;
+            margin-left: 1rem;
+        }
+
+        .video-close {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.8rem;
+            cursor: pointer;
+            padding: 0 1rem;
+            transition: color 0.2s ease;
+        }
+
+        .video-close:hover {
+            color: #fa5252;
+        }
+
+        .video-wrapper {
+            width: 100%;
+            aspect-ratio: 16/9;
+        }
+
+        .video-js {
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Empty State */
+        .empty-state {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 4rem 2rem;
+            background: white;
+            border-radius: 12px;
+            border: 2px dashed #e9ecef;
+        }
+
+        .empty-state i {
+            font-size: 4rem;
+            color: #4dabf7;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        .empty-state h3 {
+            font-size: 1.5rem;
+            color: #2c3e50;
+            margin-bottom: 0.5rem;
+        }
+
+        .empty-state p {
+            color: #6c757d;
+            margin-bottom: 1rem;
+        }
+
+        .empty-state .btn-primary {
+            display: inline-flex;
+            margin-top: 1rem;
         }
 
         /* Assignments Table */
@@ -925,34 +1076,6 @@
             text-decoration: underline;
         }
 
-        /* Empty State */
-        .empty-state {
-            grid-column: 1 / -1;
-            text-align: center;
-            padding: 4rem 2rem;
-            background: white;
-            border-radius: 12px;
-            border: 2px dashed #e9ecef;
-        }
-
-        .empty-state i {
-            font-size: 4rem;
-            color: #4dabf7;
-            margin-bottom: 1rem;
-            opacity: 0.5;
-        }
-
-        .empty-state h3 {
-            font-size: 1.5rem;
-            color: #2c3e50;
-            margin-bottom: 0.5rem;
-        }
-
-        .empty-state p {
-            color: #6c757d;
-            margin-bottom: 2rem;
-        }
-
         /* Footer */
         .footer {
             text-align: center;
@@ -993,11 +1116,23 @@
             border-radius: 8px;
             background: white;
             box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-            z-index: 3000;
+            z-index: 5000;
             display: none;
             align-items: center;
             gap: 0.8rem;
             min-width: 300px;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
         }
 
         .notification.show {
@@ -1012,6 +1147,10 @@
             border-left: 4px solid #fa5252;
         }
 
+        .notification.warning {
+            border-left: 4px solid #fcc419;
+        }
+
         .notification i {
             font-size: 1.2rem;
         }
@@ -1022,6 +1161,16 @@
 
         .notification.error i {
             color: #fa5252;
+        }
+
+        .notification.warning i {
+            color: #fcc419;
+        }
+
+        .file-size-warning {
+            color: #fcc419;
+            font-size: 0.85rem;
+            margin-top: 0.3rem;
         }
 
         /* Responsive */
@@ -1204,14 +1353,14 @@
                 </div>
             </div>
 
-            <!-- Stats Grid -->
+            <!-- Stats Grid - Simplified without counting -->
             <div class="stats-grid">
                 <div class="stat-card">
                     <div class="stat-icon">
                         <i class="fas fa-file"></i>
                     </div>
                     <div class="stat-content">
-                        <h3>24</h3>
+                        <h3>{{ materials|length }}</h3>
                         <p>Total Materials</p>
                     </div>
                 </div>
@@ -1220,7 +1369,7 @@
                         <i class="fas fa-video"></i>
                     </div>
                     <div class="stat-content">
-                        <h3>12</h3>
+                        <h3>-</h3>
                         <p>Video Lectures</p>
                     </div>
                 </div>
@@ -1229,17 +1378,17 @@
                         <i class="fas fa-file-pdf"></i>
                     </div>
                     <div class="stat-content">
-                        <h3>8</h3>
+                        <h3>-</h3>
                         <p>PDF Documents</p>
                     </div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-icon purple">
-                        <i class="fas fa-tasks"></i>
+                        <i class="fas fa-link"></i>
                     </div>
                     <div class="stat-content">
-                        <h3>6</h3>
-                        <p>Assignments</p>
+                        <h3>-</h3>
+                        <p>External Links</p>
                     </div>
                 </div>
             </div>
@@ -1272,11 +1421,10 @@
                 </div>
 
                 <div class="materials-grid">
-                {% if materials %}
-                    {% for material in materials %}
-                        
+                    {% if materials %}
+                        {% for material in materials %}
                             {% if material.material_type == "pdf" %}
-                                <div class="material-card">
+                                <div class="material-card" id="material-{{ material.id }}">
                                     <div class="material-icon pdf">
                                         <i class="fas fa-file-pdf"></i>
                                     </div>
@@ -1284,25 +1432,25 @@
                                     <h3 class="material-title">{{ material.title }}</h3>
                                     <div class="material-meta">
                                         <span><i class="fas fa-calendar"></i> {{ material.uploaded_on|date:"j M Y" }} {{ material.uploaded_on|time:"H:i" }}</span>
-                                        <span><i class="fas fa-file-size"></i>{{ material.file_detail }}</span>
+                                        <span><i class="fas fa-file-size"></i> {{ material.file_detail }}</span>
                                     </div>
                                     <div class="material-actions">
-                                        <button class="material-btn" title="View">
+                                        <a href="{% url 'university:view_material' material.id %}" target="_blank" class="material-btn view" title="View">
                                             <i class="fas fa-eye"></i>
-                                        </button>
-                                        <button class="material-btn" title="Download">
+                                        </a>
+                                        <a href="{% url 'university:material_download' material.id %}" class="material-btn" title="Download">
                                             <i class="fas fa-download"></i>
-                                        </button>
-                                        <button class="material-btn" title="Edit">
+                                        </a>
+                                        <button class="material-btn" title="Edit" onclick="openEditModal({{ material.id }}, '{{ material.title|escapejs }}', '{{ material.description|default:''|escapejs }}', '{{ material.material_type }}')">
                                             <i class="fas fa-edit"></i>
                                         </button>
-                                        <button class="material-btn delete" title="Delete">
+                                        <button class="material-btn delete" title="Delete" onclick="deleteMaterial({{ material.id }})">
                                             <i class="fas fa-trash"></i>
-                                        </button>     
+                                        </button>
                                     </div>
                                 </div>
                             {% elif material.material_type == "vid" %}
-                                <div class="material-card">
+                                <div class="material-card" id="material-{{ material.id }}">
                                     <div class="material-icon video">
                                         <i class="fas fa-video"></i>
                                     </div>
@@ -1310,132 +1458,82 @@
                                     <h3 class="material-title">{{ material.title }}</h3>
                                     <div class="material-meta">
                                         <span><i class="fas fa-calendar"></i> {{ material.uploaded_on|date:"j M Y" }} {{ material.uploaded_on|time:"H:i" }}</span>
-                                        <span><i class="fas fa-clock"></i>{{ material.file_detail }}</span>
+                                        <span><i class="fas fa-clock"></i> {{ material.file_detail }}</span>
                                     </div>
                                     <div class="material-actions">
-                                        <button class="material-btn" title="Download">
-                                            <i class="fas fa-download"></i>
-                                        </button>
-                                        <button class="material-btn" title="Play">
+                                        <button class="material-btn view" title="Play" onclick="playVideo({{ material.id }}, '{{ material.title|escapejs }}')">
                                             <i class="fas fa-play"></i>
                                         </button>
-                                        <button class="material-btn" title="Edit">
+                                        <a href="{% url 'university:material_download' material.id %}" class="material-btn" title="Download">
+                                            <i class="fas fa-download"></i>
+                                        </a>
+                                        <button class="material-btn" title="Edit" onclick="openEditModal({{ material.id }}, '{{ material.title|escapejs }}', '{{ material.description|default:''|escapejs }}', '{{ material.material_type }}')">
                                             <i class="fas fa-edit"></i>
                                         </button>
-                                        <button class="material-btn delete" title="Delete">
+                                        <button class="material-btn delete" title="Delete" onclick="deleteMaterial({{ material.id }})">
                                             <i class="fas fa-trash"></i>
                                         </button>
                                     </div>
-                                </div>                       
+                                </div>
+                            {% elif material.material_type == "link" %}
+                                <div class="material-card" id="material-{{ material.id }}">
+                                    <div class="material-icon link">
+                                        <i class="fas fa-link"></i>
+                                    </div>
+                                    <span class="material-type type-link">LINK</span>
+                                    <h3 class="material-title">{{ material.title }}</h3>
+                                    <div class="material-meta">
+                                        <span><i class="fas fa-calendar"></i> {{ material.uploaded_on|date:"j M Y" }} {{ material.uploaded_on|time:"H:i" }}</span>
+                                        <span><i class="fas fa-globe"></i> {{ material.file_detail }}</span>
+                                    </div>
+                                    <div class="material-actions">
+                                        <a href="{{ material.external_url }}" target="_blank" class="material-btn view" title="Open Link">
+                                            <i class="fas fa-external-link-alt"></i>
+                                        </a>
+                                        <button class="material-btn" title="Edit" onclick="openEditModal({{ material.id }}, '{{ material.title|escapejs }}', '{{ material.description|default:''|escapejs }}', '{{ material.material_type }}')">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button class="material-btn delete" title="Delete" onclick="deleteMaterial({{ material.id }})">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            {% elif material.material_type == "doc" %}
+                                <div class="material-card" id="material-{{ material.id }}">
+                                    <div class="material-icon">
+                                        <i class="fas fa-file-word"></i>
+                                    </div>
+                                    <span class="material-type type-doc">DOCUMENT</span>
+                                    <h3 class="material-title">{{ material.title }}</h3>
+                                    <div class="material-meta">
+                                        <span><i class="fas fa-calendar"></i> {{ material.uploaded_on|date:"j M Y" }} {{ material.uploaded_on|time:"H:i" }}</span>
+                                        <span><i class="fas fa-file-size"></i> {{ material.file_detail }}</span>
+                                    </div>
+                                    <div class="material-actions">
+                                        <a href="{% url 'university:material_download' material.id %}" class="material-btn" title="Download">
+                                            <i class="fas fa-download"></i>
+                                        </a>
+                                        <button class="material-btn" title="Edit" onclick="openEditModal({{ material.id }}, '{{ material.title|escapejs }}', '{{ material.description|default:''|escapejs }}', '{{ material.material_type }}')">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button class="material-btn delete" title="Delete" onclick="deleteMaterial({{ material.id }})">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </div>
                             {% endif %}
-
-                    {% endfor %}
-                {% else %}
-                <!-- Material Card 1 -->
-                    <div class="material-card">
-                        <div class="material-icon pdf">
-                            <i class="fas fa-file-pdf"></i>
-                        </div>
-                        <span class="material-type type-pdf">PDF</span>
-                        <h3 class="material-title">Introduction to Subject - Lecture Notes</h3>
-                        <div class="material-meta">
-                            <span><i class="fas fa-calendar"></i> 15 Jan 2024</span>
-                            <span><i class="fas fa-file-size"></i> 2.4 MB</span>
-                        </div>
-                        <div class="material-actions">
-                            <button class="material-btn" title="Delete">
-                                <i class="fas fa-eye"></i>
-                            </button>
-                            <button class="material-btn" title="Download">
-                                <i class="fas fa-download"></i>
-                            </button>
-                            <button class="material-btn" title="Edit">
-                                <i class="fas fa-edit"></i>
-                            </button>
-                            <button class="material-btn delete" title="Delete">
-                                <i class="fas fa-trash"></i>
+                        {% endfor %}
+                    {% else %}
+                        <div class="empty-state">
+                            <i class="fas fa-folder-open"></i>
+                            <h3>No Materials Found</h3>
+                            <p>This subject doesn't have any materials yet. Upload your first material to get started.</p>
+                            <button class="btn-primary" onclick="document.getElementById('addMaterialBtn').click()">
+                                <i class="fas fa-plus"></i> Upload First Material
                             </button>
                         </div>
-                    </div>
-
-                    <!-- Material Card 2 -->
-                    <div class="material-card">
-                        <div class="material-icon video">
-                            <i class="fas fa-video"></i>
-                        </div>
-                        <span class="material-type type-video">VIDEO</span>
-                        <h3 class="material-title">Week 1 - Lecture Recording</h3>
-                        <div class="material-meta">
-                            <span><i class="fas fa-calendar"></i> 16 Jan 2024</span>
-                            <span><i class="fas fa-clock"></i> 45 min</span>
-                        </div>
-                        <div class="material-actions">
-                            <button class="material-btn" title="Download">
-                                <i class="fas fa-download"></i>
-                            </button>
-                            <button class="material-btn" title="Play">
-                                <i class="fas fa-play"></i>
-                            </button>
-                            <button class="material-btn" title="Edit">
-                                <i class="fas fa-edit"></i>
-                            </button>
-                            <button class="material-btn delete" title="Delete">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Material Card 3 -->
-                    <div class="material-card">
-                        <div class="material-icon link">
-                            <i class="fas fa-link"></i>
-                        </div>
-                        <span class="material-type type-link">LINK</span>
-                        <h3 class="material-title">External Resource - Practice Problems</h3>
-                        <div class="material-meta">
-                            <span><i class="fas fa-calendar"></i> 18 Jan 2024</span>
-                            <span><i class="fas fa-globe"></i> khanacademy.org</span>
-                        </div>
-                        <div class="material-actions">
-                            <button class="material-btn" title="Open Link">
-                                <i class="fas fa-external-link-alt"></i>
-                            </button>
-                            <button class="material-btn" title="Edit">
-                                <i class="fas fa-edit"></i>
-                            </button>
-                            <button class="material-btn delete" title="Delete">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Material Card 4 -->
-                    <div class="material-card">
-                        <div class="material-icon">
-                            <i class="fas fa-file-word"></i>
-                        </div>
-                        <span class="material-type type-doc">DOC</span>
-                        <h3 class="material-title">Lab Manual - Week 1 Exercises</h3>
-                        <div class="material-meta">
-                            <span><i class="fas fa-calendar"></i> 20 Jan 2024</span>
-                            <span><i class="fas fa-file-size"></i> 1.2 MB</span>
-                        </div>
-                        <div class="material-actions">
-                            <button class="material-btn" title="Download">
-                                <i class="fas fa-download"></i>
-                            </button>
-                            <button class="material-btn" title="Edit">
-                                <i class="fas fa-edit"></i>
-                            </button>
-                            <button class="material-btn delete" title="Delete">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </div>
-                    </div>
-
-
-                {% endif %}
-                
+                    {% endif %}
+                </div>
             </div>
 
             <!-- Assignments Tab Content -->
@@ -1695,7 +1793,8 @@
 
                     <div class="form-group">
                         <label class="form-label" id="fileLabel">File</label>
-                        <input type="file" class="form-control" id="fileInput">
+                        <input type="file" class="form-control" id="fileInput" onchange="checkFileSize(this)">
+                        <div class="file-size-warning" id="fileSizeWarning"></div>
                         <small style="color: #6c757d;" id="urlHint" style="display: none;">Enter URL for links</small>
                         <input type="url" class="form-control" id="urlInput" style="margin-top: 0.5rem; display: none;" placeholder="https://...">
                     </div>
@@ -1707,6 +1806,75 @@
                     <span id="uploadText">Upload Material</span>
                     <span id="uploadSpinner" class="spinner" style="display: none;"></span>
                 </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Material Modal -->
+    <div class="modal" id="editModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-edit"></i> Edit Material</h2>
+                <button class="modal-close" id="closeEditModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="editForm">
+                    <input type="hidden" id="editMaterialId">
+                    <div class="form-group">
+                        <label class="form-label">Material Title</label>
+                        <input type="text" class="form-control" id="editMaterialTitle" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Material Type</label>
+                        <div class="type-selector" id="editTypeSelector">
+                            <div class="type-option disabled" data-type="pdf">
+                                <i class="fas fa-file-pdf"></i>
+                                <span>PDF</span>
+                            </div>
+                            <div class="type-option disabled" data-type="video">
+                                <i class="fas fa-video"></i>
+                                <span>Video</span>
+                            </div>
+                            <div class="type-option disabled" data-type="link">
+                                <i class="fas fa-link"></i>
+                                <span>Link</span>
+                            </div>
+                            <div class="type-option disabled" data-type="document">
+                                <i class="fas fa-file-word"></i>
+                                <span>Document</span>
+                            </div>
+                        </div>
+                        <input type="hidden" id="editMaterialType">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Description</label>
+                        <textarea class="form-control" id="editMaterialDescription" rows="3"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-outline" id="cancelEditModal">Cancel</button>
+                <button class="btn-primary" id="updateBtn">
+                    <span id="updateText">Update Material</span>
+                    <span id="updateSpinner" class="spinner" style="display: none;"></span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Video Player Modal -->
+    <div class="video-modal" id="videoModal">
+        <div class="video-modal-content">
+            <div class="video-modal-header">
+                <h3 id="videoTitle">Video Player</h3>
+                <button class="video-close" id="closeVideoModal">&times;</button>
+            </div>
+            <div class="video-wrapper">
+                <video-js id="videoPlayer" class="vjs-default-skin vjs-big-play-centered" controls preload="auto" data-setup='{"fluid": true}'>
+                    <source id="videoSource" src="" type="video/mp4">
+                </video-js>
             </div>
         </div>
     </div>
@@ -1757,12 +1925,37 @@
                 });
             });
 
-            // Modal functionality
+            // Get subject ID
+            const subjectId = '{{ batch_subject.id }}';
+            const maxUploadSize = {{ settings.MAX_UPLOAD_MB|default:100 }} * 1024 * 1024; // Convert MB to bytes
+
+            // File size checker
+            window.checkFileSize = function(input) {
+                const warning = document.getElementById('fileSizeWarning');
+                if (input.files && input.files[0]) {
+                    const fileSize = input.files[0].size;
+                    if (fileSize > maxUploadSize) {
+                        const sizeMB = (fileSize / (1024 * 1024)).toFixed(2);
+                        const maxMB = maxUploadSize / (1024 * 1024);
+                        warning.textContent = `File size (${sizeMB} MB) exceeds maximum allowed size (${maxMB} MB)`;
+                        input.value = ''; // Clear the file input
+                    } else {
+                        warning.textContent = '';
+                    }
+                }
+            };
+
+            // Upload Modal functionality
             const modal = document.getElementById('uploadModal');
+            const editModal = document.getElementById('editModal');
+            const videoModal = document.getElementById('videoModal');
             const addBtns = document.querySelectorAll('#addMaterialBtn, #addMaterialBtn2');
             const closeBtn = document.getElementById('closeModal');
+            const closeEditBtn = document.getElementById('closeEditModal');
+            const closeVideoBtn = document.getElementById('closeVideoModal');
             const cancelBtn = document.getElementById('cancelModal');
-            const typeOptions = document.querySelectorAll('.type-option');
+            const cancelEditBtn = document.getElementById('cancelEditModal');
+            const typeOptions = document.querySelectorAll('#typeSelector .type-option');
             const materialType = document.getElementById('materialType');
             const fileInput = document.getElementById('fileInput');
             const urlInput = document.getElementById('urlInput');
@@ -1771,17 +1964,16 @@
             const uploadBtn = document.getElementById('uploadBtn');
             const uploadText = document.getElementById('uploadText');
             const uploadSpinner = document.getElementById('uploadSpinner');
+            const updateBtn = document.getElementById('updateBtn');
+            const updateText = document.getElementById('updateText');
+            const updateSpinner = document.getElementById('updateSpinner');
             const notification = document.getElementById('notification');
             const notificationMessage = document.getElementById('notificationMessage');
 
-            // Get subject ID from URL or data attribute
-            const subjectId = '{{ batch_subject.id }}';
-
-            // Open modal
+            // Open upload modal
             addBtns.forEach(btn => {
                 btn.addEventListener('click', function() {
                     modal.classList.add('show');
-                    // Reset form
                     document.getElementById('uploadForm').reset();
                     typeOptions.forEach(o => o.classList.remove('selected'));
                     typeOptions[0].classList.add('selected');
@@ -1790,24 +1982,28 @@
                     urlInput.style.display = 'none';
                     urlHint.style.display = 'none';
                     fileLabel.textContent = 'File';
+                    document.getElementById('fileSizeWarning').textContent = '';
                 });
             });
 
             // Close modal functions
-            function closeModal() {
+            function closeModal(modal) {
                 modal.classList.remove('show');
             }
 
-            if (closeBtn) closeBtn.addEventListener('click', closeModal);
-            if (cancelBtn) cancelBtn.addEventListener('click', closeModal);
+            if (closeBtn) closeBtn.addEventListener('click', () => closeModal(modal));
+            if (closeEditBtn) closeEditBtn.addEventListener('click', () => closeModal(editModal));
+            if (closeVideoBtn) closeVideoBtn.addEventListener('click', () => closeModal(videoModal));
+            if (cancelBtn) cancelBtn.addEventListener('click', () => closeModal(modal));
+            if (cancelEditBtn) cancelEditBtn.addEventListener('click', () => closeModal(editModal));
 
             window.addEventListener('click', function(e) {
-                if (e.target === modal) {
-                    closeModal();
-                }
+                if (e.target === modal) closeModal(modal);
+                if (e.target === editModal) closeModal(editModal);
+                if (e.target === videoModal) closeModal(videoModal);
             });
 
-            // Material type selector
+            // Material type selector for upload
             typeOptions.forEach(option => {
                 option.addEventListener('click', function() {
                     typeOptions.forEach(o => o.classList.remove('selected'));
@@ -1815,7 +2011,6 @@
                     const type = this.dataset.type;
                     materialType.value = type;
                     
-                    // Toggle file/url inputs based on type
                     if (type === 'link') {
                         fileInput.style.display = 'none';
                         urlInput.style.display = 'block';
@@ -1839,12 +2034,6 @@
                 notification.className = 'notification show ' + type;
                 notificationMessage.textContent = message;
                 
-                if (type === 'success') {
-                    notification.querySelector('i').className = 'fas fa-check-circle';
-                } else {
-                    notification.querySelector('i').className = 'fas fa-exclamation-circle';
-                }
-                
                 setTimeout(() => {
                     notification.classList.remove('show');
                 }, 3000);
@@ -1863,12 +2052,10 @@
                     return;
                 }
                 
-                // Show loading state
                 uploadText.style.display = 'none';
                 uploadSpinner.style.display = 'inline-block';
                 uploadBtn.disabled = true;
                 
-                // Prepare form data
                 const formData = new FormData();
                 formData.append('title', title);
                 formData.append('description', description);
@@ -1878,9 +2065,7 @@
                     const url = urlInput.value;
                     if (!url) {
                         showNotification('Please enter a URL', 'error');
-                        uploadText.style.display = 'inline';
-                        uploadSpinner.style.display = 'none';
-                        uploadBtn.disabled = false;
+                        resetUploadButton();
                         return;
                     }
                     formData.append('url', url);
@@ -1888,15 +2073,12 @@
                     const file = fileInput.files[0];
                     if (!file) {
                         showNotification('Please select a file', 'error');
-                        uploadText.style.display = 'inline';
-                        uploadSpinner.style.display = 'none';
-                        uploadBtn.disabled = false;
+                        resetUploadButton();
                         return;
                     }
                     formData.append('file', file);
                 }
                 
-                // Send to API endpoint
                 fetch(`/api/material/${subjectId}/upload`, {
                     method: 'POST',
                     body: formData,
@@ -1905,25 +2087,145 @@
                     }
                 })
                 .then(response => {
-                    if (!response.ok) {
-                        throw new Error('Upload failed');
-                    }
+                    if (!response.ok) throw new Error('Upload failed');
                     return response.json();
                 })
                 .then(data => {
                     showNotification('Material uploaded successfully!', 'success');
-                    closeModal();
-                    // Refresh materials list here if needed
+                    closeModal(modal);
+                    setTimeout(() => location.reload(), 1500);
                 })
                 .catch(error => {
                     console.error('Error:', error);
                     showNotification('Failed to upload material. Please try again.', 'error');
                 })
-                .finally(() => {
-                    uploadText.style.display = 'inline';
-                    uploadSpinner.style.display = 'none';
-                    uploadBtn.disabled = false;
+                .finally(resetUploadButton);
+            });
+
+            function resetUploadButton() {
+                uploadText.style.display = 'inline';
+                uploadSpinner.style.display = 'none';
+                uploadBtn.disabled = false;
+            }
+
+            // Open edit modal
+            window.openEditModal = function(id, title, description, type) {
+                document.getElementById('editMaterialId').value = id;
+                document.getElementById('editMaterialTitle').value = title;
+                document.getElementById('editMaterialDescription').value = description;
+                document.getElementById('editMaterialType').value = type;
+                
+                // Highlight the correct type in the disabled selector
+                document.querySelectorAll('#editTypeSelector .type-option').forEach(opt => {
+                    opt.classList.remove('selected');
+                    if (opt.dataset.type === type || 
+                        (type === 'vid' && opt.dataset.type === 'video') ||
+                        (type === 'doc' && opt.dataset.type === 'document')) {
+                        opt.classList.add('selected');
+                    }
                 });
+                
+                editModal.classList.add('show');
+            };
+
+            // Update material
+            updateBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                
+                const id = document.getElementById('editMaterialId').value;
+                const title = document.getElementById('editMaterialTitle').value;
+                const description = document.getElementById('editMaterialDescription').value;
+                
+                if (!title) {
+                    showNotification('Please enter a material title', 'error');
+                    return;
+                }
+                
+                updateText.style.display = 'none';
+                updateSpinner.style.display = 'inline-block';
+                updateBtn.disabled = true;
+                
+                fetch(`/api/material/${id}/update`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token }}'
+                    },
+                    body: JSON.stringify({
+                        title: title,
+                        description: description
+                    })
+                })
+                .then(response => {
+                    if (!response.ok) throw new Error('Update failed');
+                    return response.json();
+                })
+                .then(data => {
+                    showNotification('Material updated successfully!', 'success');
+                    closeModal(editModal);
+                    setTimeout(() => location.reload(), 1500);
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showNotification('Failed to update material. Please try again.', 'error');
+                })
+                .finally(() => {
+                    updateText.style.display = 'inline';
+                    updateSpinner.style.display = 'none';
+                    updateBtn.disabled = false;
+                });
+            });
+
+            // Delete material
+            window.deleteMaterial = function(id) {
+                if (confirm('Are you sure you want to delete this material? This action cannot be undone.')) {
+                    fetch(`/api/material/${id}/delete`, {
+                        method: 'DELETE',
+                        headers: {
+                            'X-CSRFToken': '{{ csrf_token }}'
+                        }
+                    })
+                    .then(response => {
+                        if (!response.ok) throw new Error('Delete failed');
+                        return response.json();
+                    })
+                    .then(data => {
+                        showNotification('Material deleted successfully!', 'success');
+                        document.getElementById(`material-${id}`).remove();
+                        
+                        // Check if no materials left
+                        if (document.querySelectorAll('.material-card').length === 0) {
+                            location.reload();
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        showNotification('Failed to delete material. Please try again.', 'error');
+                    });
+                }
+            };
+
+            // Play video
+            window.playVideo = function(id, title) {
+                document.getElementById('videoTitle').textContent = title;
+                const videoPlayer = videojs('videoPlayer');
+                
+                // Set video source using the stream endpoint
+                videoPlayer.src({
+                    src: `/university/materials/${id}/video/stream/`,
+                    type: 'video/mp4'
+                });
+                
+                videoModal.classList.add('show');
+                videoPlayer.play();
+            };
+
+            // Close video modal and stop video
+            closeVideoBtn.addEventListener('click', function() {
+                const videoPlayer = videojs('videoPlayer');
+                videoPlayer.pause();
+                videoPlayer.src('');
+                closeModal(videoModal);
             });
 
             // Change password link

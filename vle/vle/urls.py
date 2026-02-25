@@ -24,6 +24,7 @@ urlpatterns = [
     path('',include('Users.urls')),
     path('dashboard/',include('dashboard.urls')),
     path('api/',include('api.urls')),
+    path('university/',include('university.urls')),
 ]
 
 if settings.DEBUG:

@@ -639,3 +639,14 @@ def delete_shedule(request,schedule_id):
 
     shedule.delete()
     return response.Response({},status=status.HTTP_204_NO_CONTENT)
+
+
+
+
+@api_view(['DELETE'])
+def delete_material(request,id):
+    material = university_models.LectureMaterials.objects.filter(id=id).first()
+    if material is None:
+        return response.Response({'message':'material not found'},status=status.HTTP_404_NOT_FOUND)
+    material.delete()
+    return response.Response({'success': True},status=status.HTTP_204_NO_CONTENT)

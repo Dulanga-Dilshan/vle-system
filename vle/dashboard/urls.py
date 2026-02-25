@@ -39,10 +39,6 @@ urlpatterns = [
     path('staff/manage_subjects/',views.manage_subjects,name='manage_subjects'),
     path('staff/manage_subject/<int:id>/',views.manage_subject,name='manage_subject'),
 
-
-
-
-
 ]
 
 
