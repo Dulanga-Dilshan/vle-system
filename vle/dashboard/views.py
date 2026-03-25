@@ -391,11 +391,14 @@ def manage_subjects(request):
     subjects = university_models.BatchSubject.objects.filter(staff__username=request.user)
     return render(request,"dashboard/staff/manage_subjects.html",{'subjects':subjects})
 
-
 def manage_subject(request,id):
     context = {
         'batch_subject':university_models.BatchSubject.objects.filter(id=id).first(),
         'students':models.Student.objects.filter(batch=university_models.BatchSubject.objects.filter(id=id).first().batch),
         'materials':university_models.LectureMaterials.objects.all(),
+        'video_lectures_count':university_models.LectureMaterials.objects.filter(material_type='vid').count(),
+        'documents_count':university_models.LectureMaterials.objects.all().exclude(material_type='vid').exclude(material_type='link').count(),
+        'external_link_count':university_models.LectureMaterials.objects.filter(material_type='link').count(),
+
     }
     return render(request,"dashboard/staff/manage_subject.html",context)

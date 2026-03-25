@@ -1,9 +1,9 @@
 from rest_framework import response,status
 from rest_framework.decorators import api_view,permission_classes
-from . import serializer
+from api import serializer
 from university import models as university_models
 from Users import models as user_models
-from . import permissions
+from api import permissions
 from django.shortcuts import get_object_or_404
 from Users import services as user_services
 from config.config import get_setting,update_setting,get_all_setting
@@ -649,4 +649,28 @@ def delete_material(request,id):
     if material is None:
         return response.Response({'message':'material not found'},status=status.HTTP_404_NOT_FOUND)
     material.delete()
-    return response.Response({'success': True},status=status.HTTP_204_NO_CONTENT)
+    return response.Response({'success': True},status=status.HTTP_200_OK)
+
+@api_view(['POST'])
+def upload_material(request,id):
+    batch_subject = university_models.BatchSubject.objects.filter(id=id).first()
+    if batch_subject is None:
+        return response.Response({'message':' Subject Not Found'},status=status.HTTP_404_NOT_FOUND)
+    
+    try:
+        lecture_metireal=serializer.LectureMaterialSerializer(univercity_services.add_lecture_metireal(id,request.data))
+    except NotFound as e:
+        return response.Response({'message':e.detail},status=status.HTTP_404_NOT_FOUND)
+    except ValidationError as e:
+        return response.Response({'message':e.detail},status=status.HTTP_404_NOT_FOUND)
+    
+    return response.Response({'success': True,'data':lecture_metireal.data},status=status.HTTP_201_CREATED)
+
+@api_view(['GET'])
+def get_material(request,id):
+    material=university_models.LectureMaterials.objects.filter(id=id).first()
+    if material is None:
+        return response.Response({'message':'Material Not Found'},status=status.HTTP_404_NOT_FOUND)
+    
+    serialized_material = serializer.LectureMaterialSerializer(material)
+    return response.Response({'success': True,'data':serialized_material.data},status=status.HTTP_200_OK)

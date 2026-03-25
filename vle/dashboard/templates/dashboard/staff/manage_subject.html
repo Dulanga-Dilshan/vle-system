@@ -1369,7 +1369,7 @@
                         <i class="fas fa-video"></i>
                     </div>
                     <div class="stat-content">
-                        <h3>-</h3>
+                        <h3>{{ video_lectures_count }}</h3>
                         <p>Video Lectures</p>
                     </div>
                 </div>
@@ -1378,7 +1378,7 @@
                         <i class="fas fa-file-pdf"></i>
                     </div>
                     <div class="stat-content">
-                        <h3>-</h3>
+                        <h3>{{documents_count}}</h3>
                         <p>PDF Documents</p>
                     </div>
                 </div>
@@ -1387,7 +1387,7 @@
                         <i class="fas fa-link"></i>
                     </div>
                     <div class="stat-content">
-                        <h3>-</h3>
+                        <h3>{{external_link_count}}</h3>
                         <p>External Links</p>
                     </div>
                 </div>
@@ -1770,7 +1770,7 @@
                                 <i class="fas fa-file-pdf"></i>
                                 <span>PDF</span>
                             </div>
-                            <div class="type-option" data-type="video">
+                            <div class="type-option" data-type="vid">
                                 <i class="fas fa-video"></i>
                                 <span>Video</span>
                             </div>
@@ -1778,7 +1778,7 @@
                                 <i class="fas fa-link"></i>
                                 <span>Link</span>
                             </div>
-                            <div class="type-option" data-type="document">
+                            <div class="type-option" data-type="doc">
                                 <i class="fas fa-file-word"></i>
                                 <span>Document</span>
                             </div>
@@ -2079,7 +2079,7 @@
                     formData.append('file', file);
                 }
                 
-                fetch(`/api/material/${subjectId}/upload`, {
+                fetch(`/api/material/${subjectId}/upload/`, {
                     method: 'POST',
                     body: formData,
                     headers: {
@@ -2179,14 +2179,14 @@
             // Delete material
             window.deleteMaterial = function(id) {
                 if (confirm('Are you sure you want to delete this material? This action cannot be undone.')) {
-                    fetch(`/api/material/${id}/delete`, {
+                    fetch(`/api/material/${id}/delete/`, {
                         method: 'DELETE',
                         headers: {
                             'X-CSRFToken': '{{ csrf_token }}'
                         }
                     })
                     .then(response => {
-                        if (!response.ok) throw new Error('Delete failed');
+                        if (!response.ok) throw new Error('Delete failed'); 
                         return response.json();
                     })
                     .then(data => {

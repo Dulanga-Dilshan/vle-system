@@ -61,7 +61,11 @@ urlpatterns = [
     path('schedules/<int:schedule_id>/delete/',views.delete_shedule),
 
 
-    path('material/<int:id>/delete',views.delete_material),
+    path('material/<int:id>/delete/',views.delete_material),
+    path('material/<int:id>/upload/',views.upload_material),
+    path('material/<int:id>/get/',views.get_material),
+    
+
     
 
 

@@ -23,3 +23,8 @@ class LectureHallSerializer(serializers.ModelSerializer):
     class Meta:
         model = university_models.LectureHall
         fields = '__all__'
+
+class LectureMaterialSerializer(serializers.ModelSerializer):
+    class Meta:
+        model=university_models.LectureMaterials
+        fields = '__all__'

@@ -152,7 +152,7 @@ class  LectureMaterials(models.Model):
         ('doc','Document')
     ]
 
-    title = models.CharField(max_length=100)
+    title = models.CharField(max_length=100) 
     description = models.TextField()
     material_type = models.CharField(choices=MATERIAL_TYPES,max_length=10,default='pdf')
     subject = models.ForeignKey(BatchSubject,on_delete=models.CASCADE)

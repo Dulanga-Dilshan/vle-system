@@ -347,3 +347,42 @@ def update_shedule(schedule_id,data:dict)->None:
         schedule.notes = data['notes']
     
     schedule.save()
+
+@transaction.atomic
+def add_lecture_metireal(batch_subject_id:int,data:dict)->None:
+    batch_subject = models.BatchSubject.objects.filter(id=batch_subject_id).first()
+    if batch_subject is None:
+        raise NotFound('Subject Not Found')
+    
+    if len(data['description'])<1 or len(data['title'])<1:
+        raise ValidationError('title or description cant be empty')
+    
+    if data['type'] != 'link':
+        if 'file' not in data:
+            raise ValidationError(f"file is requerd for metireal type:{data['type']}")
+         
+    if data['type'] == 'link':
+        if 'url' not in data:
+            raise ValidationError(f"external url is missing for metireal type:{data['type']}")
+    
+
+    Material=models.LectureMaterials(
+        title = data['title'],
+        description = data['description'],
+        material_type = data['type'],
+        subject = batch_subject,
+        file = None if data['type']=='link' else data['file'],
+        external_url = data['url'] if data['type']=='link' else None,
+    )
+
+    try:
+        Material.save()
+    except Exception as e:
+        print(e)
+        raise NotFound('someting went wrong!')
+    
+
+
+
+#<QueryDict: {'title': ['dassad'], 'description': ['asdasd'], 'type': ['link'], 'url': ['https://www.youtube.com/watch?v=Yi2sSHjUEZU&list=RDuovlge8_29U&index=5']}>
+#<QueryDict: {'title': ['dsafdsf'], 'description': ['fsddfs'], 'type': ['pdf'], 'file': [<InMemoryUploadedFile: Dulanga Dilshan QA.pdf (application/pdf)>]}>
